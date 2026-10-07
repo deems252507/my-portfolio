@@ -3,7 +3,7 @@ import { supabase } from "../supabase";
 export const SITE_CONTENT_KEY = "site_content_cache";
 
 export const DEFAULT_CONTENT = {
-  full_name: "Eka Wahyu Maulidan",
+  full_name: "Rizky Dwi Maulana",
   first_name: "Eka Wahyu",
   last_name: "Maulidan",
   greeting: "Hi, I'm",
