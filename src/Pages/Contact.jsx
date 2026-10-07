@@ -37,7 +37,7 @@ const handleChange = (e) => {
 
     try {
       // Ganti dengan email Anda di FormSubmit
-      const formSubmitUrl = 'https://formsubmit.co/ekawahyu@student.ub.ac.id';
+      const formSubmitUrl = 'https://formsubmit.co/rizkydwimaulana97@gmail.com';
       
       // Siapkan data form untuk FormSubmit
       const submitData = new FormData();
