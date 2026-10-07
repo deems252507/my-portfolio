@@ -115,9 +115,9 @@ const WelcomeScreen = ({ onLoadingComplete }) => {
           <div className="relative z-10 min-h-screen flex items-center justify-center px-4">
             <div className="w-full max-w-4xl mx-auto">
 
-              {/* Welcome Text Animation — tinggi cukup agar 2 baris teks tidak terpotong */}
+              {/* Welcome Text Animation */}
               <motion.div
-                className="relative text-center mb-6 sm:mb-8 md:mb-12 w-full h-[200px] sm:h-[260px] md:h-[300px] flex justify-center overflow-visible"
+                className="text-center mb-6 sm:mb-8 md:mb-12 w-full h-[150px] sm:h-[200px] flex justify-center"
                 variants={childVariants}
               >
                 <ParticleTextEffect />
