@@ -163,10 +163,22 @@ export function ParticleTextEffect() {
     offscreenCtx.textAlign = "center";
     offscreenCtx.textBaseline = "middle";
 
-    // Responsive font sizes — scale against CSS width, not physical width
-    const widthRatio = Math.min(1, cssW / 800);
-    const fontSize1  = 65 * widthRatio;
-    const fontSize2  = 80 * widthRatio;
+    // Responsive font sizes — fit within parent width & height so text tidak terpotong
+    const widthRatio  = Math.min(1, cssW / 800);
+    const heightRatio = Math.min(1, cssH / 260);
+    const scale = Math.min(widthRatio, heightRatio);
+    let fontSize1 = Math.max(22, 65 * scale);
+    let fontSize2 = Math.max(28, 80 * scale);
+
+    // Pastikan baris terpanjang ("Portofolio Website") muat di lebar canvas
+    offscreenCtx.font = `bold ${fontSize2}px Arial, sans-serif`;
+    const maxTextW = cssW * 0.92;
+    const measured = offscreenCtx.measureText("Portofolio Website").width;
+    if (measured > maxTextW && measured > 0) {
+      const fit = maxTextW / measured;
+      fontSize1 *= fit;
+      fontSize2 *= fit;
+    }
 
     // "Welcome To My"
     offscreenCtx.font = `bold ${fontSize1}px Arial, sans-serif`;
@@ -178,12 +190,12 @@ export function ParticleTextEffect() {
     gradient.addColorStop(0.5, "#dbeafe");
     gradient.addColorStop(1, "#bfdbfe");
     offscreenCtx.fillStyle = gradient;
-    offscreenCtx.fillText("Welcome To My", cssW / 2, cssH / 2 - (fontSize1 * 0.7));
+    offscreenCtx.fillText("Welcome To My", cssW / 2, cssH / 2 - (fontSize1 * 0.75));
 
     // "Portofolio Website"
     offscreenCtx.font = `bold ${fontSize2}px Arial, sans-serif`;
     offscreenCtx.fillStyle = "#2563eb";
-    offscreenCtx.fillText("Portofolio Website", cssW / 2, cssH / 2 + (fontSize2 * 0.7));
+    offscreenCtx.fillText("Portofolio Website", cssW / 2, cssH / 2 + (fontSize2 * 0.65));
 
     const imageData = offscreenCtx.getImageData(0, 0, cssW, cssH);
     const pixels    = imageData.data;
@@ -303,24 +315,21 @@ export function ParticleTextEffect() {
     if (!canvas) return;
 
     // Scale canvas by devicePixelRatio for crisp rendering on HiDPI / Retina / mobile screens
+    // Ukuran mengikuti parent container (bukan full window) agar teks tidak terpotong
     const updateSize = () => {
-      const dpr  = Math.min(window.devicePixelRatio || 1, 2); // cap at 2x to avoid excess memory
-      const cssW = window.innerWidth;
-      const cssH = window.innerHeight;
+      const parent = canvas.parentElement;
+      const dpr  = Math.min(window.devicePixelRatio || 1, 2);
+      const cssW = Math.max(parent?.clientWidth || window.innerWidth, 280);
+      const cssH = Math.max(parent?.clientHeight || 200, 160);
 
-      // Physical pixel dimensions
-      canvas.width  = cssW * dpr;
-      canvas.height = cssH * dpr;
-
-      // CSS display size stays full screen
+      canvas.width  = Math.floor(cssW * dpr);
+      canvas.height = Math.floor(cssH * dpr);
       canvas.style.width  = `${cssW}px`;
       canvas.style.height = `${cssH}px`;
 
-      // Scale context so all drawing uses CSS pixel coordinates
       const ctx = canvas.getContext("2d");
-      ctx.scale(dpr, dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      // Pass CSS dims so drawText uses correct coordinate space
       drawText(canvas, cssW, cssH);
     };
 
@@ -338,10 +347,10 @@ export function ParticleTextEffect() {
   }, []);
 
   return (
-    <div className="absolute inset-0 w-full h-full pointer-events-none z-10 flex items-center justify-center">
+    <div className="absolute inset-0 w-full h-full pointer-events-none z-10 flex items-center justify-center overflow-visible">
       <canvas
         ref={canvasRef}
-        className="block"
+        className="block max-w-full max-h-full"
         style={{ willChange: "transform" }}
       />
     </div>
