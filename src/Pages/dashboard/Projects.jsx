@@ -1,4 +1,3 @@
-```jsx
 import { useEffect, useState } from "react";
 import { supabase } from "../../supabase";
 import {
@@ -620,4 +619,3 @@ export default function Projects() {
     </div>
   );
 }
-```
