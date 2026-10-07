@@ -43,12 +43,12 @@ function CobeGlobe({
   const isPausedRef = useRef(false)
 
   const handlePointerDown = useCallback((e) => {
-    // On touch/mobile, don't capture pointer so vertical page scroll works
-    if (isCompactLayout) return
+    // Mobile/touch: jangan tangkap pointer agar swipe page tetap jalan
+    if (window.matchMedia("(max-width: 767px), (pointer: coarse)").matches) return
     pointerInteracting.current = { x: e.clientX, y: e.clientY }
     if (canvasRef.current) canvasRef.current.style.cursor = "grabbing"
     isPausedRef.current = true
-  }, [isCompactLayout])
+  }, [])
 
   const handlePointerUp = useCallback(() => {
     if (pointerInteracting.current !== null) {
@@ -223,8 +223,10 @@ function CobeGlobe({
           opacity: 0,
           transition: "opacity 1.2s ease",
           borderRadius: "50%",
-          // pan-y allows vertical page scroll on mobile; none only on desktop for drag-rotate
+          // Mobile: pan-y = swipe vertikal page tetap bekerja
+          // Desktop: none = drag-rotate globe
           touchAction: isCompactLayout ? "pan-y" : "none",
+          pointerEvents: isCompactLayout ? "none" : "auto",
         }}
       />
       {markers.map((m) => (
