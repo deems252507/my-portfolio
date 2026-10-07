@@ -34,18 +34,16 @@ html {
 
 html, body {
   overflow-x: clip; /* clip lebih aman di mobile daripada hidden (tidak blokir scroll vertikal) */
-  overflow-y: auto;
   background: var(--col-bg);
   font-family: var(--font-body);
-  overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
   min-height: 100%;
   min-height: 100dvh;
 }
 
+/* Jangan kunci gesture di body — biarkan browser handle scroll normal di semua device */
 body {
-  /* pan-y + pinch-zoom keeps vertical swipe scroll working on mobile */
-  touch-action: pan-y pinch-zoom;
+  touch-action: auto;
 }
 
 /* =========================================
