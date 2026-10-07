@@ -2,7 +2,6 @@ import * as React from "react";
 import { motion, useMotionValue, useSpring } from "framer-motion";
 import { cn } from "@/lib/utils";
 
-// Meteors use framer-motion to correctly handle repeatDelay and diagonal movement
 function Meteors() {
   const meteors = React.useMemo(() => [
     { id: 1, delay: 0,  top: "-10%", left: "20%",  repeatDelay: 12 },
@@ -33,7 +32,6 @@ function Meteors() {
   );
 }
 
-// Stars are generated once per mount and memoized to avoid unnecessary recalculations
 function generateStars(count, starColor) {
   const shadows = [];
   for (let i = 0; i < count; i++) {
@@ -52,10 +50,8 @@ function StarLayer({
   className,
   ...props
 }) {
-  // Memoize star generation so it runs only once per mount
   const boxShadow = React.useMemo(
     () => generateStars(count, starColor),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
 
@@ -69,7 +65,6 @@ function StarLayer({
       data-slot="star-layer"
       animate={{ y: [0, -2000] }}
       transition={transition}
-      // will-change: transform offloads star animation to the GPU, eliminating repaint
       className={cn("absolute top-0 left-0 w-full h-[2000px]", className)}
       style={{ willChange: "transform" }}
       {...props}
@@ -91,12 +86,10 @@ export default function AnimatedBackground({
 }) {
   const offsetX = useMotionValue(0);
   const offsetY = useMotionValue(0);
-
   const springX = useSpring(offsetX, transition);
   const springY = useSpring(offsetY, transition);
 
   React.useEffect(() => {
-    // throttle via requestAnimationFrame to avoid doing work on every pixel of mouse movement
     let rafId = null;
     const handlePointerMove = (e) => {
       if (rafId) return;
@@ -108,7 +101,6 @@ export default function AnimatedBackground({
         rafId = null;
       });
     };
-
     window.addEventListener("pointermove", handlePointerMove, { passive: true });
     return () => {
       window.removeEventListener("pointermove", handlePointerMove);
@@ -120,7 +112,7 @@ export default function AnimatedBackground({
     <div
       data-slot="stars-background"
       className={cn(
-        "fixed inset-0 z-0 overflow-hidden pointer-events-none",
+        "fixed inset-0 -z-10 overflow-hidden pointer-events-none",
         className,
       )}
       style={{
