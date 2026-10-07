@@ -308,23 +308,29 @@ const Komentar = () => {
     const uploadImage = useCallback(async (imageFile) => {
         if (!imageFile) return null;
         
-        const fileExt = imageFile.name.split('.').pop();
+        const fileExt = imageFile.name.split('.').pop() || 'jpg';
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
-        const filePath = `profile-images/${fileName}`;
 
-        const { error: uploadError } = await supabase.storage
-            .from('profile-images')
-            .upload(filePath, imageFile);
+        // Coba bucket profile-images dulu, fallback ke project-images
+        const buckets = ['profile-images', 'project-images'];
+        let lastError = null;
 
-        if (uploadError) {
-            throw uploadError;
+        for (const bucket of buckets) {
+            const filePath = bucket === 'profile-images' ? `profile-images/${fileName}` : `comment-avatars/${fileName}`;
+            const { error: uploadError } = await supabase.storage
+                .from(bucket)
+                .upload(filePath, imageFile);
+
+            if (!uploadError) {
+                const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
+                return data.publicUrl;
+            }
+            lastError = uploadError;
         }
 
-        const { data } = supabase.storage
-            .from('profile-images')
-            .getPublicUrl(filePath);
-
-        return data.publicUrl;
+        // Jangan gagalkan seluruh komentar hanya karena upload foto gagal
+        console.warn('Avatar upload failed, posting comment without image:', lastError);
+        return null;
     }, []);
 
     const handleCommentSubmit = useCallback(async ({ newComment, userName, imageFile }) => {
@@ -332,7 +338,12 @@ const Komentar = () => {
         setIsSubmitting(true);
         
         try {
-            const profileImageUrl = await uploadImage(imageFile);
+            let profileImageUrl = null;
+            try {
+                profileImageUrl = await uploadImage(imageFile);
+            } catch (imgErr) {
+                console.warn('Image upload skipped:', imgErr);
+            }
             
             const { data: newCommentData, error } = await supabase
                 .from('portfolio_comments')
@@ -342,7 +353,6 @@ const Komentar = () => {
                         user_name: userName,
                         profile_image: profileImageUrl,
                         is_pinned: false,
-                        created_at: new Date().toISOString()
                     }
                 ])
                 .select()
@@ -357,7 +367,8 @@ const Komentar = () => {
                 setComments(prevComments => [newCommentData, ...prevComments]);
             }
         } catch (error) {
-            setError('Failed to post comment. Please try again.');
+            const msg = error?.message || error?.error_description || 'Unknown error';
+            setError(`Gagal mengirim komentar: ${msg}. Pastikan tabel portfolio_comments ada & RLS dimatikan.`);
             console.error('Error adding comment: ', error);
         } finally {
             setIsSubmitting(false);

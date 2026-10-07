@@ -31,8 +31,9 @@ const InputField = ({
   required = false,
 }) => (
   <div className="space-y-1.5">
-    <label className="text-xs text-blue-300/70 uppercase tracking-wider font-medium">
+    <label className="text-xs text-blue-300 uppercase tracking-wider font-medium block">
       {label}
+      {required && <span className="text-red-400 ml-0.5">*</span>}
     </label>
     <input
       type={type}
@@ -40,7 +41,7 @@ const InputField = ({
       onChange={onChange}
       placeholder={placeholder}
       required={required}
-      className="w-full bg-[#0d0d22] border border-white/10 rounded-xl px-4 py-2.5 text-gray-200 placeholder-gray-600 text-sm outline-none focus:border-blue-500/60 focus:ring-1 focus:ring-blue-500/20 transition-all"
+      className="w-full bg-[#0d0d22] border border-white/20 rounded-xl px-4 py-2.5 text-gray-100 placeholder-gray-500 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition-all"
     />
   </div>
 );
@@ -164,32 +165,38 @@ const ProjectCard = ({ project, onDelete, onEdit }) => {
 };
 
 const Modal = ({ title, onClose, children }) => (
-  <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6">
+  <div
+    className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6"
+    style={{ overscrollBehavior: "contain" }}
+  >
     <div
-      className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+      className="absolute inset-0 bg-black/70 backdrop-blur-sm"
       onClick={onClose}
     />
 
     <div
-      className="relative z-10 w-full max-w-2xl flex flex-col"
-      style={{ maxHeight: "calc(100vh - 24px)" }}
+      className="relative z-10 w-full max-w-2xl flex flex-col shadow-2xl"
+      style={{ maxHeight: "calc(100dvh - 24px)" }}
     >
-      <div className="absolute -inset-0.5 bg-gradient-to-r from-[#3b82f6] to-[#06b6d4] rounded-2xl blur opacity-20 pointer-events-none" />
+      <div className="absolute -inset-0.5 bg-gradient-to-r from-[#3b82f6] to-[#06b6d4] rounded-2xl blur opacity-30 pointer-events-none" />
 
-      <div className="relative bg-[#0a0a1a] border border-white/12 rounded-2xl flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/8 shrink-0">
+      <div className="relative bg-[#0a0a1a] border border-white/20 rounded-2xl flex flex-col overflow-hidden text-white">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 shrink-0 bg-[#0a0a1a]">
           <h2 className="text-base font-semibold text-white">{title}</h2>
 
           <button
             type="button"
             onClick={onClose}
-            className="p-1 text-gray-500 hover:text-white transition-colors"
+            className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+            aria-label="Close"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="overflow-y-auto flex-1">{children}</div>
+        <div className="overflow-y-auto flex-1 overscroll-contain bg-[#0a0a1a]">
+          {children}
+        </div>
       </div>
     </div>
   </div>
@@ -202,21 +209,26 @@ const ProjectForm = ({
   submitLabel = "Save Project",
   uploading,
 }) => {
+  // DB uses lowercase/snake_case: title, description, tech_stack, features, link, github, img
   const [form, setForm] = useState({
-    Title: initial?.Title || "",
-    Description: initial?.Description || "",
-    TechStack: Array.isArray(initial?.TechStack)
-      ? initial.TechStack.join(", ")
-      : initial?.TechStack || "",
-    Features: Array.isArray(initial?.Features)
-      ? initial.Features.join(", ")
-      : initial?.Features || "",
-    Link: initial?.Link || "",
-    Github: initial?.Github || "",
+    Title: initial?.title || initial?.Title || "",
+    Description: initial?.description || initial?.Description || "",
+    TechStack: Array.isArray(initial?.tech_stack)
+      ? initial.tech_stack.join(", ")
+      : Array.isArray(initial?.TechStack)
+        ? initial.TechStack.join(", ")
+        : initial?.tech_stack || initial?.TechStack || "",
+    Features: Array.isArray(initial?.features)
+      ? initial.features.join(", ")
+      : Array.isArray(initial?.Features)
+        ? initial.Features.join(", ")
+        : initial?.features || initial?.Features || "",
+    Link: initial?.link || initial?.Link || "",
+    Github: initial?.github || initial?.Github || "",
   });
 
   const [file, setFile] = useState(null);
-  const [preview, setPreview] = useState(initial?.Img || null);
+  const [preview, setPreview] = useState(initial?.img || initial?.Img || null);
 
   const set = (key) => (e) =>
     setForm((f) => ({
@@ -507,7 +519,7 @@ export default function Projects() {
   };
 
   return (
-    <div className="space-y-6z ">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
         <div className="flex items-center gap-3">
@@ -538,18 +550,18 @@ export default function Projects() {
 
           <div className="relative flex items-center gap-2 px-4 py-2.5 bg-[#030014] rounded-xl border border-white/10">
             <Plus className="w-4 h-4 text-blue-400" />
-            <span className="text-sm text-gray-200">New Project</span>
+            <span className="text-sm text-gray-200">+ Tambah Project</span>
           </div>
         </button>
       </div>
 
       {/* Create Modal */}
       {showCreate && (
-        <Modal title="Add New Project" onClose={() => setShowCreate(false)}>
+        <Modal title="Tambah Project" onClose={() => setShowCreate(false)}>
           <ProjectForm
             onSubmit={handleCreate}
             onCancel={() => setShowCreate(false)}
-            submitLabel="Save Project"
+            submitLabel="Simpan Project"
             uploading={uploading}
           />
         </Modal>

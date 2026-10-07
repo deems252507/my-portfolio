@@ -83,17 +83,54 @@ export default function Certificates() {
   const uploadImage = async () => {
     if (!file) return
     setUploading(true)
-    const fileName = `cert-${Date.now()}-${file.name}`
-    await supabase.storage.from('certificate-images').upload(fileName, file)
-    const { data } = supabase.storage.from('certificate-images').getPublicUrl(fileName)
-    await supabase.from('certificates').insert({ img: data.publicUrl, category })
-    setFile(null); setPreview(null); setUploading(false)
-    fetchCerts()
+    try {
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+      const fileName = `cert-${Date.now()}-${safeName}`
+
+      let publicUrl = null
+      const { error: uploadError } = await supabase.storage
+        .from('certificate-images')
+        .upload(fileName, file)
+
+      if (uploadError) {
+        // Fallback ke project-images jika bucket certificate-images belum ada
+        const { error: fallbackErr } = await supabase.storage
+          .from('project-images')
+          .upload(fileName, file)
+        if (fallbackErr) throw uploadError
+        const { data } = supabase.storage.from('project-images').getPublicUrl(fileName)
+        publicUrl = data.publicUrl
+      } else {
+        const { data } = supabase.storage.from('certificate-images').getPublicUrl(fileName)
+        publicUrl = data.publicUrl
+      }
+
+      const { error: insertError } = await supabase
+        .from('certificates')
+        .insert({ img: publicUrl, category: category || 'keahlian' })
+      if (insertError) throw insertError
+
+      setFile(null)
+      setPreview(null)
+      await fetchCerts()
+    } catch (err) {
+      console.error('Certificate upload error:', err)
+      alert(
+        err?.message ||
+          'Gagal upload sertifikat. Pastikan bucket certificate-images (atau project-images) public, dan RLS tabel certificates dimatikan di Supabase.'
+      )
+    } finally {
+      setUploading(false)
+    }
   }
 
   const deleteCert = async (id) => {
     if (!confirm('Delete this certificate?')) return
-    await supabase.from('certificates').delete().eq('id', id)
+    const { error } = await supabase.from('certificates').delete().eq('id', id)
+    if (error) {
+      alert(error.message || 'Gagal menghapus sertifikat.')
+      return
+    }
     fetchCerts()
   }
 

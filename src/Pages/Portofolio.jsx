@@ -90,7 +90,10 @@ export default function FullWidthTabs() {
 
       const projectData = projectsResponse.data || [];
       const allCertData = certificatesResponse.data || [];
-      const certData = allCertData.filter((c) => c.category === "keahlian");
+      // Sertifikat tanpa category dianggap keahlian supaya tetap tampil
+      const certData = allCertData.filter(
+        (c) => !c.category || c.category === "keahlian"
+      );
       const awardData = allCertData.filter((c) => c.category === "prestasi");
 
       setProjects(projectData);
@@ -109,7 +112,9 @@ export default function FullWidthTabs() {
     if (cachedProjects && cachedCertificates) {
       setProjects(JSON.parse(cachedProjects));
       const allCerts = JSON.parse(cachedCertificates);
-      setCertificates(allCerts.filter((c) => c.category === "keahlian"));
+      setCertificates(
+        allCerts.filter((c) => !c.category || c.category === "keahlian")
+      );
       setAwards(allCerts.filter((c) => c.category === "prestasi"));
     }
     fetchData();
@@ -137,7 +142,7 @@ export default function FullWidthTabs() {
   const displayedAwards = showAllAwards ? awards : awards.slice(0, initialItems);
 
   return (
-    <div className="md:px-[10%] px-[5%] w-full sm:mt-0 mt-[3rem] overflow-hidden" id="Portofolio">
+    <div className="md:px-[10%] px-[5%] w-full sm:mt-0 mt-[3rem] overflow-x-clip" id="Portofolio">
 
       {/* Header */}
       <div className="text-center pb-10" data-aos="fade-up" data-aos-duration="1000">

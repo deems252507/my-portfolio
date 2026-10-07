@@ -139,7 +139,7 @@ const Home = () => {
       </Helmet>
 
       <div
-        className="min-h-screen overflow-hidden px-[5%] sm:px-[5%] lg:px-[10%] relative"
+        className="min-h-screen overflow-x-clip px-[5%] sm:px-[5%] lg:px-[10%] relative"
         id="Home"
       >
         <div className="relative z-10">

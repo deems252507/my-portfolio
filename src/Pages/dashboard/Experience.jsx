@@ -117,30 +117,34 @@ const ExperienceCard = ({ experience, onDelete, onEdit }) => {
 };
 
 const Modal = ({ title, onClose, children }) => (
-  <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6">
+  <div
+    className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6"
+    style={{ overscrollBehavior: "contain" }}
+  >
     <div
-      className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+      className="absolute inset-0 bg-black/70 backdrop-blur-sm"
       onClick={onClose}
     />
     <div
-      className="relative z-10 w-full max-w-2xl flex flex-col"
-      style={{ maxHeight: "calc(100vh - 24px)" }}
+      className="relative z-10 w-full max-w-2xl flex flex-col shadow-2xl"
+      style={{ maxHeight: "calc(100dvh - 24px)" }}
     >
-      <div className="absolute -inset-0.5 bg-gradient-to-r from-[#3b82f6] to-[#06b6d4] rounded-2xl blur opacity-20 pointer-events-none" />
-      <div className="relative bg-[#0a0a1a] border border-white/12 rounded-2xl flex flex-col overflow-hidden">
-        {/* Fixed header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/8 shrink-0">
+      <div className="absolute -inset-0.5 bg-gradient-to-r from-[#3b82f6] to-[#06b6d4] rounded-2xl blur opacity-30 pointer-events-none" />
+      <div className="relative bg-[#0a0a1a] border border-white/20 rounded-2xl flex flex-col overflow-hidden text-white">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 shrink-0 bg-[#0a0a1a]">
           <h2 className="text-base font-semibold text-white">{title}</h2>
           <button
             type="button"
             onClick={onClose}
-            className="p-1 text-gray-500 hover:text-white transition-colors"
+            className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+            aria-label="Close"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
-        {/* Scrollable content */}
-        <div className="overflow-y-auto flex-1">{children}</div>
+        <div className="overflow-y-auto flex-1 overscroll-contain bg-[#0a0a1a]">
+          {children}
+        </div>
       </div>
     </div>
   </div>
@@ -301,40 +305,58 @@ export default function Experience() {
 
   const handleCreate = async (form, file) => {
     setUploading(true);
-    let imgUrl = "";
-    if (file) imgUrl = await uploadImage(file);
-    await supabase.from("experiences").insert({
-      company: form.company,
-      role: form.role,
-      year: form.year,
-      logo: imgUrl,
-    });
-    setShowCreate(false);
-    setUploading(false);
-    fetchExperiences();
+    try {
+      let imgUrl = "";
+      if (file) imgUrl = await uploadImage(file);
+      const { error } = await supabase.from("experiences").insert({
+        company: form.company,
+        role: form.role,
+        year: form.year,
+        logo: imgUrl || null,
+      });
+      if (error) throw error;
+      setShowCreate(false);
+      await fetchExperiences();
+    } catch (err) {
+      console.error("Create experience error:", err);
+      alert(err.message || "Gagal menyimpan experience. Cek RLS & tabel experiences di Supabase.");
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleEdit = async (form, file) => {
     setUploading(true);
-    let imgUrl = editExperience.logo || "";
-    if (file) imgUrl = await uploadImage(file);
-    await supabase
-      .from("experiences")
-      .update({
-        company: form.company,
-        role: form.role,
-        year: form.year,
-        logo: imgUrl,
-      })
-      .eq("id", editExperience.id);
-    setEditExperience(null);
-    setUploading(false);
-    fetchExperiences();
+    try {
+      let imgUrl = editExperience.logo || "";
+      if (file) imgUrl = await uploadImage(file);
+      const { error } = await supabase
+        .from("experiences")
+        .update({
+          company: form.company,
+          role: form.role,
+          year: form.year,
+          logo: imgUrl || null,
+        })
+        .eq("id", editExperience.id);
+      if (error) throw error;
+      setEditExperience(null);
+      await fetchExperiences();
+    } catch (err) {
+      console.error("Update experience error:", err);
+      alert(err.message || "Gagal mengupdate experience.");
+    } finally {
+      setUploading(false);
+    }
   };
 
   const deleteExperience = async (id) => {
     if (!confirm("Delete this experience?")) return;
-    await supabase.from("experiences").delete().eq("id", id);
+    const { error } = await supabase.from("experiences").delete().eq("id", id);
+    if (error) {
+      alert(error.message || "Gagal menghapus experience.");
+      return;
+    }
     fetchExperiences();
   };
 
