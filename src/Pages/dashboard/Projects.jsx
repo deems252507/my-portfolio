@@ -1,3 +1,4 @@
+```jsx
 import { useEffect, useState } from "react";
 import { supabase } from "../../supabase";
 import {
@@ -86,18 +87,23 @@ const ProjectCard = ({ project, onDelete, onEdit }) => {
               src={project.img}
               alt={project.title}
               onLoad={() => setImgLoaded(true)}
-              className={`w-full h-full object-cover transition-opacity duration-300 ${imgLoaded ? "opacity-100" : "opacity-0 absolute"}`}
+              className={`w-full h-full object-cover transition-opacity duration-300 ${
+                imgLoaded ? "opacity-100" : "opacity-0 absolute"
+              }`}
             />
           </div>
         )}
+
         <h3 className="font-semibold text-white text-sm mb-1">
           {project.title}
         </h3>
+
         {project.description && (
           <p className="text-gray-400 text-xs mb-3 line-clamp-2 leading-relaxed">
-            {project.escription}
+            {project.description}
           </p>
         )}
+
         {project.tech_stack?.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-3">
             {project.tech_stack.map((t) => (
@@ -110,6 +116,7 @@ const ProjectCard = ({ project, onDelete, onEdit }) => {
             ))}
           </div>
         )}
+
         <div className="mt-auto flex items-center justify-between gap-2 pt-2 border-t border-white/8">
           <div className="flex gap-2">
             {project.link && (
@@ -122,6 +129,7 @@ const ProjectCard = ({ project, onDelete, onEdit }) => {
                 <ExternalLink className="w-3.5 h-3.5" />
               </a>
             )}
+
             {project.github && (
               <a
                 href={project.github}
@@ -133,6 +141,7 @@ const ProjectCard = ({ project, onDelete, onEdit }) => {
               </a>
             )}
           </div>
+
           <div className="flex gap-2">
             <button
               onClick={() => onEdit(project)}
@@ -140,6 +149,7 @@ const ProjectCard = ({ project, onDelete, onEdit }) => {
             >
               <Pencil className="w-3 h-3" /> Edit
             </button>
+
             <button
               onClick={() => onDelete(project.id)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-500/20 text-red-400 hover:bg-red-500/10 text-xs transition-colors"
@@ -159,15 +169,17 @@ const Modal = ({ title, onClose, children }) => (
       className="absolute inset-0 bg-black/60 backdrop-blur-sm"
       onClick={onClose}
     />
+
     <div
       className="relative z-10 w-full max-w-2xl flex flex-col"
       style={{ maxHeight: "calc(100vh - 24px)" }}
     >
       <div className="absolute -inset-0.5 bg-gradient-to-r from-[#3b82f6] to-[#06b6d4] rounded-2xl blur opacity-20 pointer-events-none" />
+
       <div className="relative bg-[#0a0a1a] border border-white/12 rounded-2xl flex flex-col overflow-hidden">
-        {/* Fixed header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/8 shrink-0">
           <h2 className="text-base font-semibold text-white">{title}</h2>
+
           <button
             type="button"
             onClick={onClose}
@@ -176,7 +188,7 @@ const Modal = ({ title, onClose, children }) => (
             <X className="w-5 h-5" />
           </button>
         </div>
-        {/* Scrollable content */}
+
         <div className="overflow-y-auto flex-1">{children}</div>
       </div>
     </div>
@@ -202,14 +214,21 @@ const ProjectForm = ({
     Link: initial?.Link || "",
     Github: initial?.Github || "",
   });
+
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(initial?.Img || null);
 
-  const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+  const set = (key) => (e) =>
+    setForm((f) => ({
+      ...f,
+      [key]: e.target.value,
+    }));
 
   const handleFileChange = (e) => {
     const f = e.target.files[0];
+
     if (!f) return;
+
     setFile(f);
     setPreview(URL.createObjectURL(f));
   };
@@ -237,6 +256,7 @@ const ProjectForm = ({
           <label className="text-xs text-blue-300/70 uppercase tracking-wider font-medium">
             Description
           </label>
+
           <textarea
             value={form.Description}
             onChange={set("Description")}
@@ -252,18 +272,21 @@ const ProjectForm = ({
           onChange={set("TechStack")}
           placeholder="e.g. React, Tailwind, Supabase"
         />
+
         <InputField
           label="Key Features (comma separated)"
           value={form.Features}
           onChange={set("Features")}
           placeholder="e.g. Auth, Dark mode, REST API"
         />
+
         <InputField
           label="Live URL"
           value={form.Link}
           onChange={set("Link")}
           placeholder="https://yourproject.com"
         />
+
         <InputField
           label="GitHub URL"
           value={form.Github}
@@ -275,6 +298,7 @@ const ProjectForm = ({
           <label className="text-xs text-blue-300/70 uppercase tracking-wider font-medium">
             Project Image
           </label>
+
           <label className="flex items-center gap-4 w-full bg-[#0d0d22] border border-dashed border-white/15 rounded-xl px-4 py-4 cursor-pointer hover:border-blue-500/40 hover:bg-white/4 transition-all">
             {preview ? (
               <img
@@ -287,14 +311,17 @@ const ProjectForm = ({
                 <ImageIcon className="w-5 h-5 text-gray-600" />
               </div>
             )}
+
             <div>
               <p className="text-sm text-gray-300">
                 {preview ? "Change image" : "Click to upload image"}
               </p>
+
               <p className="text-xs text-gray-600 mt-0.5">
                 PNG, JPG, WEBP supported
               </p>
             </div>
+
             <input
               type="file"
               accept="image/*"
@@ -313,14 +340,21 @@ const ProjectForm = ({
         >
           Cancel
         </button>
-        <button type="submit" disabled={uploading} className="relative group/s">
+
+        <button
+          type="submit"
+          disabled={uploading}
+          className="relative group/s"
+        >
           <div className="absolute -inset-0.5 bg-gradient-to-r from-[#2563eb] to-[#0891b2] rounded-xl opacity-60 blur group-hover/s:opacity-100 transition duration-300" />
+
           <div className="relative flex items-center gap-2 px-5 py-2 bg-[#030014] rounded-xl border border-white/10">
             {uploading ? (
               <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
             ) : (
               <Upload className="w-4 h-4 text-blue-400" />
             )}
+
             <span className="text-sm text-gray-200">
               {uploading ? "Saving..." : submitLabel}
             </span>
@@ -340,10 +374,16 @@ export default function Projects() {
 
   const fetchProjects = async () => {
     setLoading(true);
-    const { data } = await supabase
+
+    const { data, error } = await supabase
       .from("projects")
       .select("*")
       .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Fetch projects error:", error);
+    }
+
     setProjects(data || []);
     setLoading(false);
   };
@@ -354,42 +394,33 @@ export default function Projects() {
 
   const uploadImage = async (f) => {
     const fileName = `${Date.now()}-${f.name}`;
-    await supabase.storage.from("project-images").upload(fileName, f);
+
+    const { error: uploadError } = await supabase.storage
+      .from("project-images")
+      .upload(fileName, f);
+
+    if (uploadError) {
+      throw new Error(`Upload gambar gagal: ${uploadError.message}`);
+    }
+
     const { data } = supabase.storage
       .from("project-images")
       .getPublicUrl(fileName);
+
     return data.publicUrl;
   };
 
   const handleCreate = async (form, file) => {
     setUploading(true);
-    let imgUrl = "";
-    if (file) imgUrl = await uploadImage(file);
-    await supabase.from("projects").insert({
-      title: form.Title,
-      description: form.Description,
-      img: imgUrl,
-      tech_stack: form.TechStack.split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
-      features: form.Features.split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
-      link: form.Link,
-      github: form.Github,
-    });
-    setShowCreate(false);
-    setUploading(false);
-    fetchProjects();
-  };
 
-  const handleEdit = async (form, file) => {
-    setUploading(true);
-    let imgUrl = editProject.img || "";
-    if (file) imgUrl = await uploadImage(file);
-    await supabase
-      .from("projects")
-      .update({
+    try {
+      let imgUrl = "";
+
+      if (file) {
+        imgUrl = await uploadImage(file);
+      }
+
+      const { error } = await supabase.from("projects").insert({
         title: form.Title,
         description: form.Description,
         img: imgUrl,
@@ -401,16 +432,77 @@ export default function Projects() {
           .filter(Boolean),
         link: form.Link,
         github: form.Github,
-      })
-      .eq("id", editProject.id);
-    setEditProject(null);
-    setUploading(false);
-    fetchProjects();
+      });
+
+      if (error) {
+        throw new Error(`Gagal menyimpan project: ${error.message}`);
+      }
+
+      setShowCreate(false);
+      await fetchProjects();
+    } catch (error) {
+      console.error("Project save error:", error);
+      alert(error.message || "Gagal menyimpan project.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleEdit = async (form, file) => {
+    setUploading(true);
+
+    try {
+      let imgUrl = editProject.img || "";
+
+      if (file) {
+        imgUrl = await uploadImage(file);
+      }
+
+      const { error } = await supabase
+        .from("projects")
+        .update({
+          title: form.Title,
+          description: form.Description,
+          img: imgUrl,
+          tech_stack: form.TechStack.split(",")
+            .map((s) => s.trim())
+            .filter(Boolean),
+          features: form.Features.split(",")
+            .map((s) => s.trim())
+            .filter(Boolean),
+          link: form.Link,
+          github: form.Github,
+        })
+        .eq("id", editProject.id);
+
+      if (error) {
+        throw new Error(`Gagal mengupdate project: ${error.message}`);
+      }
+
+      setEditProject(null);
+      await fetchProjects();
+    } catch (error) {
+      console.error("Project update error:", error);
+      alert(error.message || "Gagal mengupdate project.");
+    } finally {
+      setUploading(false);
+    }
   };
 
   const deleteProject = async (id) => {
     if (!confirm("Delete this project?")) return;
-    await supabase.from("projects").delete().eq("id", id);
+
+    const { error } = await supabase
+      .from("projects")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error("Delete project error:", error);
+      alert(`Gagal menghapus project: ${error.message}`);
+      return;
+    }
+
     fetchProjects();
   };
 
@@ -421,14 +513,17 @@ export default function Projects() {
         <div className="flex items-center gap-3">
           <div className="relative">
             <div className="absolute -inset-0.5 bg-gradient-to-r from-[#3b82f6] to-[#06b6d4] rounded-xl blur opacity-50" />
+
             <div className="relative w-9 h-9 bg-[#030014] rounded-xl border border-white/15 flex items-center justify-center">
               <FolderGit2 className="w-4 h-4 text-blue-400" />
             </div>
           </div>
+
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-white">
               Projects
             </h1>
+
             <p className="text-gray-500 text-xs">
               {loading ? "Loading..." : `${projects.length} projects total`}
             </p>
@@ -440,6 +535,7 @@ export default function Projects() {
           className="relative group shrink-0"
         >
           <div className="absolute -inset-0.5 bg-gradient-to-r from-[#2563eb] to-[#0891b2] rounded-xl opacity-50 blur group-hover:opacity-80 transition duration-300" />
+
           <div className="relative flex items-center gap-2 px-4 py-2.5 bg-[#030014] rounded-xl border border-white/10">
             <Plus className="w-4 h-4 text-blue-400" />
             <span className="text-sm text-gray-200">New Project</span>
@@ -483,6 +579,7 @@ export default function Projects() {
         <Card>
           <div className="p-16 text-center">
             <FolderGit2 className="w-10 h-10 text-gray-700 mx-auto mb-3" />
+
             <p className="text-gray-500 text-sm">
               No projects yet. Create your first one!
             </p>
@@ -503,3 +600,4 @@ export default function Projects() {
     </div>
   );
 }
+```
