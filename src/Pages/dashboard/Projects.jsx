@@ -30,8 +30,8 @@ const InputField = ({
   type = "text",
   required = false,
 }) => (
-  <div className="space-y-1.5">
-    <label className="text-xs text-blue-300 uppercase tracking-wider font-medium block">
+  <div className="flex flex-col gap-1.5 w-full min-w-0">
+    <label className="text-xs text-blue-300 uppercase tracking-wider font-medium block leading-tight">
       {label}
       {required && <span className="text-red-400 ml-0.5">*</span>}
     </label>
@@ -41,7 +41,7 @@ const InputField = ({
       onChange={onChange}
       placeholder={placeholder}
       required={required}
-      className="w-full bg-[#0d0d22] border border-white/20 rounded-xl px-4 py-2.5 text-gray-100 placeholder-gray-500 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition-all"
+      className="w-full min-w-0 bg-[#0d0d22] border border-white/20 rounded-xl px-3 sm:px-4 py-2.5 text-gray-100 placeholder-gray-500 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition-all"
     />
   </div>
 );
@@ -175,12 +175,12 @@ const Modal = ({ title, onClose, children }) => (
     />
 
     <div
-      className="relative z-10 w-full max-w-2xl flex flex-col shadow-2xl"
+      className="relative z-10 w-full max-w-2xl flex flex-col shadow-2xl min-h-0"
       style={{ maxHeight: "calc(100dvh - 24px)" }}
     >
       <div className="absolute -inset-0.5 bg-gradient-to-r from-[#3b82f6] to-[#06b6d4] rounded-2xl blur opacity-30 pointer-events-none" />
 
-      <div className="relative bg-[#0a0a1a] border border-white/20 rounded-2xl flex flex-col overflow-hidden text-white">
+      <div className="relative bg-[#0a0a1a] border border-white/20 rounded-2xl flex flex-col overflow-hidden text-white min-h-0 max-h-[calc(100dvh-24px)]">
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 shrink-0 bg-[#0a0a1a]">
           <h2 className="text-base font-semibold text-white">{title}</h2>
 
@@ -194,7 +194,7 @@ const Modal = ({ title, onClose, children }) => (
           </button>
         </div>
 
-        <div className="overflow-y-auto flex-1 overscroll-contain bg-[#0a0a1a]">
+        <div className="overflow-y-auto flex-1 min-h-0 overscroll-contain bg-[#0a0a1a]" style={{ WebkitOverflowScrolling: "touch" }}>
           {children}
         </div>
       </div>
@@ -251,10 +251,10 @@ const ProjectForm = ({
         e.preventDefault();
         onSubmit(form, file);
       }}
-      className="p-5 sm:p-6 space-y-4"
+      className="p-4 sm:p-6 space-y-5"
     >
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="sm:col-span-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+        <div className="sm:col-span-2 min-w-0">
           <InputField
             label="Project Title"
             value={form.Title}
@@ -264,8 +264,8 @@ const ProjectForm = ({
           />
         </div>
 
-        <div className="sm:col-span-2 space-y-1.5">
-          <label className="text-xs text-blue-300/70 uppercase tracking-wider font-medium">
+        <div className="sm:col-span-2 flex flex-col gap-1.5 min-w-0">
+          <label className="text-xs text-blue-300 uppercase tracking-wider font-medium leading-tight">
             Description
           </label>
 
@@ -274,40 +274,48 @@ const ProjectForm = ({
             onChange={set("Description")}
             placeholder="Describe what this project does, its purpose, and impact..."
             rows={3}
-            className="w-full bg-[#0d0d22] border border-white/10 rounded-xl px-4 py-2.5 text-gray-200 placeholder-gray-600 text-sm outline-none focus:border-blue-500/60 focus:ring-1 focus:ring-blue-500/20 transition-all resize-none"
+            className="w-full min-w-0 bg-[#0d0d22] border border-white/20 rounded-xl px-3 sm:px-4 py-2.5 text-gray-100 placeholder-gray-500 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition-all resize-y min-h-[80px]"
           />
         </div>
 
-        <InputField
-          label="Tech Stack (comma separated)"
-          value={form.TechStack}
-          onChange={set("TechStack")}
-          placeholder="e.g. React, Tailwind, Supabase"
-        />
+        <div className="min-w-0">
+          <InputField
+            label="Tech Stack (comma separated)"
+            value={form.TechStack}
+            onChange={set("TechStack")}
+            placeholder="e.g. React, Tailwind, Supabase"
+          />
+        </div>
 
-        <InputField
-          label="Key Features (comma separated)"
-          value={form.Features}
-          onChange={set("Features")}
-          placeholder="e.g. Auth, Dark mode, REST API"
-        />
+        <div className="min-w-0">
+          <InputField
+            label="Key Features (comma separated)"
+            value={form.Features}
+            onChange={set("Features")}
+            placeholder="e.g. Auth, Dark mode, REST API"
+          />
+        </div>
 
-        <InputField
-          label="Live URL"
-          value={form.Link}
-          onChange={set("Link")}
-          placeholder="https://yourproject.com"
-        />
+        <div className="min-w-0">
+          <InputField
+            label="Live URL"
+            value={form.Link}
+            onChange={set("Link")}
+            placeholder="https://yourproject.com"
+          />
+        </div>
 
-        <InputField
-          label="GitHub URL"
-          value={form.Github}
-          onChange={set("Github")}
-          placeholder="https://github.com/username/repo"
-        />
+        <div className="min-w-0">
+          <InputField
+            label="GitHub URL"
+            value={form.Github}
+            onChange={set("Github")}
+            placeholder="https://github.com/username/repo"
+          />
+        </div>
 
-        <div className="sm:col-span-2 space-y-1.5">
-          <label className="text-xs text-blue-300/70 uppercase tracking-wider font-medium">
+        <div className="sm:col-span-2 flex flex-col gap-1.5 min-w-0">
+          <label className="text-xs text-blue-300 uppercase tracking-wider font-medium leading-tight">
             Project Image
           </label>
 

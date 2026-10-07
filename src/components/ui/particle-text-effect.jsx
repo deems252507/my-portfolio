@@ -168,7 +168,7 @@ export function ParticleTextEffect() {
     const fontSize1  = 65 * widthRatio;
     const fontSize2  = 80 * widthRatio;
 
-    // "Welcome To My"
+    // "Rizky Dwi"
     offscreenCtx.font = `bold ${fontSize1}px Arial, sans-serif`;
     const gradient = offscreenCtx.createLinearGradient(
       cssW / 2 - 250, 0,
@@ -178,12 +178,12 @@ export function ParticleTextEffect() {
     gradient.addColorStop(0.5, "#dbeafe");
     gradient.addColorStop(1, "#bfdbfe");
     offscreenCtx.fillStyle = gradient;
-    offscreenCtx.fillText("Welcome To My", cssW / 2, cssH / 2 - (fontSize1 * 0.7));
+    offscreenCtx.fillText("Rizky Dwi", cssW / 2, cssH / 2 - (fontSize1 * 0.7));
 
-    // "Portofolio Website"
+    // "Maulana"
     offscreenCtx.font = `bold ${fontSize2}px Arial, sans-serif`;
     offscreenCtx.fillStyle = "#2563eb";
-    offscreenCtx.fillText("Portofolio Website", cssW / 2, cssH / 2 + (fontSize2 * 0.7));
+    offscreenCtx.fillText("Maulana", cssW / 2, cssH / 2 + (fontSize2 * 0.7));
 
     const imageData = offscreenCtx.getImageData(0, 0, cssW, cssH);
     const pixels    = imageData.data;

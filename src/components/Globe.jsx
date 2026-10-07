@@ -43,10 +43,12 @@ function CobeGlobe({
   const isPausedRef = useRef(false)
 
   const handlePointerDown = useCallback((e) => {
+    // On touch/mobile, don't capture pointer so vertical page scroll works
+    if (isCompactLayout) return
     pointerInteracting.current = { x: e.clientX, y: e.clientY }
     if (canvasRef.current) canvasRef.current.style.cursor = "grabbing"
     isPausedRef.current = true
-  }, [])
+  }, [isCompactLayout])
 
   const handlePointerUp = useCallback(() => {
     if (pointerInteracting.current !== null) {
@@ -217,11 +219,12 @@ function CobeGlobe({
         style={{
           width: "100%",
           height: "100%",
-          cursor: "grab",
+          cursor: isCompactLayout ? "default" : "grab",
           opacity: 0,
           transition: "opacity 1.2s ease",
           borderRadius: "50%",
-          touchAction: "none",
+          // pan-y allows vertical page scroll on mobile; none only on desktop for drag-rotate
+          touchAction: isCompactLayout ? "pan-y" : "none",
         }}
       />
       {markers.map((m) => (
