@@ -16,6 +16,17 @@ export const DEFAULT_THEME = {
 
 
 /** Preset tema warna bergaya karakter — diterapkan ke semua CSS variables */
+export const HOVER_CHARACTERS = [
+  { id: "spiderman", label: "Spider-Man", field: "hover_photo_spiderman" },
+  { id: "ironman", label: "Iron Man", field: "hover_photo_ironman" },
+  { id: "captain", label: "Captain America", field: "hover_photo_captain" },
+  { id: "hulk", label: "Hulk", field: "hover_photo_hulk" },
+  { id: "blackwidow", label: "Black Widow", field: "hover_photo_blackwidow" },
+  { id: "captainmarvel", label: "Captain Marvel", field: "hover_photo_captainmarvel" },
+  { id: "superman", label: "Superman", field: "hover_photo_superman" },
+  { id: "batman", label: "Batman", field: "hover_photo_batman" },
+];
+
 export const CHARACTER_THEMES = {
   default: {
     label: "Default (Blue)",
@@ -150,6 +161,16 @@ export const DEFAULT_CONTENT = {
   instagram: "https://www.instagram.com/eka.wahyu.m",
   profile_photo: "/Photo.png",
   hover_photo: "/PhotoSpiderman.png",
+  hover_char: "spiderman",
+  hover_photo_spiderman: "/PhotoSpiderman.png",
+  hover_photo_ironman: "",
+  hover_photo_captain: "",
+  hover_photo_hulk: "",
+  hover_photo_blackwidow: "",
+  hover_photo_captainmarvel: "",
+  hover_photo_superman: "",
+  hover_photo_batman: "",
+
   edu1_logo: "/ub.png",
   edu1_school: "Universitas Brawijaya",
   edu1_major: "IT Edu | Faculty of Computer Science",
