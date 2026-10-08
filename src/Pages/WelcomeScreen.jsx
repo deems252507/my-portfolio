@@ -3,59 +3,24 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ParticleTextEffect } from '../components/ui/particle-text-effect';
 import { useSiteContent } from '../context/SiteContentContext';
 import WelcomeBackground from '../components/WelcomeBackground';
-
-const LoadingProgress = () => {
-  const [progress, setProgress] = useState(0);
-
-  useEffect(() => {
-    const duration = 4000; 
-    const interval = 40; 
-    const steps = duration / interval;
-    let currentStep = 0;
-
-    const timer = setInterval(() => {
-      currentStep++;
-      const newProgress = Math.min(100, Math.round((currentStep / steps) * 100));
-      setProgress(newProgress);
-      if (currentStep >= steps) clearInterval(timer);
-    }, interval);
-
-    return () => clearInterval(timer);
-  }, []);
-
-  return (
-    <div className="w-64 sm:w-80 mx-auto flex flex-col items-center gap-4">
-      <div className="text-white font-mono text-sm sm:text-base font-bold tracking-widest flex items-center justify-between w-full px-1">
-        <span>Loading</span>
-        <span>{progress}%</span>
-      </div>
-      
-      <div className="w-full h-[3px] bg-white/10 rounded-full overflow-hidden relative">
-        <div className="absolute top-0 bottom-0 left-0 bg-white/50 blur-[2px] w-full" 
-             style={{ transform: `translateX(${progress - 100}%)`, transition: 'transform 0.1s linear' }} />
-        <div 
-          className="h-full bg-white shadow-[0_0_15px_rgba(255,255,255,0.5)]" 
-          style={{ width: `${progress}%`, transition: 'width 0.1s linear' }}
-        />
-      </div>
-    </div>
-  );
-};
+import LoadingProgress from '../components/LoadingProgress';
 
 const WelcomeScreen = ({ onLoadingComplete }) => {
   const [isLoading, setIsLoading] = useState(true);
   const { content } = useSiteContent();
+
+  const loadDuration = Math.max(1500, (parseFloat(content?.loading_duration) || 4.5) * 1000);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false);
       setTimeout(() => {
         onLoadingComplete?.();
-      }, 1000);
-    }, 4500);
+      }, 800);
+    }, loadDuration);
     
     return () => clearTimeout(timer);
-  }, [onLoadingComplete]);
+  }, [onLoadingComplete, loadDuration]);
 
   const containerVariants = {
     exit: {
@@ -115,7 +80,7 @@ const WelcomeScreen = ({ onLoadingComplete }) => {
                 data-aos="fade-up"
                 data-aos-delay="1200"
               >
-                <LoadingProgress />
+                <LoadingProgress content={content} />
               </motion.div>
             </div>
           </div>

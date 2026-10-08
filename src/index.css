@@ -20,7 +20,19 @@
   --col-white:    #f0f0ff;
   --col-muted:    #c0c0dc;
   --col-border:   rgba(255,255,255,0.08);
+  --col-footer:   var(--col-muted);
 }
+
+/* Theme helpers — pakai class ini agar ikut tema admin */
+.theme-text { color: var(--col-white); }
+.theme-muted { color: var(--col-muted); }
+.theme-bg { background: var(--col-bg); }
+.theme-bg2 { background: var(--col-bg2); }
+.theme-primary { color: var(--col-blue); }
+.theme-bg-primary { background: var(--col-blue); }
+.theme-border { border-color: var(--col-border); }
+.theme-accent { color: var(--col-accent); }
+
 
 * {
   margin: 0;

@@ -13,6 +13,7 @@ import {
 } from "../../lib/siteContent";
 import { useSiteContent } from "../../context/SiteContentContext";
 import { WELCOME_BG_STYLES } from "../../components/WelcomeBackground";
+import { LOADING_STYLES } from "../../components/LoadingProgress";
 
 const SECTIONS = [
   {
@@ -260,7 +261,7 @@ export default function SiteSettings() {
           </div>
           <h1 className="text-2xl font-semibold text-white mt-1">Profil & Konten</h1>
           <p className="text-sm text-gray-400 mt-1">
-            Ubah nama, bio, welcome screen, tema warna, efek petir, WhatsApp, dan foto.
+            Ubah nama, bio, welcome, background, loading, tema, WhatsApp, dan foto.
           </p>
         </div>
         <button
@@ -442,26 +443,36 @@ export default function SiteSettings() {
         {/* Shared color + speed for non-lightning styles */}
         {(form.welcome_bg_style || "lightning") !== "lightning" &&
           (form.welcome_bg_style || "lightning") !== "none" && (
-          <div className="grid sm:grid-cols-2 gap-4 pt-1">
-            <ColorField
-              label="Warna efek"
-              value={form.welcome_fx_color || "#3b82f6"}
-              onChange={(v) => setField("welcome_fx_color", v)}
-            />
-            <label className="block space-y-1.5">
-              <span className="text-xs text-gray-400">
-                Kecepatan ({form.welcome_fx_speed || "1"}x)
-              </span>
-              <input
-                type="range"
-                min="0.3"
-                max="2.5"
-                step="0.1"
-                value={form.welcome_fx_speed || "1"}
-                onChange={(e) => setField("welcome_fx_speed", e.target.value)}
-                className="w-full accent-blue-500"
+          <div className="space-y-4 pt-1">
+            <div className="grid sm:grid-cols-2 gap-4">
+              <ColorField
+                label="Warna efek"
+                value={form.welcome_fx_color || "#3b82f6"}
+                onChange={(v) => setField("welcome_fx_color", v)}
               />
-            </label>
+              <label className="block space-y-1.5">
+                <span className="text-xs text-gray-400">
+                  Kecepatan ({form.welcome_fx_speed || "1"}x)
+                </span>
+                <input
+                  type="range"
+                  min="0.3"
+                  max="2.5"
+                  step="0.1"
+                  value={form.welcome_fx_speed || "1"}
+                  onChange={(e) => setField("welcome_fx_speed", e.target.value)}
+                  className="w-full accent-blue-500"
+                />
+              </label>
+            </div>
+            {(form.welcome_bg_style || "") === "marquee" && (
+              <Field
+                label="Teks marquee (bergerak kiri-kanan)"
+                type="text"
+                value={form.welcome_marquee_text || ""}
+                onChange={(v) => setField("welcome_marquee_text", v)}
+              />
+            )}
           </div>
         )}
 
@@ -635,6 +646,80 @@ export default function SiteSettings() {
             </div>
           </div>
         )}
+      </section>
+
+
+      {/* ── Loading Progress ── */}
+      <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 space-y-4">
+        <div className="flex items-center gap-2">
+          <Type className="w-4 h-4 text-cyan-400" />
+          <div>
+            <h2 className="text-white font-medium">Loading Progress (0–100%)</h2>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Gaya progress bar, durasi, warna, dan teks. Bisa diganti kapan saja.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+          {LOADING_STYLES.map((s) => {
+            const active = (form.loading_style || "bar") === s.id;
+            return (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => setField("loading_style", s.id)}
+                className={`text-left rounded-xl border px-3 py-2 transition-colors ${
+                  active
+                    ? "border-cyan-500/50 bg-cyan-500/10 text-white"
+                    : "border-white/10 bg-white/[0.02] text-gray-400 hover:border-white/20 hover:text-white"
+                }`}
+              >
+                <span className="block text-xs font-medium">{s.label}</span>
+                <span className="block text-[10px] text-gray-500 mt-0.5">{s.desc}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <Field
+            label="Teks loading"
+            type="text"
+            value={form.loading_text || ""}
+            onChange={(v) => setField("loading_text", v)}
+          />
+          <label className="block space-y-1.5">
+            <span className="text-xs text-gray-400">
+              Durasi ({form.loading_duration || "4.5"} detik)
+            </span>
+            <input
+              type="range"
+              min="2"
+              max="10"
+              step="0.5"
+              value={form.loading_duration || "4.5"}
+              onChange={(e) => setField("loading_duration", e.target.value)}
+              className="w-full accent-cyan-500"
+            />
+          </label>
+          <label className="block space-y-1.5">
+            <span className="text-xs text-gray-400">Tampilkan persen</span>
+            <select
+              className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2.5 text-sm text-white outline-none"
+              value={form.loading_show_pct === "false" ? "false" : "true"}
+              onChange={(e) => setField("loading_show_pct", e.target.value)}
+            >
+              <option value="true" style={{ background: "#0a0a1a" }}>Ya</option>
+              <option value="false" style={{ background: "#0a0a1a" }}>Tidak</option>
+            </select>
+          </label>
+          <ColorField
+            label="Warna progress"
+            value={form.loading_color || "#ffffff"}
+            onChange={(v) => setField("loading_color", v)}
+          />
+        </div>
       </section>
 
       {/* ── WhatsApp ── */}

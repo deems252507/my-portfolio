@@ -71,6 +71,15 @@ export const DEFAULT_CONTENT = {
   welcome_bg_style: "lightning",
   welcome_fx_color: "#3b82f6",
   welcome_fx_speed: "1",
+  welcome_marquee_text: "PORTFOLIO · CREATIVE · DEVELOPER · ",
+
+  // Loading progress
+  loading_style: "bar",
+  loading_duration: "4.5",
+  loading_text: "Loading",
+  loading_show_pct: "true",
+  loading_color: "#ffffff",
+  loading_track: "rgba(255,255,255,0.1)",
 
   // Lightning (Welcome Screen only — used when style = lightning)
   lightning_enabled: "true",

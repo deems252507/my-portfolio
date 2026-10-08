@@ -214,6 +214,184 @@ function RippleFX({ color = "#3b82f6", speed = 1 }) {
   );
 }
 
+
+/* ── Falling stars / meteor ── */
+function FallingStarsFX({ color = "#ffffff", speed = 1 }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const canvas = ref.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    let raf, w, h;
+    const count = window.innerWidth < 768 ? 18 : 28;
+    const stars = Array.from({ length: count }, () => ({
+      x: Math.random(),
+      y: Math.random() * -0.2,
+      len: Math.random() * 0.08 + 0.04,
+      sp: (Math.random() * 0.004 + 0.002) * speed,
+      a: Math.random() * 0.5 + 0.3,
+    }));
+    const resize = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      w = canvas.width = Math.floor(canvas.clientWidth * dpr);
+      h = canvas.height = Math.floor(canvas.clientHeight * dpr);
+    };
+    resize();
+    const ro = new ResizeObserver(resize);
+    ro.observe(canvas);
+    const draw = () => {
+      ctx.clearRect(0, 0, w, h);
+      for (const s of stars) {
+        s.y += s.sp;
+        s.x += s.sp * 0.4;
+        if (s.y > 1.1 || s.x > 1.1) {
+          s.x = Math.random() * 0.8;
+          s.y = -0.05;
+          s.sp = (Math.random() * 0.004 + 0.002) * speed;
+        }
+        const x0 = s.x * w;
+        const y0 = s.y * h;
+        const x1 = (s.x - s.len * 0.4) * w;
+        const y1 = (s.y - s.len) * h;
+        const g = ctx.createLinearGradient(x0, y0, x1, y1);
+        g.addColorStop(0, color);
+        g.addColorStop(1, "transparent");
+        ctx.strokeStyle = g;
+        ctx.globalAlpha = s.a;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(x0, y0);
+        ctx.lineTo(x1, y1);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+      raf = requestAnimationFrame(draw);
+    };
+    draw();
+    return () => { cancelAnimationFrame(raf); ro.disconnect(); };
+  }, [color, speed]);
+  return <canvas ref={ref} className="absolute inset-0 w-full h-full" />;
+}
+
+/* ── Marquee text L-R ── */
+function MarqueeFX({ color = "#3b82f6", speed = 1, text = "PORTFOLIO · CREATIVE · DEVELOPER · " }) {
+  const dur = Math.max(12, 28 / speed);
+  const line = (text || "PORTFOLIO · CREATIVE · DEVELOPER · ").repeat(4);
+  return (
+    <div className="absolute inset-0 overflow-hidden flex flex-col justify-center gap-8 opacity-20 pointer-events-none">
+      {[0, 1, 2].map((row) => (
+        <div
+          key={row}
+          className="whitespace-nowrap font-bold tracking-[0.3em] text-2xl sm:text-4xl md:text-5xl"
+          style={{
+            color,
+            animation: `welcome-marquee ${dur * (row % 2 === 0 ? 1 : 1.3)}s linear infinite`,
+            animationDirection: row % 2 === 0 ? "normal" : "reverse",
+          }}
+        >
+          {line}
+        </div>
+      ))}
+      <style>{`
+        @keyframes welcome-marquee {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+/* ── Constellation ── */
+function ConstellationFX({ color = "#3b82f6", speed = 1 }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const canvas = ref.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    let raf, w, h, t = 0;
+    const n = window.innerWidth < 768 ? 28 : 45;
+    const pts = Array.from({ length: n }, () => ({
+      x: Math.random(),
+      y: Math.random(),
+      vx: (Math.random() - 0.5) * 0.00025 * speed,
+      vy: (Math.random() - 0.5) * 0.00025 * speed,
+    }));
+    const resize = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      w = canvas.width = Math.floor(canvas.clientWidth * dpr);
+      h = canvas.height = Math.floor(canvas.clientHeight * dpr);
+    };
+    resize();
+    const ro = new ResizeObserver(resize);
+    ro.observe(canvas);
+    const maxDist = 0.18;
+    const draw = () => {
+      t += 0.01;
+      ctx.clearRect(0, 0, w, h);
+      for (const p of pts) {
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0 || p.x > 1) p.vx *= -1;
+        if (p.y < 0 || p.y > 1) p.vy *= -1;
+      }
+      for (let i = 0; i < pts.length; i++) {
+        for (let j = i + 1; j < pts.length; j++) {
+          const dx = pts[i].x - pts[j].x;
+          const dy = pts[i].y - pts[j].y;
+          const d = Math.sqrt(dx * dx + dy * dy);
+          if (d < maxDist) {
+            ctx.strokeStyle = color;
+            ctx.globalAlpha = (1 - d / maxDist) * 0.35;
+            ctx.beginPath();
+            ctx.moveTo(pts[i].x * w, pts[i].y * h);
+            ctx.lineTo(pts[j].x * w, pts[j].y * h);
+            ctx.stroke();
+          }
+        }
+      }
+      ctx.globalAlpha = 1;
+      for (const p of pts) {
+        ctx.beginPath();
+        ctx.arc(p.x * w, p.y * h, 2, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+      }
+      raf = requestAnimationFrame(draw);
+    };
+    draw();
+    return () => { cancelAnimationFrame(raf); ro.disconnect(); };
+  }, [color, speed]);
+  return <canvas ref={ref} className="absolute inset-0 w-full h-full" />;
+}
+
+/* ── Pulse rings ── */
+function PulseRingsFX({ color = "#3b82f6", speed = 1 }) {
+  const dur = Math.max(2.5, 5 / speed);
+  return (
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+      {[0, 1, 2, 3, 4].map((i) => (
+        <div
+          key={i}
+          className="absolute rounded-full border"
+          style={{
+            width: "12vmin",
+            height: "12vmin",
+            borderColor: color,
+            opacity: 0.35,
+            animation: `welcome-pulse-ring ${dur}s ease-out ${i * (dur / 5)}s infinite`,
+          }}
+        />
+      ))}
+      <style>{`
+        @keyframes welcome-pulse-ring {
+          0% { transform: scale(0.5); opacity: 0.5; }
+          100% { transform: scale(8); opacity: 0; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 function WelcomeBackground({ content }) {
   const style = content?.welcome_bg_style || "lightning";
   const color = content?.welcome_fx_color || "#3b82f6";
@@ -244,6 +422,10 @@ function WelcomeBackground({ content }) {
     orbs: <OrbsFX color={color} speed={speed} />,
     matrix: <MatrixFX color={color} speed={speed} />,
     ripple: <RippleFX color={color} speed={speed} />,
+    falling: <FallingStarsFX color={color} speed={speed} />,
+    marquee: <MarqueeFX color={color} speed={speed} text={content?.welcome_marquee_text} />,
+    constellation: <ConstellationFX color={color} speed={speed} />,
+    pulse: <PulseRingsFX color={color} speed={speed} />,
   };
 
   const fx = map[style];
@@ -261,10 +443,14 @@ export default memo(WelcomeBackground);
 export const WELCOME_BG_STYLES = [
   { id: "lightning", label: "Petir (Lightning)", desc: "WebGL petir dramatis" },
   { id: "particles", label: "Particles / Bintang", desc: "Titik cahaya mengambang" },
+  { id: "falling", label: "Bintang Jatuh", desc: "Meteor jatuh diagonal" },
+  { id: "constellation", label: "Constellation", desc: "Bintang + garis jaringan" },
   { id: "aurora", label: "Aurora", desc: "Gradient lembut bergeser" },
   { id: "cyber", label: "Cyber Grid", desc: "Grid + scan line" },
   { id: "orbs", label: "Glow Orbs", desc: "Bola cahaya blur" },
   { id: "matrix", label: "Matrix Rain", desc: "Huruf/angka jatuh" },
+  { id: "marquee", label: "Teks Bergerak", desc: "Teks scroll kiri-kanan" },
   { id: "ripple", label: "Ripple / Wave", desc: "Gelombang dari tengah" },
+  { id: "pulse", label: "Pulse Rings", desc: "Cincin denyut profesional" },
   { id: "none", label: "Tanpa efek", desc: "Hanya teks + progress" },
 ];

@@ -124,7 +124,7 @@ const handleChange = (e) => {
               <div>
                 <h2
                   className="text-3xl font-bold mb-3"
-                  style={{ fontFamily: "var(--font-display)", color: "#2563eb" }}
+                  style={{ fontFamily: "var(--font-display)", color: "var(--col-blue)" }}
                 >
                   Hubungi
                 </h2>
@@ -193,7 +193,7 @@ const handleChange = (e) => {
                 data-aos-delay="400"
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full text-white py-4 rounded-xl font-semibold transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_25px_rgba(37,99,235,0.35)] hover:bg-[#1d4ed8] active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 bg-[#2563eb]"
+                className="w-full text-white py-4 rounded-xl font-semibold transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100" style={{ background: "var(--col-blue)", boxShadow: "0 0 0 transparent" }}
                 style={{
                   fontFamily: "var(--font-display)",
                 }}
