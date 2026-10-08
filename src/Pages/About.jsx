@@ -245,9 +245,9 @@ const AboutPage = () => {
   }, [])
 
   const statsData = useMemo(() => [
-    { icon: Code, value: stats.totalProjects, label: "Projects", description: "Innovative solutions crafted", animation: "fade-right", accentColor: "#2563eb", href: "#Portofolio", tabIndex: 0 },
-    { icon: Award, value: stats.totalCertificates, label: "Certificates", description: "Skills validated", animation: "fade-up", accentColor: "#2563eb", href: "#Portofolio", tabIndex: 1 },
-    { icon: Trophy, value: stats.totalAwards, label: "Awards", description: "Achievements earned", animation: "fade-left", accentColor: "#2563eb", href: "#Portofolio", tabIndex: 2 },
+    { icon: Code, value: stats.totalProjects, label: "Projects", description: "Innovative solutions crafted", animation: "fade-right", accentColor: "var(--col-blue)", href: "#Portofolio", tabIndex: 0 },
+    { icon: Award, value: stats.totalCertificates, label: "Certificates", description: "Skills validated", animation: "fade-up", accentColor: "var(--col-blue)", href: "#Portofolio", tabIndex: 1 },
+    { icon: Trophy, value: stats.totalAwards, label: "Awards", description: "Achievements earned", animation: "fade-left", accentColor: "var(--col-blue)", href: "#Portofolio", tabIndex: 2 },
   ], [stats])
 
   return (
@@ -273,8 +273,8 @@ const AboutPage = () => {
             </h3>
             <div className="mt-8">
               <a href={content.resume_url}>
-                <button className="px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 flex items-center gap-2 hover:shadow-[0_0_25px_rgba(37,99,235,0.35)] whitespace-nowrap"
-                  style={{ background: "#2563eb", fontFamily: "var(--font-display)", color: "white" }}>
+                <button className="px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 flex items-center gap-2 whitespace-nowrap theme-btn-primary"
+                  style={{ background: "var(--col-blue)", fontFamily: "var(--font-display)", color: "white", boxShadow: "0 0 0 transparent" }}>
                   <FileText className="w-4 h-4" /> View Resume
                 </button>
               </a>
@@ -293,8 +293,8 @@ const AboutPage = () => {
             </div>
             <div className="mt-8">
               <a href="#Portofolio">
-                <button className="px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 flex items-center gap-2 hover:bg-[rgba(37,99,235,0.08)] whitespace-nowrap"
-                  style={{ border: "1px solid rgba(37,99,235,0.35)", color: "#60a5fa", fontFamily: "var(--font-display)" }}>
+                <button className="px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 flex items-center gap-2 whitespace-nowrap theme-btn-outline"
+                  style={{ border: "1px solid color-mix(in srgb, var(--col-blue) 45%, transparent)", color: "var(--col-blue-light)", fontFamily: "var(--font-display)", background: "transparent" }}>
                   <Code className="w-4 h-4" /> View Projects
                 </button>
               </a>
@@ -322,14 +322,14 @@ const AboutPage = () => {
           {/* Buttons — full width, stacked */}
           <div className="flex flex-col gap-3 w-full">
             <a href={content.resume_url} className="w-full">
-              <button className="w-full px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2"
-                style={{ background: "#2563eb", fontFamily: "var(--font-display)", color: "white" }}>
+              <button className="w-full px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2 theme-btn-primary"
+                style={{ background: "var(--col-blue)", fontFamily: "var(--font-display)", color: "white" }}>
                 <FileText className="w-4 h-4" /> View Resume
               </button>
             </a>
             <a href="#Portofolio" className="w-full">
-              <button className="w-full px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2"
-                style={{ border: "1px solid rgba(37,99,235,0.35)", color: "#60a5fa", fontFamily: "var(--font-display)" }}>
+              <button className="w-full px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2 theme-btn-outline"
+                style={{ border: "1px solid color-mix(in srgb, var(--col-blue) 45%, transparent)", color: "var(--col-blue-light)", fontFamily: "var(--font-display)", background: "transparent" }}>
                 <Code className="w-4 h-4" /> View Projects
               </button>
             </a>

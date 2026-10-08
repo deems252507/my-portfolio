@@ -71,7 +71,7 @@ const TypeWriter = memo(({ words }) => {
         {text}
       </span>
       <span className="w-[2px] h-5 ml-1 rounded-full"
-        style={{ background: "linear-gradient(to bottom, #2563eb, #06b6d4)", animation: "blink 1s step-end infinite" }} />
+        style={{ background: "linear-gradient(to bottom, var(--col-blue), var(--col-accent))", animation: "blink 1s step-end infinite" }} />
     </div>
   )
 })
@@ -80,12 +80,18 @@ const CTAButton = memo(({ href, text, icon: Icon, variant = "primary" }) => {
   const isPrimary = variant === "primary"
   return (
     <a href={href}>
-      <button className={`group relative flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300
-        ${isPrimary
-          ? "bg-[#2563eb] text-white hover:bg-[#1d4ed8] hover:shadow-[0_0_30px_rgba(37,99,235,0.4)] hover:scale-[1.03]"
-          : "border border-[rgba(255,255,255,0.12)] text-blue-100 hover:border-[rgba(59,130,246,0.5)] hover:bg-[rgba(59,130,246,0.08)] hover:scale-[1.03]"
-        }`}
-        style={{ fontFamily: "var(--font-display)" }}
+      <button
+        className="group relative flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 hover:scale-[1.03]"
+        style={{
+          fontFamily: "var(--font-display)",
+          ...(isPrimary
+            ? { background: "var(--col-blue)", color: "#fff" }
+            : {
+                background: "transparent",
+                color: "var(--col-muted)",
+                border: "1px solid var(--col-border)",
+              }),
+        }}
       >
         <span>{text}</span>
         <Icon className={`w-4 h-4 transition-transform duration-300 ${isPrimary ? "group-hover:translate-x-0.5" : "group-hover:rotate-45"}`} />
@@ -97,10 +103,14 @@ const CTAButton = memo(({ href, text, icon: Icon, variant = "primary" }) => {
 const SocialLink = memo(({ icon: Icon, link, label }) => (
   <a href={link} target="_blank" rel="noopener noreferrer" aria-label={label}>
     <button
-      className="group p-2.5 rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] hover:border-[rgba(37,99,235,0.4)] hover:bg-[rgba(37,99,235,0.1)] transition-all duration-300"
+      className="group p-2.5 rounded-xl transition-all duration-300"
+      style={{
+        border: "1px solid var(--col-border)",
+        background: "rgba(255,255,255,0.03)",
+      }}
       aria-label={label}
     >
-      <Icon className="w-5 h-5 text-blue-300 group-hover:text-white transition-colors" />
+      <Icon className="w-5 h-5 transition-colors" style={{ color: "var(--col-blue-light)" }} />
     </button>
   </a>
 ))

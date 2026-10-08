@@ -4,6 +4,7 @@ import { ImagePlus, Save, UserRound, Palette, MessageCircle, Type, RotateCcw, Za
 import {
   DEFAULT_CONTENT,
   DEFAULT_THEME,
+  CHARACTER_THEMES,
   WELCOME_FONTS,
   LIGHTNING_MOODS,
   fetchSiteContent,
@@ -212,7 +213,7 @@ export default function SiteSettings() {
 
   const resetTheme = () => {
     setForm((prev) => {
-      const next = { ...prev, ...DEFAULT_THEME };
+      const next = { ...prev, ...DEFAULT_THEME, character_theme: "default" };
       applyTheme(next);
       return next;
     });
@@ -372,6 +373,50 @@ export default function SiteSettings() {
             <RotateCcw className="w-3.5 h-3.5" />
             Reset ke default
           </button>
+        </div>
+
+        {/* Character theme presets */}
+        <div className="space-y-2">
+          <p className="text-xs text-gray-400">Preset karakter (klik = apply semua warna tema)</p>
+          <div className="flex flex-wrap gap-2">
+            {Object.entries(CHARACTER_THEMES).map(([id, t]) => {
+              const active = (form.character_theme || "default") === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => {
+                    const next = {
+                      ...form,
+                      character_theme: id,
+                      theme_bg: t.theme_bg,
+                      theme_bg2: t.theme_bg2,
+                      theme_blue: t.theme_blue,
+                      theme_blue_light: t.theme_blue_light,
+                      theme_accent: t.theme_accent,
+                      theme_teal: t.theme_teal,
+                      theme_pink: t.theme_pink,
+                      theme_white: t.theme_white,
+                      theme_muted: t.theme_muted,
+                    };
+                    setForm(next);
+                    applyTheme(next);
+                  }}
+                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs border transition-colors ${
+                    active
+                      ? "border-white/30 bg-white/10 text-white"
+                      : "border-white/10 text-gray-400 hover:text-white hover:border-white/20"
+                  }`}
+                >
+                  <span
+                    className="w-2.5 h-2.5 rounded-full shrink-0"
+                    style={{ background: t.theme_blue }}
+                  />
+                  {t.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">

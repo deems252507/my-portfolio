@@ -220,3 +220,12 @@ body {
   50% { transform: translateX(100%); }
   100% { transform: translateX(-100%); }
 }
+
+/* Theme buttons */
+.theme-btn-primary:hover {
+  filter: brightness(1.12);
+  box-shadow: 0 0 24px color-mix(in srgb, var(--col-blue) 40%, transparent);
+}
+.theme-btn-outline:hover {
+  background: color-mix(in srgb, var(--col-blue) 10%, transparent) !important;
+}
