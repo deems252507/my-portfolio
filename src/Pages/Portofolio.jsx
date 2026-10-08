@@ -222,8 +222,8 @@ export default function FullWidthTabs() {
               </div>
             ) : (
               <>
-                <div className="container mx-auto flex justify-center items-center overflow-hidden">
-                  <div className="grid grid-cols-1 md:grid-cols-3 md:gap-5 gap-4 w-full">
+                <div className="container mx-auto flex justify-center items-center">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5 w-full">
                     {displayedCertificates.map((certificate, index) => (
                       <div
                         key={certificate.id || index}
@@ -255,8 +255,8 @@ export default function FullWidthTabs() {
               </div>
             ) : (
               <>
-                <div className="container mx-auto flex justify-center items-center overflow-hidden">
-                  <div className="grid grid-cols-1 md:grid-cols-3 md:gap-5 gap-4 w-full">
+                <div className="container mx-auto flex justify-center items-center">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5 w-full">
                     {displayedAwards.map((award, index) => (
                       <div
                         key={award.id || index}
