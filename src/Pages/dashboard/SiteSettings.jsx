@@ -5,6 +5,7 @@ import {
   DEFAULT_CONTENT,
   DEFAULT_THEME,
   CHARACTER_THEMES,
+  HOVER_CHARACTERS,
   WELCOME_FONTS,
   LIGHTNING_MOODS,
   fetchSiteContent,
@@ -80,7 +81,6 @@ const SECTIONS = [
 
 const PHOTOS = [
   ["profile_photo", "Foto profil"],
-  ["hover_photo", "Foto hover (efek About)"],
   ["edu1_logo", "Logo pendidikan 1"],
   ["edu2_logo", "Logo pendidikan 2"],
 ];
@@ -849,6 +849,68 @@ export default function SiteSettings() {
         <div className="grid sm:grid-cols-2 gap-4">
           {PHOTOS.map(([key, label]) => (
             <PhotoField key={key} label={label} value={form[key] || ""} onChange={(v) => setField(key, v)} />
+          ))}
+        </div>
+      </section>
+
+      {/* ── Foto karakter hover (About) ── */}
+      <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 space-y-4">
+        <div>
+          <h2 className="text-white font-medium">Foto karakter hover (About)</h2>
+          <p className="text-xs text-gray-500 mt-1">
+            Upload foto kamu bergaya tiap karakter. Pilih karakter aktif — itu yang muncul saat hover di About.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {HOVER_CHARACTERS.map((c) => {
+            const active = (form.hover_char || "spiderman") === c.id;
+            const hasImg = !!(form[c.field] || (c.id === "spiderman" && form.hover_photo));
+            return (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => {
+                  const url = form[c.field] || (c.id === "spiderman" ? form.hover_photo : "") || "";
+                  setForm((prev) => ({
+                    ...prev,
+                    hover_char: c.id,
+                    hover_photo: url || prev.hover_photo,
+                  }));
+                }}
+                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs border transition-colors ${
+                  active
+                    ? "border-white/30 bg-white/10 text-white"
+                    : "border-white/10 text-gray-400 hover:text-white hover:border-white/20"
+                }`}
+              >
+                <span className={`w-2 h-2 rounded-full ${hasImg ? "bg-green-400" : "bg-gray-600"}`} />
+                {c.label}
+                {active && <span className="text-[10px] text-cyan-300">aktif</span>}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {HOVER_CHARACTERS.map((c) => (
+            <PhotoField
+              key={c.id}
+              label={`${c.label}${(form.hover_char || "spiderman") === c.id ? " · aktif" : ""}`}
+              value={form[c.field] || (c.id === "spiderman" ? form.hover_photo : "") || ""}
+              onChange={(v) => {
+                setForm((prev) => {
+                  const next = { ...prev, [c.field]: v };
+                  // Jika karakter ini yang aktif, sync ke hover_photo
+                  if ((prev.hover_char || "spiderman") === c.id) {
+                    next.hover_photo = v;
+                  }
+                  // Spiderman legacy field
+                  if (c.id === "spiderman") next.hover_photo_spiderman = v;
+                  return next;
+                });
+              }}
+            />
           ))}
         </div>
       </section>
