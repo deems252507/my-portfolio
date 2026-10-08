@@ -2,6 +2,18 @@ import { supabase } from "../supabase";
 
 export const SITE_CONTENT_KEY = "site_content_cache";
 
+export const DEFAULT_THEME = {
+  theme_bg: "#050510",
+  theme_bg2: "#07071a",
+  theme_blue: "#2563eb",
+  theme_blue_light: "#3b82f6",
+  theme_accent: "#06b6d4",
+  theme_teal: "#10b981",
+  theme_pink: "#ec4899",
+  theme_white: "#f0f0ff",
+  theme_muted: "#c0c0dc",
+};
+
 export const DEFAULT_CONTENT = {
   full_name: "Rizky Dwi Maulana",
   first_name: "Eka Wahyu",
@@ -38,7 +50,52 @@ export const DEFAULT_CONTENT = {
   spotify_title: "Daily Rotation",
   spotify_desc:
     "A curated collection of tracks that keep me in the zone and inspired while coding.",
+
+  // Welcome Screen (Loading)
+  welcome_line1: "Welcome To My",
+  welcome_line2: "Portofolio Website",
+  welcome_font: "Arial",
+  welcome_color1: "#ffffff",
+  welcome_color2: "#2563eb",
+
+  // Tema Warna Website
+  ...DEFAULT_THEME,
+
+  // WhatsApp
+  wa_enabled: "true",
+  wa_number: "6281234567890",
+  wa_button_text: "Chat WhatsApp",
+  wa_message: "Halo! Saya tertarik dengan portofolio Anda.",
 };
+
+export const WELCOME_FONTS = [
+  "Arial",
+  "Verdana",
+  "Poppins",
+  "Space Grotesk",
+  "Georgia",
+  "Times New Roman",
+  "Courier New",
+  "Impact",
+  "Tahoma",
+  "Trebuchet MS",
+];
+
+/** Apply theme CSS variables to document root */
+export function applyTheme(content) {
+  if (typeof document === "undefined") return;
+  const root = document.documentElement;
+  const c = content || DEFAULT_CONTENT;
+  root.style.setProperty("--col-bg", c.theme_bg || DEFAULT_THEME.theme_bg);
+  root.style.setProperty("--col-bg2", c.theme_bg2 || DEFAULT_THEME.theme_bg2);
+  root.style.setProperty("--col-blue", c.theme_blue || DEFAULT_THEME.theme_blue);
+  root.style.setProperty("--col-blue-light", c.theme_blue_light || DEFAULT_THEME.theme_blue_light);
+  root.style.setProperty("--col-accent", c.theme_accent || DEFAULT_THEME.theme_accent);
+  root.style.setProperty("--col-teal", c.theme_teal || DEFAULT_THEME.theme_teal);
+  root.style.setProperty("--col-pink", c.theme_pink || DEFAULT_THEME.theme_pink);
+  root.style.setProperty("--col-white", c.theme_white || DEFAULT_THEME.theme_white);
+  root.style.setProperty("--col-muted", c.theme_muted || DEFAULT_THEME.theme_muted);
+}
 
 export function mergeContent(partial) {
   const next = { ...DEFAULT_CONTENT };
@@ -102,6 +159,7 @@ export async function saveSiteContent(content) {
   });
   if (error) throw error;
   writeCachedContent(payload);
+  applyTheme(payload);
   return payload;
 }
 

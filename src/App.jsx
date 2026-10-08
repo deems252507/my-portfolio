@@ -12,6 +12,7 @@ import Footer from "./components/Footer";
 import Login from "./Pages/Login";
 import Dashboard from "./Pages/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
+import WhatsAppButton from "./components/WhatsAppButton";
 
 const importHome = () => import("./Pages/Home");
 const importAbout = () => import("./Pages/About");
@@ -47,6 +48,7 @@ const LandingPage = ({ showWelcome, setShowWelcome }) => {
             <ContactPage />
           </Suspense>
           <Footer />
+          <WhatsAppButton />
         </>
       )}
     </>
@@ -59,6 +61,7 @@ const ProjectPageLayout = () => (
       <ProjectDetails />
     </Suspense>
     <Footer />
+    <WhatsAppButton />
   </>
 );
 

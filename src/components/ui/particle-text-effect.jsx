@@ -127,12 +127,20 @@ class Particle {
   }
 }
 
-export function ParticleTextEffect() {
+export function ParticleTextEffect({
+  line1 = "Welcome To My",
+  line2 = "Portofolio Website",
+  fontFamily = "Arial",
+  color1 = "#ffffff",
+  color2 = "#2563eb",
+}) {
   const canvasRef = useRef(null);
   const animationRef = useRef();
   const particlesRef = useRef([]);
   const offscreenCanvasRef = useRef(null);
   const frameCountRef = useRef(0);
+  const propsRef = useRef({ line1, line2, fontFamily, color1, color2 });
+  propsRef.current = { line1, line2, fontFamily, color1, color2 };
 
   // Use a denser particle map to make it look more solid initially
   const pixelSteps = 4; 
@@ -170,32 +178,38 @@ export function ParticleTextEffect() {
     let fontSize1 = Math.max(22, 65 * scale);
     let fontSize2 = Math.max(28, 80 * scale);
 
-    // Pastikan baris terpanjang ("Portofolio Website") muat di lebar canvas
-    offscreenCtx.font = `bold ${fontSize2}px Arial, sans-serif`;
+    const { line1: L1, line2: L2, fontFamily: FF, color1: C1, color2: C2 } = propsRef.current;
+    const fontStack = `"${FF}", Arial, sans-serif`;
+
+    // Pastikan baris terpanjang muat di lebar canvas
+    offscreenCtx.font = `bold ${fontSize2}px ${fontStack}`;
     const maxTextW = cssW * 0.92;
-    const measured = offscreenCtx.measureText("Portofolio Website").width;
+    const measured = Math.max(
+      offscreenCtx.measureText(L2 || " ").width,
+      (() => { offscreenCtx.font = `bold ${fontSize1}px ${fontStack}`; return offscreenCtx.measureText(L1 || " ").width; })()
+    );
     if (measured > maxTextW && measured > 0) {
       const fit = maxTextW / measured;
       fontSize1 *= fit;
       fontSize2 *= fit;
     }
 
-    // "Welcome To My"
-    offscreenCtx.font = `bold ${fontSize1}px Arial, sans-serif`;
+    // Line 1
+    offscreenCtx.font = `bold ${fontSize1}px ${fontStack}`;
     const gradient = offscreenCtx.createLinearGradient(
       cssW / 2 - 250, 0,
       cssW / 2 + 250, 0
     );
-    gradient.addColorStop(0, "#ffffff");
-    gradient.addColorStop(0.5, "#dbeafe");
-    gradient.addColorStop(1, "#bfdbfe");
+    gradient.addColorStop(0, C1);
+    gradient.addColorStop(0.5, C1);
+    gradient.addColorStop(1, C1);
     offscreenCtx.fillStyle = gradient;
-    offscreenCtx.fillText("Welcome To My", cssW / 2, cssH / 2 - (fontSize1 * 0.75));
+    offscreenCtx.fillText(L1, cssW / 2, cssH / 2 - (fontSize1 * 0.75));
 
-    // "Portofolio Website"
-    offscreenCtx.font = `bold ${fontSize2}px Arial, sans-serif`;
-    offscreenCtx.fillStyle = "#2563eb";
-    offscreenCtx.fillText("Portofolio Website", cssW / 2, cssH / 2 + (fontSize2 * 0.65));
+    // Line 2
+    offscreenCtx.font = `bold ${fontSize2}px ${fontStack}`;
+    offscreenCtx.fillStyle = C2;
+    offscreenCtx.fillText(L2, cssW / 2, cssH / 2 + (fontSize2 * 0.65));
 
     const imageData = offscreenCtx.getImageData(0, 0, cssW, cssH);
     const pixels    = imageData.data;
@@ -344,7 +358,7 @@ export function ParticleTextEffect() {
       }
       window.removeEventListener("resize", updateSize);
     };
-  }, []);
+  }, [line1, line2, fontFamily, color1, color2]);
 
   return (
     <div className="absolute inset-0 w-full h-full pointer-events-none z-10 flex items-center justify-center overflow-visible">
