@@ -59,7 +59,7 @@ const handleChange = (e) => {
         title: 'Berhasil!',
         text: 'Pesan Anda telah berhasil terkirim!',
         icon: 'success',
-        confirmButtonColor: '#3b82f6',
+        confirmButtonColor: (typeof getComputedStyle !== 'undefined' && getComputedStyle(document.documentElement).getPropertyValue('--col-blue').trim()) || '#2563eb',
         timer: 2000,
         timerProgressBar: true
       });
@@ -76,7 +76,7 @@ const handleChange = (e) => {
           title: 'Berhasil!',
           text: 'Pesan Anda telah berhasil terkirim!',
           icon: 'success',
-          confirmButtonColor: '#3b82f6',
+          confirmButtonColor: (typeof getComputedStyle !== 'undefined' && getComputedStyle(document.documentElement).getPropertyValue('--col-blue').trim()) || '#2563eb',
           timer: 2000,
           timerProgressBar: true
         });
@@ -91,7 +91,7 @@ const handleChange = (e) => {
           title: 'Gagal!',
           text: 'Terjadi kesalahan. Silakan coba lagi nanti.',
           icon: 'error',
-          confirmButtonColor: '#3b82f6'
+          confirmButtonColor: (typeof getComputedStyle !== 'undefined' && getComputedStyle(document.documentElement).getPropertyValue('--col-blue').trim()) || '#2563eb'
         });
       }
     } finally {
@@ -118,7 +118,7 @@ const handleChange = (e) => {
       >
         <div className="container px-[1%] grid grid-cols-1 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-[45%_55%] 2xl:grid-cols-[35%_65%] gap-12" >
           <div
-            className="h-full flex flex-col bg-white/5 backdrop-blur-xl rounded-3xl shadow-2xl p-5 py-10 sm:p-10 transform transition-all duration-500 hover:shadow-[#3b82f6]/10"
+            className="h-full flex flex-col bg-white/5 backdrop-blur-xl rounded-3xl shadow-2xl p-5 py-10 sm:p-10 transform transition-all duration-500 hover:shadow-[var(--col-blue-light)]/10"
           >
             <div className="flex justify-between items-start mb-8">
               <div>
@@ -143,7 +143,7 @@ const handleChange = (e) => {
                 data-aos-delay="100"
                 className="relative group"
               >
-                <User className="absolute left-4 top-4 w-5 h-5 text-gray-400 group-focus-within:text-[#3b82f6] transition-colors" />
+                <User className="absolute left-4 top-4 w-5 h-5 text-gray-400 group-focus-within:text-[var(--col-blue-light)] transition-colors" />
                 <input
                   type="text"
                   name="name"
@@ -151,7 +151,7 @@ const handleChange = (e) => {
                   value={formData.name}
                   onChange={handleChange}
                   disabled={isSubmitting}
-                  className="w-full p-4 pl-12 bg-white/10 rounded-xl border border-white/20 placeholder-gray-500 text-white focus:outline-none focus:ring-2 focus:ring-[#3b82f6]/30 transition-all duration-300 hover:border-[#3b82f6]/30 disabled:opacity-50"
+                  className="w-full p-4 pl-12 bg-white/10 rounded-xl border border-white/20 placeholder-gray-500 text-white focus:outline-none focus:ring-2 focus:ring-[var(--col-blue-light)]/30 transition-all duration-300 hover:border-[var(--col-blue-light)]/30 disabled:opacity-50"
                   required
                 />
               </div>
@@ -160,7 +160,7 @@ const handleChange = (e) => {
                 data-aos-delay="200"
                 className="relative group"
               >
-                <Mail className="absolute left-4 top-4 w-5 h-5 text-gray-400 group-focus-within:text-[#3b82f6] transition-colors" />
+                <Mail className="absolute left-4 top-4 w-5 h-5 text-gray-400 group-focus-within:text-[var(--col-blue-light)] transition-colors" />
                 <input
                   type="email"
                   name="email"
@@ -168,7 +168,7 @@ const handleChange = (e) => {
                   value={formData.email}
                   onChange={handleChange}
                   disabled={isSubmitting}
-                  className="w-full p-4 pl-12 bg-white/10 rounded-xl border border-white/20 placeholder-gray-500 text-white focus:outline-none focus:ring-2 focus:ring-[#3b82f6]/30 transition-all duration-300 hover:border-[#3b82f6]/30 disabled:opacity-50"
+                  className="w-full p-4 pl-12 bg-white/10 rounded-xl border border-white/20 placeholder-gray-500 text-white focus:outline-none focus:ring-2 focus:ring-[var(--col-blue-light)]/30 transition-all duration-300 hover:border-[var(--col-blue-light)]/30 disabled:opacity-50"
                   required
                 />
               </div>
@@ -177,14 +177,14 @@ const handleChange = (e) => {
                 data-aos-delay="300"
                 className="relative group"
               >
-                <MessageSquare className="absolute left-4 top-4 w-5 h-5 text-gray-400 group-focus-within:text-[#3b82f6] transition-colors" />
+                <MessageSquare className="absolute left-4 top-4 w-5 h-5 text-gray-400 group-focus-within:text-[var(--col-blue-light)] transition-colors" />
                 <textarea
                   name="message"
                   placeholder="Pesan Anda"
                   value={formData.message}
                   onChange={handleChange}
                   disabled={isSubmitting}
-                  className="w-full resize-none p-4 pl-12 bg-white/10 rounded-xl border border-white/20 placeholder-gray-500 text-white focus:outline-none focus:ring-2 focus:ring-[#3b82f6]/30 transition-all duration-300 hover:border-[#3b82f6]/30 h-[9.9rem] disabled:opacity-50"
+                  className="w-full resize-none p-4 pl-12 bg-white/10 rounded-xl border border-white/20 placeholder-gray-500 text-white focus:outline-none focus:ring-2 focus:ring-[var(--col-blue-light)]/30 transition-all duration-300 hover:border-[var(--col-blue-light)]/30 h-[9.9rem] disabled:opacity-50"
                   required
                 />
               </div>
@@ -208,7 +208,7 @@ const handleChange = (e) => {
             </div>
           </div>
 
-          <div className="h-full flex flex-col bg-white/5 backdrop-blur-xl rounded-3xl p-3 py-3 md:p-10 md:py-8 shadow-2xl transform transition-all duration-500 hover:shadow-[#3b82f6]/10">
+          <div className="h-full flex flex-col bg-white/5 backdrop-blur-xl rounded-3xl p-3 py-3 md:p-10 md:py-8 shadow-2xl transform transition-all duration-500 hover:shadow-[var(--col-blue-light)]/10">
             <Komentar />
           </div>
         </div>
