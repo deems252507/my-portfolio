@@ -28,11 +28,15 @@ const TECH_ICONS = {
 const TechBadge = ({ tech }) => {
   const Icon = TECH_ICONS[tech] || TECH_ICONS["default"];
   return (
-    <div className="group relative overflow-hidden px-3 py-2 md:px-4 md:py-2.5 bg-gradient-to-r from-blue-600/10 to-cyan-600/10 rounded-xl border border-blue-500/10 hover:border-blue-500/30 transition-all duration-300 cursor-default">
-      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 to-cyan-500/0 group-hover:from-blue-500/10 group-hover:to-cyan-500/10 transition-all duration-500" />
+    <div className="group relative overflow-hidden px-3 py-2 md:px-4 md:py-2.5 rounded-xl transition-all duration-300 cursor-default"
+      style={{
+        background: "color-mix(in srgb, var(--col-blue) 10%, transparent)",
+        border: "1px solid color-mix(in srgb, var(--col-blue) 20%, transparent)",
+      }}
+    >
       <div className="relative flex items-center gap-1.5 md:gap-2">
-        <Icon className="w-3.5 h-3.5 md:w-4 md:h-4 text-blue-400 group-hover:text-blue-300 transition-colors" />
-        <span className="text-xs md:text-sm font-medium text-blue-300/90 group-hover:text-blue-200 transition-colors">
+        <Icon className="w-3.5 h-3.5 md:w-4 md:h-4" style={{ color: "var(--col-blue-light)" }} />
+        <span className="text-xs md:text-sm font-medium" style={{ color: "var(--col-blue-light)" }}>
           {tech}
         </span>
       </div>
@@ -133,7 +137,7 @@ const ProjectDetails = () => {
 
                 <div className="space-y-4 md:space-y-6">
                   <h3 className="text-lg md:text-xl font-semibold text-white/90 flex items-center gap-2 md:gap-3">
-                    <Code2 className="w-4 h-4 md:w-5 md:h-5 text-blue-400" />
+                    <Code2 className="w-4 h-4 md:w-5 md:h-5" style={{ color: "var(--col-blue-light)" }} />
                     Technologies Used
                   </h3>
                   {project.tech_stack?.length > 0 ? (
