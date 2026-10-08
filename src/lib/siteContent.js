@@ -159,6 +159,15 @@ export const DEFAULT_CONTENT = {
   linkedin:
     "https://www.linkedin.com/in/eka-wahyu-maulidan-484021315?utm_source=share_via&utm_content=profile",
   instagram: "https://www.instagram.com/eka.wahyu.m",
+
+  // FIND ME section (Contact)
+  find_me_title: "FIND ME",
+  find_linkedin_title: "Let's Connect",
+  find_linkedin_sub: "on LinkedIn",
+  find_instagram_title: "Instagram",
+  find_instagram_sub: "dm_rizky",
+  find_github_title: "Github",
+  find_github_sub: "",
   profile_photo: "/Photo.png",
   hover_photo: "/PhotoSpiderman.png",
   hover_char: "spiderman",
