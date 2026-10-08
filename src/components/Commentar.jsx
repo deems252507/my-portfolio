@@ -10,7 +10,7 @@ const Comment = memo(({ comment, formatDate, index, isPinned = false }) => (
     <div 
         className={`px-4 pt-4 pb-2 rounded-xl border transition-all group hover:shadow-lg hover:-translate-y-0.5 ${
             isPinned 
-                ? 'bg-[#2563eb]/10 border-[#2563eb]/30 hover:bg-[#2563eb]/15' 
+                ? 'bg-[color-mix(in_srgb,var(--col-blue)_10%,transparent)] border-[color-mix(in_srgb,var(--col-blue)_30%,transparent)] hover:bg-[color-mix(in_srgb,var(--col-blue)_15%,transparent)]' 
                 : 'bg-white/5 border-white/10 hover:bg-white/10'
         }`}
     >
@@ -26,13 +26,13 @@ const Comment = memo(({ comment, formatDate, index, isPinned = false }) => (
                     src={comment.profile_image}
                     alt={`${comment.user_name}'s profile`}
                     className={`w-10 h-10 rounded-full object-cover border-2 flex-shrink-0  ${
-                        isPinned ? 'border-[#2563eb]/50' : 'border-[#2563eb]/30'
+                        isPinned ? 'border-[color-mix(in_srgb,var(--col-blue)_50%,transparent)]' : 'border-[color-mix(in_srgb,var(--col-blue)_30%,transparent)]'
                     }`}
                     loading="lazy"
                 />
             ) : (
-                <div className={`p-2 rounded-full text-white group-hover:bg-[#2563eb]/30 transition-colors ${
-                    isPinned ? 'bg-[#2563eb]/30' : 'bg-[#2563eb]/20'
+                <div className={`p-2 rounded-full text-white group-hover:bg-[color-mix(in_srgb,var(--col-blue)_30%,transparent)] transition-colors ${
+                    isPinned ? 'bg-[color-mix(in_srgb,var(--col-blue)_30%,transparent)]' : 'bg-[color-mix(in_srgb,var(--col-blue)_20%,transparent)]'
                 }`}>
                     <UserCircle2 className="w-5 h-5" />
                 </div>
@@ -46,7 +46,7 @@ const Comment = memo(({ comment, formatDate, index, isPinned = false }) => (
                             {comment.user_name}
                         </h4>
                         {isPinned && (
-                            <span className="px-2 py-0.5 text-xs bg-[#2563eb]/20 text-blue-300 rounded-full">
+                            <span className="px-2 py-0.5 text-xs bg-[color-mix(in_srgb,var(--col-blue)_20%,transparent)] text-[var(--col-blue-light)] rounded-full">
                                 Admin
                             </span>
                         )}
@@ -129,7 +129,7 @@ const CommentForm = memo(({ onSubmit, isSubmitting, error }) => {
                     onChange={(e) => setUserName(e.target.value)}
                      maxLength={15}
                     placeholder="Masukkan nama kamu"
-                    className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-400 focus:outline-none focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 transition-all"
+                    className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-400 focus:outline-none focus:border-[var(--col-blue)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--col-blue)_20%,transparent)] transition-all"
                     required
                 />
             </div>
@@ -145,7 +145,7 @@ const CommentForm = memo(({ onSubmit, isSubmitting, error }) => {
 
                     onChange={handleTextareaChange}
                     placeholder="Tulis komentar kamu di sini..."
-                    className="w-full p-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-400 focus:outline-none focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20 transition-all resize-none min-h-[120px]"
+                    className="w-full p-4 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-400 focus:outline-none focus:border-[var(--col-blue)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--col-blue)_20%,transparent)] transition-all resize-none min-h-[120px]"
                     required
                 />
             </div>
@@ -160,7 +160,7 @@ const CommentForm = memo(({ onSubmit, isSubmitting, error }) => {
                             <img
                                 src={imagePreview}
                                 alt="Profile preview"
-                                className="w-16 h-16 rounded-full object-cover border-2 border-[#2563eb]/50"
+                                className="w-16 h-16 rounded-full object-cover border-2 border-[color-mix(in_srgb,var(--col-blue)_50%,transparent)]"
                             />
                             <button
                                 type="button"
@@ -187,7 +187,7 @@ const CommentForm = memo(({ onSubmit, isSubmitting, error }) => {
                             <button
                                 type="button"
                                 onClick={() => fileInputRef.current?.click()}
-                                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#2563eb]/20 text-blue-300 hover:bg-[#2563eb]/30 transition-all border border-dashed border-[#2563eb]/50 hover:border-[#2563eb] group"
+                                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all border border-dashed group" style={{ background: "color-mix(in srgb, var(--col-blue) 20%, transparent)", color: "var(--col-blue-light)", borderColor: "color-mix(in srgb, var(--col-blue) 50%, transparent)" }}
                             >
                                 <ImagePlus className="w-5 h-5 group-hover:scale-110 transition-transform" />
                                 <span>Choose Profile Photo</span>
@@ -204,7 +204,7 @@ const CommentForm = memo(({ onSubmit, isSubmitting, error }) => {
                 type="submit"
                 disabled={isSubmitting}
                 data-aos="fade-up" data-aos-duration="1000"
-                className="relative w-full h-12 bg-[#2563eb] hover:bg-[#1d4ed8] rounded-xl font-medium text-white overflow-hidden group transition-all duration-300 hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed"
+                className="relative w-full h-12 rounded-xl font-medium text-white overflow-hidden group transition-all duration-300 hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed theme-btn-primary" style={{ background: "var(--col-blue)" }}
             >
                 <div className="absolute inset-0 bg-white/20 translate-y-12 group-hover:translate-y-0 transition-transform duration-300" />
                 <div className="relative flex items-center justify-center gap-2">
@@ -402,11 +402,11 @@ const Komentar = () => {
         <div className="w-full h-full flex flex-col bg-gradient-to-b from-white/10 to-white/5 rounded-2xl  backdrop-blur-xl shadow-xl" data-aos="fade-up" data-aos-duration="1000">
             <div className="p-6 border-b border-white/10" data-aos="fade-down" data-aos-duration="800">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-[#2563eb]/20">
+                    <div className="p-2 rounded-xl bg-[color-mix(in_srgb,var(--col-blue)_20%,transparent)]">
                         <MessageCircle className="w-6 h-6 text-white" />
                     </div>
                     <h3 className="text-xl font-semibold text-white">
-                        Komentar <span className="text-[#2563eb]">({totalComments})</span>
+                        Komentar <span className="text-[var(--col-blue)]">({totalComments})</span>
                     </h3>
                 </div>
             </div>
