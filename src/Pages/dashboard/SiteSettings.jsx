@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
-import { ImagePlus, Save, UserRound, Palette, MessageCircle, Type, RotateCcw } from "lucide-react";
+import { ImagePlus, Save, UserRound, Palette, MessageCircle, Type, RotateCcw, Zap } from "lucide-react";
 import {
   DEFAULT_CONTENT,
   DEFAULT_THEME,
   WELCOME_FONTS,
+  LIGHTNING_MOODS,
   fetchSiteContent,
   saveSiteContent,
   uploadSiteImage,
   applyTheme,
 } from "../../lib/siteContent";
 import { useSiteContent } from "../../context/SiteContentContext";
+import { WELCOME_BG_STYLES } from "../../components/WelcomeBackground";
 
 const SECTIONS = [
   {
@@ -258,7 +260,7 @@ export default function SiteSettings() {
           </div>
           <h1 className="text-2xl font-semibold text-white mt-1">Profil & Konten</h1>
           <p className="text-sm text-gray-400 mt-1">
-            Ubah nama, bio, welcome screen, tema warna, WhatsApp, dan foto.
+            Ubah nama, bio, welcome screen, tema warna, efek petir, WhatsApp, dan foto.
           </p>
         </div>
         <button
@@ -399,6 +401,240 @@ export default function SiteSettings() {
             </div>
           ))}
         </div>
+      </section>
+
+
+
+      {/* ── Background Welcome Screen ── */}
+      <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 space-y-4">
+        <div className="flex items-center gap-2">
+          <Zap className="w-4 h-4 text-yellow-400" />
+          <div>
+            <h2 className="text-white font-medium">Background Welcome Screen</h2>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Pilih gaya efek loading. Semua opsi bisa diatur dari sini.
+            </p>
+          </div>
+        </div>
+
+        {/* Style grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {WELCOME_BG_STYLES.map((s) => {
+            const active = (form.welcome_bg_style || "lightning") === s.id;
+            return (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => setField("welcome_bg_style", s.id)}
+                className={`text-left rounded-xl border px-3 py-2.5 transition-colors ${
+                  active
+                    ? "border-blue-500/50 bg-blue-500/10 text-white"
+                    : "border-white/10 bg-white/[0.02] text-gray-400 hover:border-white/20 hover:text-white"
+                }`}
+              >
+                <span className="block text-xs font-medium">{s.label}</span>
+                <span className="block text-[10px] text-gray-500 mt-0.5">{s.desc}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Shared color + speed for non-lightning styles */}
+        {(form.welcome_bg_style || "lightning") !== "lightning" &&
+          (form.welcome_bg_style || "lightning") !== "none" && (
+          <div className="grid sm:grid-cols-2 gap-4 pt-1">
+            <ColorField
+              label="Warna efek"
+              value={form.welcome_fx_color || "#3b82f6"}
+              onChange={(v) => setField("welcome_fx_color", v)}
+            />
+            <label className="block space-y-1.5">
+              <span className="text-xs text-gray-400">
+                Kecepatan ({form.welcome_fx_speed || "1"}x)
+              </span>
+              <input
+                type="range"
+                min="0.3"
+                max="2.5"
+                step="0.1"
+                value={form.welcome_fx_speed || "1"}
+                onChange={(e) => setField("welcome_fx_speed", e.target.value)}
+                className="w-full accent-blue-500"
+              />
+            </label>
+          </div>
+        )}
+
+        {/* Lightning-specific controls */}
+        {(form.welcome_bg_style || "lightning") === "lightning" && (
+          <div className="space-y-4 border-t border-white/5 pt-4">
+            <p className="text-xs text-gray-500">Pengaturan khusus Petir</p>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <label className="block space-y-1.5">
+                <span className="text-xs text-gray-400">Tampilkan efek petir</span>
+                <select
+                  className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2.5 text-sm text-white outline-none focus:border-blue-500/50"
+                  value={form.lightning_enabled === "false" ? "false" : "true"}
+                  onChange={(e) => setField("lightning_enabled", e.target.value)}
+                >
+                  <option value="true" style={{ background: "#0a0a1a" }}>Tampil</option>
+                  <option value="false" style={{ background: "#0a0a1a" }}>Matikan</option>
+                </select>
+              </label>
+
+              <label className="block space-y-1.5">
+                <span className="text-xs text-gray-400">Preset mood</span>
+                <select
+                  className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2.5 text-sm text-white outline-none focus:border-blue-500/50"
+                  value={form.lightning_mood || "default"}
+                  onChange={(e) => {
+                    const mood = e.target.value;
+                    const preset = LIGHTNING_MOODS[mood];
+                    setForm((prev) => ({
+                      ...prev,
+                      lightning_mood: mood,
+                      ...(preset
+                        ? {
+                            lightning_hue: preset.hue,
+                            lightning_speed: preset.speed,
+                            lightning_intensity: preset.intensity,
+                            lightning_size: preset.size,
+                          }
+                        : {}),
+                    }));
+                  }}
+                >
+                  {Object.entries(LIGHTNING_MOODS).map(([key, m]) => (
+                    <option key={key} value={key} style={{ background: "#0a0a1a" }}>
+                      {m.label}
+                    </option>
+                  ))}
+                  <option value="custom" style={{ background: "#0a0a1a" }}>Custom (manual)</option>
+                </select>
+              </label>
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-400">Warna petir (Hue: {form.lightning_hue || "220"}°)</span>
+                <span
+                  className="w-6 h-6 rounded-full border border-white/20 shrink-0"
+                  style={{ background: `hsl(${form.lightning_hue || 220}, 90%, 55%)` }}
+                />
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="360"
+                step="1"
+                value={form.lightning_hue || "220"}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    lightning_hue: e.target.value,
+                    lightning_mood: "custom",
+                  }))
+                }
+                className="w-full h-2 rounded-full appearance-none cursor-pointer"
+                style={{
+                  background:
+                    "linear-gradient(to right, hsl(0,90%,55%), hsl(60,90%,55%), hsl(120,90%,55%), hsl(180,90%,55%), hsl(240,90%,55%), hsl(300,90%,55%), hsl(360,90%,55%))",
+                }}
+              />
+            </div>
+
+            <div className="grid sm:grid-cols-3 gap-4">
+              <label className="block space-y-1.5">
+                <span className="text-xs text-gray-400">Speed ({form.lightning_speed || "1.6"})</span>
+                <input
+                  type="range"
+                  min="0.3"
+                  max="3"
+                  step="0.1"
+                  value={form.lightning_speed || "1.6"}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      lightning_speed: e.target.value,
+                      lightning_mood: "custom",
+                    }))
+                  }
+                  className="w-full accent-blue-500"
+                />
+              </label>
+              <label className="block space-y-1.5">
+                <span className="text-xs text-gray-400">Intensity ({form.lightning_intensity || "1.2"})</span>
+                <input
+                  type="range"
+                  min="0.3"
+                  max="2.5"
+                  step="0.05"
+                  value={form.lightning_intensity || "1.2"}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      lightning_intensity: e.target.value,
+                      lightning_mood: "custom",
+                    }))
+                  }
+                  className="w-full accent-blue-500"
+                />
+              </label>
+              <label className="block space-y-1.5">
+                <span className="text-xs text-gray-400">Size ({form.lightning_size || "2"})</span>
+                <input
+                  type="range"
+                  min="0.8"
+                  max="3"
+                  step="0.1"
+                  value={form.lightning_size || "2"}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      lightning_size: e.target.value,
+                      lightning_mood: "custom",
+                    }))
+                  }
+                  className="w-full accent-blue-500"
+                />
+              </label>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(LIGHTNING_MOODS).map(([key, m]) => {
+                const active = (form.lightning_mood || "default") === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() =>
+                      setForm((prev) => ({
+                        ...prev,
+                        lightning_mood: key,
+                        lightning_hue: m.hue,
+                        lightning_speed: m.speed,
+                        lightning_intensity: m.intensity,
+                        lightning_size: m.size,
+                      }))
+                    }
+                    className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs border transition-colors ${
+                      active
+                        ? "border-white/30 bg-white/10 text-white"
+                        : "border-white/10 text-gray-400 hover:text-white hover:border-white/20"
+                    }`}
+                  >
+                    <span
+                      className="w-2.5 h-2.5 rounded-full"
+                      style={{ background: `hsl(${m.hue}, 90%, 55%)` }}
+                    />
+                    {m.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </section>
 
       {/* ── WhatsApp ── */}

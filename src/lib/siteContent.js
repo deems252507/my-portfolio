@@ -66,7 +66,49 @@ export const DEFAULT_CONTENT = {
   wa_number: "6281234567890",
   wa_button_text: "Chat WhatsApp",
   wa_message: "Halo! Saya tertarik dengan portofolio Anda.",
+
+  // Welcome background style
+  welcome_bg_style: "lightning",
+  welcome_fx_color: "#3b82f6",
+  welcome_fx_speed: "1",
+
+  // Lightning (Welcome Screen only — used when style = lightning)
+  lightning_enabled: "true",
+  lightning_mood: "default",
+  lightning_hue: "220",
+  lightning_speed: "1.6",
+  lightning_intensity: "1.2",
+  lightning_size: "2",
 };
+
+/** Preset mood petir — hue 0-360, speed/intensity/size numeric strings */
+export const LIGHTNING_MOODS = {
+  default: { label: "Default (Biru)", hue: "220", speed: "1.6", intensity: "1.2", size: "2" },
+  calm:    { label: "Calm",    hue: "200", speed: "0.6", intensity: "0.7", size: "1.5" },
+  storm:   { label: "Storm",   hue: "240", speed: "2.4", intensity: "1.8", size: "2.4" },
+  neon:    { label: "Neon",    hue: "300", speed: "1.8", intensity: "1.5", size: "2.0" },
+  soft:    { label: "Soft",    hue: "180", speed: "0.9", intensity: "0.85", size: "1.6" },
+  purple:  { label: "Purple",  hue: "270", speed: "1.4", intensity: "1.3", size: "2.0" },
+  green:   { label: "Green",   hue: "140", speed: "1.3", intensity: "1.2", size: "2.0" },
+  gold:    { label: "Gold",    hue: "45",  speed: "1.2", intensity: "1.4", size: "2.0" },
+  red:     { label: "Red",     hue: "0",   speed: "1.7", intensity: "1.5", size: "2.1" },
+};
+
+export function getLightningSettings(content) {
+  const c = content || DEFAULT_CONTENT;
+  const enabled = String(c.lightning_enabled || "true") !== "false";
+  const mood = c.lightning_mood || "default";
+  const preset = LIGHTNING_MOODS[mood];
+  // Jika mood custom, pakai nilai tersimpan; jika preset, bisa override manual juga
+  return {
+    enabled,
+    mood,
+    hue: parseFloat(c.lightning_hue ?? preset?.hue ?? "220") || 220,
+    speed: parseFloat(c.lightning_speed ?? preset?.speed ?? "1.6") || 1.6,
+    intensity: parseFloat(c.lightning_intensity ?? preset?.intensity ?? "1.2") || 1.2,
+    size: parseFloat(c.lightning_size ?? preset?.size ?? "2") || 2,
+  };
+}
 
 export const WELCOME_FONTS = [
   "Arial",

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Lightning from '../components/ui/Lightning';
 import { ParticleTextEffect } from '../components/ui/particle-text-effect';
 import { useSiteContent } from '../context/SiteContentContext';
+import WelcomeBackground from '../components/WelcomeBackground';
 
 const LoadingProgress = () => {
   const [progress, setProgress] = useState(0);
@@ -92,15 +92,7 @@ const WelcomeScreen = ({ onLoadingComplete }) => {
           exit="exit"
           variants={containerVariants}
         >
-          <div className="absolute inset-0 z-[1] pointer-events-none">
-            <Lightning
-              hue={220}
-              xOffset={0}
-              speed={1.6}
-              intensity={1.2}
-              size={2}
-            />
-          </div>
+          <WelcomeBackground content={content} />
 
           <div className="relative z-10 min-h-screen flex items-center justify-center px-4">
             <div className="w-full max-w-4xl mx-auto">
