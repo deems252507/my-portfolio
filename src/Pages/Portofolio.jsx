@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useCallback, useRef, useMemo, memo } from "react";
 import { supabase } from "../supabase";
 import CardProject from "../components/CardProject";
+import ProjectCarousel from "../components/ProjectCarousel";
+import { useSiteContent } from "../context/SiteContentContext";
 import TechStackIcon from "../components/TechStackIcon";
 import Certificate from "../components/Certificate";
 import { Code, Award, Boxes, Trophy } from "lucide-react";
@@ -47,6 +49,8 @@ const TABS = [
 ];
 
 export default function FullWidthTabs() {
+  const { content } = useSiteContent();
+  const projectLayout = content.project_layout || "carousel";
   const [value, setValue] = useState(0);
   const [projects, setProjects] = useState([]);
   const [certificates, setCertificates] = useState([]);
@@ -185,29 +189,37 @@ export default function FullWidthTabs() {
         {/* Tab 0 — Projects */}
         {value === 0 && (
           <div className="px-1 sm:px-3 py-4">
-            <div className="container mx-auto flex justify-center items-center overflow-hidden">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 w-full">
-                {displayedProjects.map((project, index) => (
-                  <div
-                    key={project.id || index}
-                    data-aos={index % 3 === 0 ? "fade-up-right" : index % 3 === 1 ? "fade-up" : "fade-up-left"}
-                    data-aos-duration={index % 3 === 0 ? "1000" : index % 3 === 1 ? "1200" : "1000"}
-                  >
-                    <CardProject
-                      Img={project.img || ""}
-                      Title={project.title || ""}
-                      Description={project.description || ""}
-                      Link={project.link || ""}
-                      id={project.id}
-                    />
+            {projectLayout === "carousel" ? (
+              <div className="container mx-auto">
+                <ProjectCarousel projects={projects} />
+              </div>
+            ) : (
+              <>
+                <div className="container mx-auto flex justify-center items-center overflow-hidden">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 w-full">
+                    {displayedProjects.map((project, index) => (
+                      <div
+                        key={project.id || index}
+                        data-aos={index % 3 === 0 ? "fade-up-right" : index % 3 === 1 ? "fade-up" : "fade-up-left"}
+                        data-aos-duration={index % 3 === 0 ? "1000" : index % 3 === 1 ? "1200" : "1000"}
+                      >
+                        <CardProject
+                          Img={project.img || ""}
+                          Title={project.title || ""}
+                          Description={project.description || ""}
+                          Link={project.link || ""}
+                          id={project.id}
+                        />
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
-            {projects.length > initialItems && (
-              <div className="mt-6 w-full flex justify-start">
-                <ToggleButton onClick={() => toggleShowMore("projects")} isShowingMore={showAllProjects} />
-              </div>
+                </div>
+                {projects.length > initialItems && (
+                  <div className="mt-6 w-full flex justify-start">
+                    <ToggleButton onClick={() => toggleShowMore("projects")} isShowingMore={showAllProjects} />
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
