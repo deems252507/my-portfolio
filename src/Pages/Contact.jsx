@@ -193,9 +193,11 @@ const handleChange = (e) => {
                 data-aos-delay="400"
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full text-white py-4 rounded-xl font-semibold transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100" style={{ background: "var(--col-blue)", boxShadow: "0 0 0 transparent" }}
+                className="w-full text-white py-4 rounded-xl font-semibold transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 theme-btn-primary"
                 style={{
                   fontFamily: "var(--font-display)",
+                  background: "var(--col-blue)",
+                  boxShadow: "0 0 20px color-mix(in srgb, var(--col-blue) 25%, transparent)",
                 }}
               >
                 <Send className="w-5 h-5" />

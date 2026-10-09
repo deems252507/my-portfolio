@@ -168,6 +168,10 @@ export const DEFAULT_CONTENT = {
   find_instagram_sub: "dm_rizky",
   find_github_title: "Github",
   find_github_sub: "",
+
+  // Navbar mascot
+  nav_mascot: "panda",
+  nav_mascot_url: "",
   profile_photo: "/Photo.png",
   hover_photo: "/PhotoSpiderman.png",
   hover_char: "spiderman",

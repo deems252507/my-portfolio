@@ -15,6 +15,7 @@ import {
 } from "../../lib/siteContent";
 import { useSiteContent } from "../../context/SiteContentContext";
 import { WELCOME_BG_STYLES } from "../../components/WelcomeBackground";
+import { NAV_MASCOTS } from "../../components/Navbar";
 import { LOADING_STYLES } from "../../components/LoadingProgress";
 
 const SECTIONS = [
@@ -405,6 +406,10 @@ export default function SiteSettings() {
                       theme_pink: t.theme_pink,
                       theme_white: t.theme_white,
                       theme_muted: t.theme_muted,
+                      // Loading progress ikut warna tema karakter
+                      loading_color: t.theme_white || t.theme_blue_light,
+                      welcome_fx_color: t.theme_blue,
+                      welcome_color2: t.theme_blue,
                     };
                     setForm(next);
                     applyTheme(next);
@@ -700,6 +705,48 @@ export default function SiteSettings() {
         )}
       </section>
 
+
+
+      {/* ── Navbar & Maskot ── */}
+      <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 space-y-4">
+        <div>
+          <h2 className="text-white font-medium">Navbar & Maskot</h2>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Maskot di atas menu (Home / About / Portfolio / Contact). Panda default atau gambar dari public / URL custom. Warna navbar ikut Tema Warna.
+          </p>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+          {NAV_MASCOTS.map((m) => {
+            const active = (form.nav_mascot || "panda") === m.id;
+            return (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => setField("nav_mascot", m.id)}
+                className={`text-left rounded-xl border px-3 py-2 transition-colors ${
+                  active
+                    ? "border-cyan-500/50 bg-cyan-500/10 text-white"
+                    : "border-white/10 bg-white/[0.02] text-gray-400 hover:border-white/20 hover:text-white"
+                }`}
+              >
+                <span className="block text-xs font-medium">{m.label}</span>
+                <span className="block text-[10px] text-gray-500 mt-0.5">{m.type}</span>
+              </button>
+            );
+          })}
+        </div>
+        {(form.nav_mascot || "") === "custom" && (
+          <Field
+            label="URL maskot custom (png/svg/webp)"
+            type="text"
+            value={form.nav_mascot_url || ""}
+            onChange={(v) => setField("nav_mascot_url", v)}
+          />
+        )}
+        <p className="text-[11px] text-gray-500">
+          File di folder public: turtle-svgrepo-com.png, bear-svgrepo-com.png, 4th-july.png, cash-svgrepo-com.png, profit-svgrepo-com.png
+        </p>
+      </section>
 
       {/* ── Loading Progress ── */}
       <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 space-y-4">

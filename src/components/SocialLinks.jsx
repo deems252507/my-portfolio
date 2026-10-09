@@ -52,7 +52,11 @@ const SocialLinks = () => {
       rel="noopener noreferrer"
       className={`group relative flex items-center ${
         large ? "justify-between p-4" : "gap-3 p-4"
-      } rounded-xl bg-white/5 border border-white/10 overflow-hidden hover:border-white/20 transition-all duration-500`}
+      } rounded-xl overflow-hidden transition-all duration-500`}
+      style={{
+        background: "color-mix(in srgb, var(--col-white) 5%, transparent)",
+        border: "1px solid var(--col-border)",
+      }}
       data-aos="fade-up"
       data-aos-delay={delay}
     >
@@ -76,24 +80,29 @@ const SocialLinks = () => {
             <>
               {link.displayName ? (
                 <span
-                  className={`font-bold text-gray-200 group-hover:text-white transition-colors duration-300 ${
+                  className={`font-bold transition-colors duration-300 ${
                     large ? "text-lg pt-[0.2rem] tracking-tight leading-none" : "text-sm"
                   }`}
+                  style={{ color: "var(--col-white)" }}
                 >
                   {link.displayName}
                 </span>
               ) : null}
               {link.subText ? (
-                <span className="text-xs sm:text-sm text-gray-400 truncate group-hover:text-gray-300 transition-colors duration-300">
+                <span
+                  className="text-xs sm:text-sm truncate transition-colors duration-300"
+                  style={{ color: "var(--col-muted)" }}
+                >
                   {link.subText}
                 </span>
               ) : null}
             </>
           ) : (
             <span
-              className={`font-bold text-gray-200 group-hover:text-white transition-colors duration-300 ${
+              className={`font-bold transition-colors duration-300 ${
                 large ? "text-lg pt-[0.2rem] tracking-tight leading-none" : "text-sm"
               }`}
+              style={{ color: "var(--col-white)" }}
             >
               {link.name}
             </span>
@@ -112,7 +121,13 @@ const SocialLinks = () => {
   );
 
   return (
-    <div className="w-full h-full flex flex-col bg-gradient-to-br from-white/10 to-white/5 rounded-2xl p-6 py-8 backdrop-blur-xl">
+    <div
+      className="w-full h-full flex flex-col rounded-2xl p-6 py-8 backdrop-blur-xl"
+      style={{
+        background: "color-mix(in srgb, var(--col-bg2) 55%, transparent)",
+        border: "1px solid var(--col-border)",
+      }}
+    >
       {title ? (
         <h3
           className="text-xl font-semibold mb-6 flex items-center gap-2"
