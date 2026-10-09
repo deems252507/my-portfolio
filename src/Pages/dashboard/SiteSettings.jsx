@@ -707,6 +707,37 @@ export default function SiteSettings() {
 
 
 
+
+      {/* ── Tampilan Projects ── */}
+      <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 space-y-3">
+        <div>
+          <h2 className="text-white font-medium">Tampilan Projects</h2>
+          <p className="text-xs text-gray-500 mt-0.5">Grid klasik atau Carousel card expansion (gaya stack).</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {[
+            { id: "carousel", label: "Carousel expansion" },
+            { id: "grid", label: "Grid" },
+          ].map((opt) => {
+            const active = (form.project_layout || "carousel") === opt.id;
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => setField("project_layout", opt.id)}
+                className={`px-4 py-2 rounded-xl text-sm border transition-colors ${
+                  active
+                    ? "border-cyan-500/50 bg-cyan-500/10 text-white"
+                    : "border-white/10 text-gray-400 hover:text-white"
+                }`}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
       {/* ── Navbar & Maskot ── */}
       <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 space-y-4">
         <div>
