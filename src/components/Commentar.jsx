@@ -235,6 +235,8 @@ const Komentar = () => {
         // Initialize AOS
         AOS.init({
             once: false,
+            mirror: true,
+            offset: 10,
             duration: 1000,
         });
     }, []);

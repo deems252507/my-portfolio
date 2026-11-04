@@ -8,7 +8,7 @@ const SocialLinks = () => {
   const { content } = useSiteContent();
 
   useEffect(() => {
-    AOS.init({ offset: 10 });
+    AOS.init({ once: false, mirror: true, offset: 10, duration: 1000 });
   }, []);
 
   // Judul & subteks opsional — string kosong = tidak ditampilkan / tanpa default paksa

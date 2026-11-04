@@ -275,3 +275,10 @@ Jika kamu mengalami kendala, ikuti panduan ini secara perlahan dari awal. Selama
 - "Find me" dihapus dari hero (sosial media sudah ada di bagian bawah).
 - Carousel project di HP berjalan otomatis (3,5 dtk), berhenti 6 dtk setelah disentuh, dan berhenti saat tidak terlihat.
 - ID card: animasi masuk baru (tali turun perlahan + kartu fade-in, mulai saat kartu terlihat), fisika 60 Hz tetap supaya halus di laptop 120/144 Hz, rendering kartu pakai GPU transform dan tali tajam di layar retina. Berlaku di laptop dan HP.
+
+## Pembaruan 3 — Welcome / loading screen
+- Teks partikel kini mengikuti ukuran layar (tinggi area `clamp(170px, 26vh, 320px)`, lebar sampai 1024px) sehingga tetap proporsional dan tidak terpotong saat zoom browser dikecilkan/dibesarkan atau di layar ultrawide. Ukuran font juga otomatis menyesuaikan tinggi & lebar area.
+- Posisi teks sebelumnya mengacu ke seluruh layar (bukan kotaknya), kini terkunci di kotak teks sehingga tidak bergeser/menimpa bar loading.
+
+## Pembaruan 4 — Animasi scroll
+- Animasi AOS kini muncul saat scroll ke bawah **dan** ke atas (`mirror: true`, `once: false`). Konfigurasi di App, SocialLinks, dan Commentar disamakan (sebelumnya ada `AOS.init` lain yang menimpa pengaturan).

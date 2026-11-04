@@ -51,7 +51,7 @@ const WelcomeScreen = ({ onLoadingComplete }) => {
     <AnimatePresence>
       {isLoading && (
         <motion.div
-          className="fixed inset-0 z-50"
+          className="fixed inset-0 z-50 overflow-hidden"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit="exit"
@@ -59,10 +59,11 @@ const WelcomeScreen = ({ onLoadingComplete }) => {
         >
           <WelcomeBackground content={content} />
 
-          <div className="relative z-10 min-h-screen flex items-center justify-center px-4">
-            <div className="w-full max-w-4xl mx-auto">
+          <div className="relative z-10 min-h-[100dvh] flex items-center justify-center px-4 sm:px-8">
+            <div className="w-full max-w-5xl mx-auto">
               <motion.div
-                className="text-center mb-6 sm:mb-8 md:mb-12 w-full h-[150px] sm:h-[200px] flex justify-center"
+                className="relative text-center mb-6 sm:mb-8 md:mb-12 w-full flex justify-center"
+                style={{ height: "clamp(170px, 26vh, 320px)" }}
                 variants={childVariants}
               >
                 <ParticleTextEffect

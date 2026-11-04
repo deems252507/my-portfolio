@@ -172,11 +172,12 @@ export function ParticleTextEffect({
     offscreenCtx.textBaseline = "middle";
 
     // Responsive font sizes — fit within parent width & height so text tidak terpotong
-    const widthRatio  = Math.min(1, cssW / 800);
-    const heightRatio = Math.min(1, cssH / 260);
+    // Skala mengikuti ukuran container (boleh > 1 di layar lebar / saat zoom-out)
+    const widthRatio  = Math.min(1.7, cssW / 800);
+    const heightRatio = Math.min(1.7, cssH / 260);
     const scale = Math.min(widthRatio, heightRatio);
-    let fontSize1 = Math.max(22, 65 * scale);
-    let fontSize2 = Math.max(28, 80 * scale);
+    let fontSize1 = Math.max(16, 65 * scale);
+    let fontSize2 = Math.max(20, 80 * scale);
 
     const { line1: L1, line2: L2, fontFamily: FF, color1: C1, color2: C2 } = propsRef.current;
     const fontStack = `"${FF}", Arial, sans-serif`;
@@ -192,6 +193,14 @@ export function ParticleTextEffect({
       const fit = maxTextW / measured;
       fontSize1 *= fit;
       fontSize2 *= fit;
+    }
+
+    // Pastikan kedua baris muat di tinggi canvas (tidak terpotong atas/bawah)
+    const maxFs2ByHeight = (cssH * 0.88) / 2.17;
+    if (fontSize2 > maxFs2ByHeight && maxFs2ByHeight > 0) {
+      const fitH = maxFs2ByHeight / fontSize2;
+      fontSize1 *= fitH;
+      fontSize2 *= fitH;
     }
 
     // Line 1
@@ -350,13 +359,19 @@ export function ParticleTextEffect({
     updateSize();
     animate();
 
-    window.addEventListener("resize", updateSize);
+    let resizeTimer;
+    const onResize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(updateSize, 120);
+    };
+    window.addEventListener("resize", onResize);
 
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
-      window.removeEventListener("resize", updateSize);
+      clearTimeout(resizeTimer);
+      window.removeEventListener("resize", onResize);
     };
   }, [line1, line2, fontFamily, color1, color2]);
 

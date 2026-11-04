@@ -70,7 +70,7 @@ function App() {
 
   // Inisialisasi AOS sekali di sini
   useEffect(() => {
-    AOS.init({ once: false, offset: 10, duration: 1000, mirror: false });
+    AOS.init({ once: false, mirror: true, offset: 10, duration: 1000 });
     
     // Preload halaman di background selagi WelcomeScreen berjalan
     // Ini mencegah lag/patah-patah saat animasi WelcomeScreen selesai
