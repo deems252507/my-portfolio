@@ -4,13 +4,12 @@ import { ParticleTextEffect } from '../components/ui/particle-text-effect';
 import { useSiteContent } from '../context/SiteContentContext';
 import WelcomeBackground from '../components/WelcomeBackground';
 import LoadingProgress from '../components/LoadingProgress';
-import { getLoadingDuration } from '../lib/siteContent';
 
 const WelcomeScreen = ({ onLoadingComplete }) => {
   const [isLoading, setIsLoading] = useState(true);
   const { content } = useSiteContent();
 
-  const loadDuration = getLoadingDuration(content);
+  const loadDuration = Math.max(1500, (parseFloat(content?.loading_duration) || 4.5) * 1000);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -73,7 +72,6 @@ const WelcomeScreen = ({ onLoadingComplete }) => {
                   fontFamily={content.welcome_font || "Arial"}
                   color1={content.welcome_color1 || "#ffffff"}
                   color2={content.welcome_color2 || "#2563eb"}
-                  duration={loadDuration}
                 />
               </motion.div>
 

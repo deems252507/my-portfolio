@@ -133,18 +133,12 @@ export function ParticleTextEffect({
   fontFamily = "Arial",
   color1 = "#ffffff",
   color2 = "#2563eb",
-  duration = 7000,
 }) {
   const canvasRef = useRef(null);
   const animationRef = useRef();
   const particlesRef = useRef([]);
   const offscreenCanvasRef = useRef(null);
   const frameCountRef = useRef(0);
-  const startTimeRef = useRef(0);
-  const accRef = useRef(0);
-  const lastTimeRef = useRef(0);
-  const durationRef = useRef(duration);
-  durationRef.current = duration;
   const propsRef = useRef({ line1, line2, fontFamily, color1, color2 });
   propsRef.current = { line1, line2, fontFamily, color1, color2 };
 
@@ -167,9 +161,6 @@ export function ParticleTextEffect({
   // cssW/cssH are the CSS pixel dimensions (not physical); used for text layout and particle coords
   const drawText = (canvas, cssW, cssH) => {
     frameCountRef.current = 0; // reset animation frame
-    startTimeRef.current = performance.now();
-    accRef.current = 0;
-    lastTimeRef.current = performance.now();
     const offscreenCanvas = document.createElement("canvas");
     // Offscreen canvas works in CSS pixels — no DPR scaling needed here
     offscreenCanvas.width  = cssW;
@@ -262,8 +253,8 @@ export function ParticleTextEffect({
           const randomPos = generateRandomPos(cssW / 2, cssH / 2, (cssW + cssH) / 2, cssW, cssH);
           particle.pos.x = randomPos.x;
           particle.pos.y = randomPos.y;
-          particle.maxSpeed = Math.random() * 3 + 4.5; // lebih pelan supaya perakitan teks terlihat
-          particle.maxForce = particle.maxSpeed * 0.07;
+          particle.maxSpeed = Math.random() * 8 + 8;
+          particle.maxForce = particle.maxSpeed * 0.1;
           particle.particleSize = 3;
           particle.colorBlendRate = Math.random() * 0.0275 + 0.0025;
           particles.push(particle);
@@ -305,29 +296,12 @@ export function ParticleTextEffect({
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Waktu berbasis ms (bukan jumlah frame) → sama di layar 60/120/144 Hz
-    const nowT = performance.now();
-    let dt = nowT - lastTimeRef.current;
-    lastTimeRef.current = nowT;
-    if (dt > 100) dt = 1000 / 60;
-    accRef.current += dt;
-    const STEP = 1000 / 60;
-    let stepsToRun = 0;
-    while (accRef.current >= STEP && stepsToRun < 4) {
-      accRef.current -= STEP;
-      stepsToRun++;
-    }
-    if (stepsToRun === 4) accRef.current = 0;
     frameCountRef.current++;
-
-    // Teks solid mulai muncul di ~55% durasi loading, penuh di ~78%
-    const total = Math.max(3000, durationRef.current);
-    const elapsed = nowT - startTimeRef.current;
-    const solidStart = total * 0.55;
-    const solidFade = total * 0.23;
+    
+    // Calculate how much the solid text should fade in
     let textOpacity = 0;
-    if (elapsed > solidStart) {
-      textOpacity = Math.min(1, (elapsed - solidStart) / solidFade);
+    if (frameCountRef.current > 90) {
+      textOpacity = Math.min(1, (frameCountRef.current - 90) / 60);
     }
 
     // Fade out particles so no dots are visible once text is perfectly solid
@@ -335,7 +309,7 @@ export function ParticleTextEffect({
 
     for (let i = particles.length - 1; i >= 0; i--) {
       const particle = particles[i];
-      for (let k = 0; k < stepsToRun; k++) particle.move();
+      particle.move();
       particle.draw(ctx, drawAsPoints);
 
       if (particle.isKilled) {
