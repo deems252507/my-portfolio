@@ -993,36 +993,56 @@ export default function SiteSettings() {
 
         <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 space-y-4">
           <div>
-            <h3 className="text-sm text-white font-medium">Penyesuaian ukuran foto karakter</h3>
+            <h3 className="text-sm text-white font-medium">Paskan ukuran foto (kamu &amp; karakter)</h3>
             <p className="text-xs text-gray-500 mt-1">
-              Atur supaya kepala &amp; bahu karakter sejajar dengan foto profil. Geser, lalu cek di halaman About.
+              Besar-kecilkan dan geser salah satu foto sampai kepala &amp; bahu sejajar. Pratinjau menumpuk kedua foto.
             </p>
           </div>
-          {[
-            ["hover_scale", "Ukuran", 0.6, 1.3, 0.01, "0.86"],
-            ["hover_offset_x", "Geser kiri / kanan (%)", -15, 15, 0.5, "0"],
-            ["hover_offset_y", "Geser atas / bawah (%)", -15, 15, 0.5, "1.5"],
-          ].map(([key, label, min, max, step, def]) => (
-            <label key={key} className="block space-y-1.5">
-              <span className="flex justify-between text-xs text-gray-400">
-                <span>{label}</span>
-                <span className="font-mono text-gray-300">{form[key] ?? def}</span>
-              </span>
-              <input
-                type="range" min={min} max={max} step={step}
-                value={form[key] ?? def}
-                onChange={(e) => setField(key, e.target.value)}
-                className="w-full"
-              />
-            </label>
-          ))}
-          <button
-            type="button"
-            onClick={() => setForm((prev) => ({ ...prev, hover_scale: "0.86", hover_offset_x: "0", hover_offset_y: "1.5" }))}
-            className="text-xs text-cyan-300 hover:text-cyan-200"
-          >
-            Kembalikan ke default
-          </button>
+
+          <div className="grid md:grid-cols-[220px_1fr] gap-5">
+            {/* Pratinjau tumpukan */}
+            <div className="relative w-full aspect-square max-w-[220px] rounded-xl overflow-hidden border border-white/10 bg-black/40">
+              <img src={form.profile_photo} alt="" className="absolute inset-0 w-full h-full object-contain object-bottom"
+                style={{ transformOrigin: "50% 40%", transform: `translate(${form.profile_offset_x ?? 0}%, ${form.profile_offset_y ?? 0}%) scale(${form.profile_scale ?? 1})` }} />
+              <img src={form.hover_photo} alt="" className="absolute inset-0 w-full h-full object-contain object-bottom opacity-50"
+                style={{ transformOrigin: "50% 40%", transform: `translate(${form.hover_offset_x ?? 0}%, ${form.hover_offset_y ?? 1.5}%) scale(${form.hover_scale ?? 0.86})` }} />
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-5">
+              {[
+                ["Foto kamu", "profile", ["1", "0", "0"]],
+                ["Foto karakter", "hover", ["0.86", "0", "1.5"]],
+              ].map(([title, pre, defs]) => (
+                <div key={pre} className="space-y-3">
+                  <h4 className="text-xs font-medium text-white">{title}</h4>
+                  {[
+                    ["scale", "Ukuran", 0.5, 1.5, 0.01, defs[0]],
+                    ["offset_x", "Geser kiri / kanan (%)", -20, 20, 0.5, defs[1]],
+                    ["offset_y", "Geser atas / bawah (%)", -20, 20, 0.5, defs[2]],
+                  ].map(([k, label, min, max, step, def]) => {
+                    const key = `${pre}_${k}`;
+                    return (
+                      <label key={key} className="block space-y-1">
+                        <span className="flex justify-between text-[11px] text-gray-400">
+                          <span>{label}</span>
+                          <span className="font-mono text-gray-300">{form[key] ?? def}</span>
+                        </span>
+                        <input type="range" min={min} max={max} step={step}
+                          value={form[key] ?? def}
+                          onChange={(e) => setField(key, e.target.value)}
+                          className="w-full" />
+                      </label>
+                    );
+                  })}
+                  <button type="button"
+                    onClick={() => setForm((prev) => ({ ...prev, [`${pre}_scale`]: defs[0], [`${pre}_offset_x`]: defs[1], [`${pre}_offset_y`]: defs[2] }))}
+                    className="text-xs text-cyan-300 hover:text-cyan-200">
+                    Kembalikan ke default
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">

@@ -186,6 +186,9 @@ export const DEFAULT_CONTENT = {
   idcard_location: "Banjarmasin, ID",
   idcard_valid: "12/2030",
   idcard_site: "rizkydm.vercel.app",
+  profile_scale: "1",
+  profile_offset_x: "0",
+  profile_offset_y: "0",
   hover_scale: "0.86",
   hover_offset_x: "0",
   hover_offset_y: "1.5",
@@ -275,6 +278,17 @@ export function getHoverFit(content) {
   return {
     transformOrigin: "50% 40%", // titik tumpu di sekitar mata
     transform: `translate(${x}%, ${y}%) scale(${scale})`,
+  };
+}
+
+/** Transform foto profil (orang) — dipakai bersama getHoverFit untuk memaskan kedua foto. */
+export function getProfileFit(content) {
+  const c = content || DEFAULT_CONTENT;
+  const num = (v, d) => (Number.isFinite(parseFloat(v)) ? parseFloat(v) : d);
+  const scale = Math.min(1.5, Math.max(0.5, num(c.profile_scale, 1)));
+  return {
+    transformOrigin: "50% 40%",
+    transform: `translate(${num(c.profile_offset_x, 0)}%, ${num(c.profile_offset_y, 0)}%) scale(${scale})`,
   };
 }
 

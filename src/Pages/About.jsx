@@ -4,7 +4,7 @@ import { motion, useMotionValue, useSpring, useMotionTemplate } from "framer-mot
 import { FileText, Code, Award, Trophy, ArrowUpRight, GraduationCap, Briefcase } from "lucide-react"
 import { BorderBeamPanel } from "../components/ui/border-beam-panel"
 import { supabase } from "../supabase"
-import { getHoverFit } from "../lib/siteContent"
+import { getHoverFit, getProfileFit } from "../lib/siteContent"
 
 const Header = memo(() => (
   <div className="text-center lg:mb-16 mb-10 px-[5%]">
@@ -19,7 +19,7 @@ const Header = memo(() => (
   </div>
 ))
 
-const ProfileImage = memo(({ profilePhoto, hoverPhoto, hoverFit }) => {
+const ProfileImage = memo(({ profilePhoto, hoverPhoto, hoverFit, profileFit }) => {
   const [isHoveringImg, setIsHoveringImg] = useState(false)
   const [isTouchDevice, setIsTouchDevice] = useState(false)
   const containerRef = useRef(null)
@@ -92,6 +92,7 @@ const ProfileImage = memo(({ profilePhoto, hoverPhoto, hoverFit }) => {
               src={profilePhoto}
               alt="Profile"
               className="absolute inset-0 w-full h-full object-contain object-bottom grayscale-[20%] group-hover:grayscale-0 transition-all duration-700 pointer-events-none"
+              style={profileFit}
               loading="lazy"
             />
 
@@ -192,6 +193,7 @@ const StatCard = memo(({ icon: Icon, value, label, description, animation, accen
 const AboutPage = () => {
   const { content } = useSiteContent()
   const hoverFit = useMemo(() => getHoverFit(content), [content])
+  const profileFit = useMemo(() => getProfileFit(content), [content])
   const [stats, setStats] = useState({ totalProjects: 0, totalCertificates: 0, totalAwards: 0 })
 
   useEffect(() => {
@@ -285,7 +287,7 @@ const AboutPage = () => {
 
           {/* Center: Image */}
           <div className="min-w-0 flex justify-center items-end">
-            <ProfileImage profilePhoto={content.profile_photo} hoverPhoto={content.hover_photo} hoverFit={hoverFit} />
+            <ProfileImage profilePhoto={content.profile_photo} hoverPhoto={content.hover_photo} hoverFit={hoverFit} profileFit={profileFit} />
           </div>
 
           {/* Right: Description + View Projects */}
@@ -308,7 +310,7 @@ const AboutPage = () => {
         <div className="flex flex-col items-start gap-6 lg:hidden">
           {/* Photo */}
           <div className="flex justify-center w-full">
-            <ProfileImage profilePhoto={content.profile_photo} hoverPhoto={content.hover_photo} hoverFit={hoverFit} />
+            <ProfileImage profilePhoto={content.profile_photo} hoverPhoto={content.hover_photo} hoverFit={hoverFit} profileFit={profileFit} />
           </div>
           {/* Name */}
           <h3 className="text-4xl sm:text-5xl font-bold tracking-tight leading-tight text-left w-full"
