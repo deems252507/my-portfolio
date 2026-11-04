@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { getLoadingDuration } from "../lib/siteContent";
 
 export const LOADING_STYLES = [
   { id: "bar", label: "Bar Linear", desc: "Garis klasik" },
@@ -17,7 +18,7 @@ export default function LoadingProgress({ content }) {
   const [progress, setProgress] = useState(0);
 
   const style = content?.loading_style || "bar";
-  const duration = Math.max(1500, (parseFloat(content?.loading_duration) || 4) * 1000);
+  const duration = getLoadingDuration(content);
   const label = content?.loading_text || "Loading";
   const showPct = content?.loading_show_pct !== "false";
   const color = content?.loading_color || "#ffffff";

@@ -282,3 +282,7 @@ Jika kamu mengalami kendala, ikuti panduan ini secara perlahan dari awal. Selama
 
 ## Pembaruan 4 — Animasi scroll
 - Animasi AOS kini muncul saat scroll ke bawah **dan** ke atas (`mirror: true`, `once: false`). Konfigurasi di App, SocialLinks, dan Commentar disamakan (sebelumnya ada `AOS.init` lain yang menimpa pengaturan).
+
+## Pembaruan 5 — Statistik & loading
+- Panel statistik kecil di bawah ID card (desktop): jumlah Projects & Certificates otomatis dari database (hitung naik saat muncul) + statistik ke-3 yang bisa diubah di Admin → "Statistik Home".
+- Layar loading lebih lama & teks lebih terbaca: durasi bawaan 7 dtk (minimal 5 dtk, slider admin 5–12 dtk). Partikel bergerak lebih pelan, teks solid muncul di ~55% durasi dan penuh di ~78%, berbasis waktu (sama di layar 60/120/144 Hz).

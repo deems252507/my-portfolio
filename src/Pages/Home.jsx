@@ -4,6 +4,7 @@ import { ExternalLink, ArrowRight } from "lucide-react"
 import SpotifyCard from "../components/ui/spotify-card"
 import IDCardLanyard from "../components/ui/id-card-lanyard"
 import { useSiteContent } from "../context/SiteContentContext"
+import { supabase } from "../supabase"
 import { typingWords, getIdCardSettings } from "../lib/siteContent"
 
 /* ── Constants ── */
@@ -101,6 +102,98 @@ const CTAButton = memo(({ href, text, icon: Icon, variant = "primary" }) => {
   )
 })
 
+/* ── Statistik kecil di bawah ID card (desktop) ── */
+function useCountUp(target, active, duration = 1400) {
+  const [val, setVal] = useState(0)
+  useEffect(() => {
+    if (!active) return
+    const end = Number(target) || 0
+    if (end <= 0) { setVal(0); return }
+    let raf
+    const t0 = performance.now()
+    const tick = (now) => {
+      const p = Math.min(1, (now - t0) / duration)
+      const eased = 1 - Math.pow(1 - p, 3)
+      setVal(Math.round(end * eased))
+      if (p < 1) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [target, active, duration])
+  return val
+}
+
+const StatItem = memo(({ value, label, active }) => {
+  const n = useCountUp(value, active)
+  return (
+    <div className="flex-1 text-center px-2">
+      <div
+        className="text-2xl font-bold tabular-nums leading-none"
+        style={{ color: "var(--col-white)", fontFamily: "var(--font-display)" }}
+      >
+        {n}
+        <span style={{ color: "var(--col-blue-light)" }}>+</span>
+      </div>
+      <div className="mt-1.5 text-[10px] uppercase tracking-[0.18em]" style={{ color: "var(--col-muted)" }}>
+        {label}
+      </div>
+    </div>
+  )
+})
+
+const StatsPanel = ({ style, thirdLabel, thirdValue }) => {
+  const [counts, setCounts] = useState(() => {
+    try {
+      const p = JSON.parse(localStorage.getItem("projects") || "[]")
+      const c = JSON.parse(localStorage.getItem("certificates") || "[]")
+      return { projects: p.length, certs: c.length }
+    } catch {
+      return { projects: 0, certs: 0 }
+    }
+  })
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    let alive = true
+    Promise.all([
+      supabase.from("projects").select("id", { count: "exact", head: true }),
+      supabase.from("certificates").select("id", { count: "exact", head: true }),
+    ])
+      .then(([p, c]) => {
+        if (!alive) return
+        setCounts((prev) => ({
+          projects: p.count ?? prev.projects,
+          certs: c.count ?? prev.certs,
+        }))
+      })
+      .catch(() => {})
+      .finally(() => alive && setReady(true))
+    return () => { alive = false }
+  }, [])
+
+  return (
+    <div
+      className="absolute z-20 w-[280px] rounded-2xl px-3 py-4 backdrop-blur-md"
+      style={{
+        background: "rgba(255,255,255,0.03)",
+        border: "1px solid var(--col-border)",
+        boxShadow: "0 18px 40px -18px color-mix(in srgb, var(--col-blue) 35%, transparent)",
+        ...style,
+      }}
+      data-aos="fade-up"
+      data-aos-delay="1300"
+    >
+      <div className="flex items-stretch">
+        <StatItem value={counts.projects} label="Projects" active={ready} />
+        <div className="w-px self-stretch" style={{ background: "var(--col-border)" }} />
+        <StatItem value={counts.certs} label="Certificates" active={ready} />
+        <div className="w-px self-stretch" style={{ background: "var(--col-border)" }} />
+        <StatItem value={thirdValue} label={thirdLabel} active={ready} />
+      </div>
+    </div>
+  )
+}
+
 /* ── Main Component ── */
 const Home = () => {
   const { content } = useSiteContent()
@@ -176,6 +269,17 @@ const Home = () => {
             anchorY={0}
             zIndex={20}
             {...cardProps}
+          />
+        )}
+        {idEnabled && isDesktop && String(content.stats_enabled) !== "false" && (
+          <StatsPanel
+            thirdLabel={content.stats_third_label || "Tech Stack"}
+            thirdValue={content.stats_third_value || "0"}
+            style={{
+              left: `${idc.anchorX}%`,
+              top: 140 + 460 + (idc.photoHeight - 112) + 28,
+              transform: "translateX(-50%)",
+            }}
           />
         )}
         <div className="relative z-10">

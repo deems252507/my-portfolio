@@ -191,6 +191,9 @@ export const DEFAULT_CONTENT = {
   idcard_photo_y: "32", // posisi vertikal foto (%)
   idcard_photo_zoom: "1", // zoom foto
   idcard_anchor_x: "74", // posisi kartu di halaman desktop (% dari kiri)
+  stats_enabled: "true", // panel statistik di bawah ID card (desktop)
+  stats_third_label: "Tech Stack",
+  stats_third_value: "12",
   profile_scale: "1",
   profile_offset_x: "0",
   profile_offset_y: "0",
@@ -245,7 +248,7 @@ export const DEFAULT_CONTENT = {
 
   // Loading progress
   loading_style: "bar",
-  loading_duration: "4.5",
+  loading_duration: "7",
   loading_text: "Loading",
   loading_show_pct: "true",
   loading_color: "#ffffff",
@@ -295,6 +298,12 @@ export function getProfileFit(content) {
     transformOrigin: "50% 40%",
     transform: `translate(${num(c.profile_offset_x, 0)}%, ${num(c.profile_offset_y, 0)}%) scale(${scale})`,
   };
+}
+
+/** Durasi layar loading (ms). Minimal 5 detik supaya animasi teks sempat terbaca. */
+export function getLoadingDuration(content) {
+  const sec = parseFloat(content?.loading_duration);
+  return Math.max(5000, (Number.isFinite(sec) ? sec : 7) * 1000);
 }
 
 /** Pengaturan foto & posisi ID card (angka dibatasi supaya aman). */

@@ -80,6 +80,15 @@ const SECTIONS = [
     ],
   },
   {
+    title: "Statistik Home (di bawah ID card)",
+    hint: "Panel kecil di bawah ID card (desktop). Jumlah Projects & Certificates otomatis dari database. Ketik false untuk menyembunyikan.",
+    fields: [
+      ["stats_enabled", "Tampilkan statistik (true / false)", "text"],
+      ["stats_third_label", "Label statistik ke-3", "text"],
+      ["stats_third_value", "Angka statistik ke-3", "text"],
+    ],
+  },
+  {
     title: "Pendidikan",
     fields: [
       ["edu1_school", "Sekolah / kampus 1", "text"],
@@ -1002,14 +1011,14 @@ export default function SiteSettings() {
           />
           <label className="block space-y-1.5">
             <span className="text-xs text-gray-400">
-              Durasi ({form.loading_duration || "4.5"} detik)
+              Durasi ({form.loading_duration || "7"} detik, minimal 5)
             </span>
             <input
               type="range"
-              min="2"
-              max="10"
+              min="5"
+              max="12"
               step="0.5"
-              value={form.loading_duration || "4.5"}
+              value={form.loading_duration || "7"}
               onChange={(e) => setField("loading_duration", e.target.value)}
               className="w-full accent-cyan-500"
             />
