@@ -12,6 +12,7 @@ import {
   saveSiteContent,
   uploadSiteImage,
   applyTheme,
+  getIdCardSettings,
 } from "../../lib/siteContent";
 import { useSiteContent } from "../../context/SiteContentContext";
 import { WELCOME_BG_STYLES } from "../../components/WelcomeBackground";
@@ -211,15 +212,155 @@ function PhotoField({ label, value, onChange }) {
   );
 }
 
+function RangeField({ label, hint, value, min, max, step, unit = "", onChange }) {
+  const num = Number.isFinite(parseFloat(value)) ? parseFloat(value) : min;
+  return (
+    <label className="block space-y-1.5">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs text-gray-400">{label}</span>
+        <span className="text-xs font-mono text-blue-300">
+          {num}
+          {unit}
+        </span>
+      </div>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={num}
+        onChange={(e) => onChange(String(e.target.value))}
+        className="w-full accent-blue-500"
+      />
+      {hint && <span className="block text-[10px] text-gray-600">{hint}</span>}
+    </label>
+  );
+}
+
+/** Atur ukuran foto, posisi (geser), zoom, dan posisi kartu ID di halaman. Ada preview langsung. */
+function IdCardPhotoEditor({ form, setField }) {
+  const idc = getIdCardSettings(form);
+  const photo = form.idcard_photo || form.profile_photo;
+  return (
+    <div className="rounded-xl border border-white/10 bg-black/20 p-4 space-y-4">
+      <div>
+        <p className="text-sm text-white">Foto & posisi ID card</p>
+        <p className="text-xs text-gray-500 mt-0.5">
+          Geser slider untuk memperbesar area foto, menaikkan/menurunkan wajah, atau memperbesar (zoom). Preview di bawah
+          langsung berubah.
+        </p>
+      </div>
+      <div className="grid md:grid-cols-[240px_1fr] gap-5 items-start">
+        <div className="mx-auto md:mx-0 w-[240px]">
+          <div
+            className="relative w-full rounded-xl overflow-hidden bg-[#eae7de] border border-white/10"
+            style={{ height: idc.photoHeight }}
+          >
+            {photo ? (
+              <img
+                src={photo}
+                alt="Preview foto ID card"
+                draggable={false}
+                className="absolute inset-0 w-full h-full object-cover"
+                style={{
+                  objectPosition: `${idc.photoX}% ${idc.photoY}%`,
+                  transformOrigin: `${idc.photoX}% ${idc.photoY}%`,
+                  transform: `scale(${idc.photoZoom})`,
+                }}
+              />
+            ) : (
+              <span className="absolute inset-0 flex items-center justify-center text-xs text-gray-500">
+                Belum ada foto
+              </span>
+            )}
+          </div>
+          <p className="text-[10px] text-gray-600 mt-1.5 text-center">Preview area foto kartu</p>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <RangeField
+            label="Tinggi area foto"
+            hint="Makin besar = foto makin besar"
+            min={100}
+            max={230}
+            step={2}
+            unit="px"
+            value={form.idcard_photo_height || "150"}
+            onChange={(v) => setField("idcard_photo_height", v)}
+          />
+          <RangeField
+            label="Zoom foto"
+            min={1}
+            max={3}
+            step={0.05}
+            unit="x"
+            value={form.idcard_photo_zoom || "1"}
+            onChange={(v) => setField("idcard_photo_zoom", v)}
+          />
+          <RangeField
+            label="Geser foto kiri ↔ kanan"
+            min={0}
+            max={100}
+            step={1}
+            unit="%"
+            value={form.idcard_photo_x || "50"}
+            onChange={(v) => setField("idcard_photo_x", v)}
+          />
+          <RangeField
+            label="Geser foto atas ↕ bawah"
+            min={0}
+            max={100}
+            step={1}
+            unit="%"
+            value={form.idcard_photo_y || "32"}
+            onChange={(v) => setField("idcard_photo_y", v)}
+          />
+          <RangeField
+            label="Posisi kartu di halaman (desktop)"
+            hint="Geser kartu ke kiri/kanan. Di HP kartu otomatis di tengah."
+            min={50}
+            max={92}
+            step={1}
+            unit="%"
+            value={form.idcard_anchor_x || "74"}
+            onChange={(v) => setField("idcard_anchor_x", v)}
+          />
+          <div className="flex items-end">
+            <button
+              type="button"
+              onClick={() => {
+                setField("idcard_photo_height", DEFAULT_CONTENT.idcard_photo_height);
+                setField("idcard_photo_zoom", DEFAULT_CONTENT.idcard_photo_zoom);
+                setField("idcard_photo_x", DEFAULT_CONTENT.idcard_photo_x);
+                setField("idcard_photo_y", DEFAULT_CONTENT.idcard_photo_y);
+                setField("idcard_anchor_x", DEFAULT_CONTENT.idcard_anchor_x);
+              }}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-white/10 text-xs text-gray-300 hover:text-white hover:bg-white/5"
+            >
+              <RotateCcw className="w-3.5 h-3.5" /> Reset posisi & ukuran
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function SiteSettings() {
   const { setContent } = useSiteContent();
   const [form, setForm] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [snapshot, setSnapshot] = useState("");
 
   useEffect(() => {
     fetchSiteContent()
-      .then(setForm)
-      .catch(() => setForm({ ...DEFAULT_CONTENT }));
+      .then((data) => {
+        setForm(data);
+        setSnapshot(JSON.stringify(data));
+      })
+      .catch(() => {
+        setForm({ ...DEFAULT_CONTENT });
+        setSnapshot(JSON.stringify(DEFAULT_CONTENT));
+      });
   }, []);
 
   const setField = (key, value) => {
@@ -247,6 +388,7 @@ export default function SiteSettings() {
       const saved = await saveSiteContent(form);
       setContent(saved);
       setForm(saved);
+      setSnapshot(JSON.stringify(saved));
       Swal.fire({
         icon: "success",
         title: "Tersimpan",
@@ -268,6 +410,31 @@ export default function SiteSettings() {
       setSaving(false);
     }
   };
+
+  const dirty = !!form && JSON.stringify(form) !== snapshot;
+
+  // Ctrl/Cmd + S = simpan dari posisi scroll mana pun
+  useEffect(() => {
+    const onKey = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        if (!saving && form) onSave();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
+
+  // Peringatan kalau menutup tab saat ada perubahan belum disimpan
+  useEffect(() => {
+    if (!dirty) return;
+    const onBeforeUnload = (e) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [dirty]);
 
   if (!form) {
     return <p className="text-sm text-gray-400">Memuat konten...</p>;
@@ -937,6 +1104,7 @@ export default function SiteSettings() {
               </div>
             ))}
           </div>
+          {section.title.startsWith("ID Card") && <IdCardPhotoEditor form={form} setField={setField} />}
         </section>
       ))}
 
@@ -1067,6 +1235,24 @@ export default function SiteSettings() {
           ))}
         </div>
       </section>
+
+      {/* Bar simpan melayang — selalu terlihat, tidak perlu scroll ke atas */}
+      <div className="fixed bottom-4 left-4 right-4 lg:left-auto lg:right-8 z-40 flex justify-end pointer-events-none">
+        <div className="pointer-events-auto flex items-center gap-3 rounded-2xl border border-white/15 bg-[#0a0a1a]/90 backdrop-blur-xl px-3 py-2 shadow-2xl shadow-black/50">
+          <span className="hidden sm:flex items-center gap-2 text-xs text-gray-400">
+            <span className={`w-2 h-2 rounded-full ${dirty ? "bg-amber-400 animate-pulse" : "bg-emerald-400"}`} />
+            {dirty ? "Ada perubahan belum disimpan" : "Semua tersimpan"}
+          </span>
+          <button
+            onClick={onSave}
+            disabled={saving}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-sm font-medium text-white disabled:opacity-60"
+          >
+            <Save className="w-4 h-4" />
+            {saving ? "Menyimpan..." : "Simpan"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

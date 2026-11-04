@@ -4,7 +4,7 @@ import { Github, Linkedin, Mail, ExternalLink, Instagram, ArrowRight } from "luc
 import SpotifyCard from "../components/ui/spotify-card"
 import IDCardLanyard from "../components/ui/id-card-lanyard"
 import { useSiteContent } from "../context/SiteContentContext"
-import { typingWords } from "../lib/siteContent"
+import { typingWords, getIdCardSettings } from "../lib/siteContent"
 
 /* ── Constants ── */
 const TYPING_SPEED   = 100
@@ -16,13 +16,13 @@ const PAUSE_DURATION = 2000
 const HeroTitle = memo(({ line1, line2 }) => (
   <div className="space-y-1" data-aos="fade-up" data-aos-delay="400">
     <div
-      className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-none tracking-tight grad-vi"
+      className="text-[2.6rem] sm:text-6xl lg:text-6xl xl:text-7xl font-bold leading-[1.05] tracking-tight grad-vi"
       style={{ fontFamily: "var(--font-display)" }}
     >
       {line1}
     </div>
     <div
-      className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-none tracking-tight text-white"
+      className="text-[2.6rem] sm:text-6xl lg:text-6xl xl:text-7xl font-bold leading-[1.05] tracking-tight text-white"
       style={{ fontFamily: "var(--font-display)" }}
     >
       {line2}
@@ -104,7 +104,7 @@ const CTAButton = memo(({ href, text, icon: Icon, variant = "primary" }) => {
 const SocialLink = memo(({ icon: Icon, link, label }) => (
   <a href={link} target="_blank" rel="noopener noreferrer" aria-label={label}>
     <button
-      className="group p-2.5 rounded-xl transition-all duration-300"
+      className="group p-2.5 rounded-xl transition-all duration-300 hover:-translate-y-0.5"
       style={{
         border: "1px solid var(--col-border)",
         background: "rgba(255,255,255,0.03)",
@@ -119,7 +119,8 @@ const SocialLink = memo(({ icon: Icon, link, label }) => (
 /* ── Main Component ── */
 const Home = () => {
   const { content } = useSiteContent()
-  // ID card hanya di desktop (lg+); di mobile Spotify tetap di bawah seperti semula
+  // Desktop (lg+): kartu ID menggantung di sisi kanan hero.
+  // Mobile/tablet: kartu tampil sebagai blok sendiri di antara tombol & Spotify.
   const [isDesktop, setIsDesktop] = useState(
     () => typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches
   )
@@ -129,7 +130,8 @@ const Home = () => {
     mq.addEventListener("change", onChange)
     return () => mq.removeEventListener("change", onChange)
   }, [])
-  const showIdCard = isDesktop && String(content.idcard_enabled) !== "false"
+  const idEnabled = String(content.idcard_enabled) !== "false"
+  const idc = getIdCardSettings(content)
   const words = typingWords(content)
   const socialLinks = [
     { icon: Github, link: content.github, label: "GitHub" },
@@ -137,16 +139,39 @@ const Home = () => {
     { icon: Instagram, link: content.instagram, label: "Instagram" },
   ].filter((s) => s.link)
   const subtitle = content.hero_subtitle
+
+  const cardProps = {
+    name: content.full_name,
+    role: content.job_title,
+    brand: content.idcard_brand,
+    brandTagline: content.idcard_tagline,
+    idNumber: content.idcard_number,
+    location: content.idcard_location,
+    validThru: content.idcard_valid,
+    site: content.idcard_site,
+    photo: content.idcard_photo || content.profile_photo,
+    githubUrl: content.github,
+    linkedinUrl: content.linkedin,
+    instagramUrl: content.instagram,
+    photoHeight: idc.photoHeight,
+    photoX: idc.photoX,
+    photoY: idc.photoY,
+    photoZoom: idc.photoZoom,
+  }
+  // tinggi kartu = 460 + (tinggi foto - 112); blok mobile = tali + kartu + sedikit ruang
+  const MOBILE_ROPE = 90
+  const mobileBlockHeight = MOBILE_ROPE + 460 + (idc.photoHeight - 112) + 36
+
   return (
     <>
       <Helmet>
         <title>{content.full_name} | Portofolio</title>
         <meta name="description" content={content.meta_description} />
         <meta name="robots" content="index, follow" />
-        <link rel="canonical" href="https://ekawahyu-portofolio-eka-wahyu-s-projects.vercel.app" />
+        <link rel="canonical" href="https://rizkydm.vercel.app" />
         <meta property="og:title"       content={`${content.full_name} | Portofolio`} />
         <meta property="og:description" content={content.meta_description} />
-        <meta property="og:url"         content="https://ekawahyu-portofolio-eka-wahyu-s-projects.vercel.app" />
+        <meta property="og:url"         content="https://rizkydm.vercel.app" />
         <meta property="og:type"        content="website" />
         <script type="application/ld+json">{`
           {
@@ -154,90 +179,102 @@ const Home = () => {
             "@type": "Person",
             "name": "${content.full_name}",
             "jobTitle": "${content.job_title}",
-            "url": "https://ekawahyu-portofolio-eka-wahyu-s-projects.vercel.app",
+            "url": "https://rizkydm.vercel.app",
             "sameAs": ${JSON.stringify([content.github, content.linkedin, content.instagram].filter(Boolean))}
           }
         `}</script>
       </Helmet>
 
       <div
-        className="min-h-screen overflow-x-clip px-[5%] sm:px-[5%] lg:px-[10%] relative"
+        className="min-h-screen overflow-x-clip px-[5%] sm:px-[6%] lg:px-[8%] xl:px-[10%] relative"
         id="Home"
       >
-        {showIdCard && (
+        {idEnabled && isDesktop && (
           <IDCardLanyard
             mode="section"
-            anchorX="74%"
+            anchorX={`${idc.anchorX}%`}
             anchorY={0}
             zIndex={20}
-            name={content.full_name}
-            role={content.job_title}
-            brand={content.idcard_brand}
-            brandTagline={content.idcard_tagline}
-            idNumber={content.idcard_number}
-            location={content.idcard_location}
-            validThru={content.idcard_valid}
-            site={content.idcard_site}
-            photo={content.idcard_photo || content.profile_photo}
-            githubUrl={content.github}
-            linkedinUrl={content.linkedin}
-            instagramUrl={content.instagram}
+            {...cardProps}
           />
         )}
         <div className="relative z-10">
           <div className="container mx-auto min-h-screen flex items-center justify-center">
-            <div className="flex flex-col lg:flex-row items-center justify-center min-h-screen pt-28 pb-12 lg:pt-24 lg:pb-0 gap-8 lg:gap-16 md:justify-between w-full">
+            <div className="flex flex-col lg:flex-row items-center justify-center min-h-screen pt-28 pb-12 lg:pt-24 lg:pb-8 gap-8 lg:gap-16 md:justify-between w-full">
 
               {/* ─── Left Column ─── */}
-              <div className="w-full lg:w-1/2 space-y-7 text-left order-1">
+              <div className="w-full lg:w-[55%] xl:w-1/2 space-y-5 sm:space-y-6 text-left order-1">
                 <HeroTitle line1={content.hero_line_1} line2={content.hero_line_2} />
                 {/* TypeWriter is isolated so only it re-renders, not the whole page */}
                 <TypeWriter key={words.join('|')} words={words} />
 
                 {/* Description */}
                 <p
-                  className="text-base md:text-lg max-w-xl leading-relaxed font-light"
+                  className="text-sm sm:text-base lg:text-[0.95rem] xl:text-lg max-w-xl leading-relaxed font-light"
                   style={{ color: "var(--col-muted)" }}
                   data-aos="fade-up" data-aos-delay="700"
                 >
                   {subtitle}
                 </p>
 
-                {/* CTA Row */}
+                {/* CTA + Find me — satu baris rapi (wrap otomatis di layar sempit) */}
                 <div
-                  className="flex flex-wrap gap-3"
+                  className="flex flex-wrap items-center gap-x-5 gap-y-4"
                   data-aos="fade-up" data-aos-delay="900"
                 >
-                  <CTAButton href="#Portofolio" text="Project"  icon={ExternalLink} variant="primary" />
-                  <CTAButton href="#Contact"    text="Contact Me"    icon={ArrowRight}   variant="secondary" />
+                  <div className="flex flex-wrap gap-3">
+                    <CTAButton href="#Portofolio" text="Project"    icon={ExternalLink} variant="primary" />
+                    <CTAButton href="#Contact"    text="Contact Me" icon={ArrowRight}   variant="secondary" />
+                  </div>
+
+                  {socialLinks.length > 0 && (
+                    <div className="flex items-center gap-3 sm:pl-5 sm:border-l" style={{ borderColor: "var(--col-border)" }}>
+                      <span className="text-[11px] text-blue-400 tracking-widest uppercase">Find me</span>
+                      <div className="flex items-center gap-2">
+                        {socialLinks.map((s, i) => (
+                          <SocialLink key={i} {...s} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {/* Social Links */}
-                <div
-                  className="hidden sm:flex items-center gap-3 pt-1"
-                  data-aos="fade-up" data-aos-delay="1100"
-                >
-                  <span className="text-xs text-blue-400 tracking-widest uppercase mr-1">Find me</span>
-                  {socialLinks.map((s, i) => (
-                    <SocialLink key={i} {...s} />
-                  ))}
-                </div>
+                {/* ID card — hanya mobile/tablet, blok sendiri supaya tidak menimpa teks */}
+                {idEnabled && !isDesktop && (
+                  <div
+                    className="relative mx-auto w-full max-w-[420px]"
+                    style={{ height: mobileBlockHeight }}
+                    data-aos="fade-up" data-aos-delay="300"
+                  >
+                    <IDCardLanyard
+                      mode="section"
+                      anchorX="50%"
+                      anchorY={0}
+                      ropeLength={MOBILE_ROPE}
+                      zIndex={5}
+                      hintText="Geser untuk berayun · Ketuk untuk membalik"
+                      {...cardProps}
+                    />
+                  </div>
+                )}
 
-                {/* Spotify ringkas — pindah ke kiri saat ID card tampil */}
-                {showIdCard && (
-                  <div data-aos="fade-up" data-aos-delay="1200">
-                    <SpotifyCard compact className="max-w-[420px]" />
+                {/* Spotify ringkas — selalu di bawah, lebar menyesuaikan perangkat */}
+                {idEnabled && (
+                  <div data-aos="fade-up" data-aos-delay="1100" className="w-full max-w-[420px] mx-auto lg:mx-0">
+                    <SpotifyCard compact className="w-full" />
                   </div>
                 )}
               </div>
 
-              {/* ─── Right Column — Spotify player ─── */}
-              <div
-                className="w-full lg:w-1/2 min-h-[350px] sm:min-h-[450px] lg:min-h-[650px] relative flex items-center justify-center lg:justify-end order-2 mt-5 sm:mt-0 lg:translate-x-12"
-                data-aos="fade-left" data-aos-delay="500"
-              >
-                {!showIdCard && <SpotifyCard className="relative z-10" />}
-              </div>
+              {/* ─── Right Column — Spotify penuh (hanya jika ID card dimatikan) ─── */}
+              {!idEnabled && (
+                <div
+                  className="w-full lg:w-1/2 relative flex items-center justify-center lg:justify-end order-2 lg:min-h-[650px] lg:translate-x-12"
+                  data-aos="fade-left" data-aos-delay="500"
+                >
+                  <SpotifyCard className="relative z-10" />
+                </div>
+              )}
 
             </div>
           </div>

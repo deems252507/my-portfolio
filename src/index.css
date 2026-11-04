@@ -229,3 +229,8 @@ body {
 .theme-btn-outline:hover {
   background: color-mix(in srgb, var(--col-blue) 10%, transparent) !important;
 }
+
+
+/* Sembunyikan scrollbar pada daftar geser (carousel mobile) */
+.hide-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.hide-scrollbar::-webkit-scrollbar { display: none; }

@@ -30,7 +30,7 @@ const CSS = `
 .idcl-rope{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
 .idcl-rail{ position:absolute; top:0; width:64px; height:6px; transform:translateX(-50%);
   background:linear-gradient(180deg,#3a4150,#21252f); border-radius:0 0 4px 4px; box-shadow:0 2px 6px rgba(0,0,0,.5); pointer-events:none; }
-.idcl-card{ position:absolute; width:clamp(196px,60vw,236px); aspect-ratio:236/460; perspective:1400px;
+.idcl-card{ position:absolute; width:clamp(220px,62vw,262px); height:calc(460px + var(--idcl-photo-h,112px) - 112px); perspective:1400px;
   cursor:grab; touch-action:none; user-select:none; transform-origin:top center; pointer-events:auto; }
 .idcl-card:active{ cursor:grabbing; }
 .idcl-flipper{ position:relative; width:100%; height:100%; transform-style:preserve-3d; }
@@ -62,10 +62,11 @@ const CSS = `
 .idcl-pillars{ display:flex; flex-direction:column; align-items:flex-end; gap:1px; }
 .idcl-pillars span{ font-family:var(--idcl-font-mono); font-size:7px; letter-spacing:.1em; text-transform:uppercase; color:var(--idcl-card-soft); }
 .idcl-pillars i{ width:16px; height:2px; background:var(--idcl-card-ink); margin-top:3px; }
-.idcl-photo{ position:relative; width:100%; height:112px; border-radius:10px; background:#eae7de; overflow:visible; margin-bottom:12px; flex-shrink:0;
+.idcl-photo{ position:relative; width:100%; height:var(--idcl-photo-h,112px); border-radius:10px; background:#eae7de; overflow:visible; margin-bottom:12px; flex-shrink:0;
   box-shadow:inset 0 0 0 1px rgba(0,0,0,.08),inset 0 2px 6px rgba(0,0,0,.12); }
 .idcl-photo-clip{ position:absolute; inset:0; border-radius:10px; overflow:hidden; }
 .idcl-photo-clip img, .idcl-photo-clip svg{ width:100%; height:100%; display:block; }
+.idcl-photo-clip img{ will-change:transform; }
 .idcl-photo-clip img{ object-fit:cover; object-position:50% 32%; pointer-events:none; -webkit-user-drag:none; }
 .idcl-verified{ position:absolute; right:-6px; bottom:-6px; width:22px; height:22px; border-radius:50%;
   background:linear-gradient(160deg,var(--idcl-accent),var(--idcl-accent-dim)); display:flex; align-items:center; justify-content:center;
@@ -79,7 +80,7 @@ const CSS = `
 .idcl-idrow-labels div{ display:flex; gap:8px; align-items:baseline; }
 .idcl-idrow-labels span{ width:56px; flex-shrink:0; font-size:7.6px; letter-spacing:.06em; text-transform:uppercase; color:var(--idcl-card-soft); }
 .idcl-idrow-labels b{ font-size:9.5px; font-weight:600; color:var(--idcl-card-ink); }
-.idcl-footer{ width:100%; margin-top:12px; padding-top:10px; border-top:1px solid var(--idcl-card-line); text-align:center;
+.idcl-footer{ width:100%; margin-top:auto; padding-top:10px; border-top:1px solid var(--idcl-card-line); text-align:center;
   font-family:var(--idcl-font-mono); font-size:8.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--idcl-card-soft); }
 .idcl-footer i{ color:var(--idcl-card-line); font-style:normal; margin:0 5px; }
 .idcl-stripe{ width:100%; height:30px; background:repeating-linear-gradient(45deg,#1b1d24,#1b1d24 6px,#26282f 6px,#26282f 12px); border-radius:3px; margin-bottom:12px; }
@@ -131,6 +132,12 @@ export function IDCardLanyard({
   anchorY = 6,
   zIndex = 60,
   showHint = true,
+  hintText = "Drag to swing · Click to flip",
+  photoHeight = 150,
+  photoX = 50,
+  photoY = 32,
+  photoZoom = 1,
+  ropeLength = 140,
   className = "",
 }) {
   const sceneRef = useRef(null);
@@ -214,7 +221,7 @@ export function IDCardLanyard({
     resize();
 
     const NUM_POINTS = 13;
-    const REST_LENGTH = 140;
+    const REST_LENGTH = ropeLength;
     const SEGMENT_LENGTH = REST_LENGTH / (NUM_POINTS - 1);
     const GRAVITY = 0.55;
     const FRICTION = 0.98;
@@ -492,14 +499,14 @@ export function IDCardLanyard({
       window.removeEventListener("resize", onResize);
       document.removeEventListener("pointerout", onPointerOut);
     };
-  }, [anchorX, anchorY]);
+  }, [anchorX, anchorY, ropeLength]);
 
   const section = mode === "section";
 
   return (
     <div
       className={`idcl-root ${className}`}
-      style={{ "--idcl-z": zIndex, "--idcl-hint-left": anchorX }}
+      style={{ "--idcl-z": zIndex, "--idcl-hint-left": anchorX, "--idcl-photo-h": `${photoHeight}px` }}
     >
       <style>{CSS}</style>
 
@@ -532,7 +539,16 @@ export function IDCardLanyard({
               <div className="idcl-photo">
                 <div className="idcl-photo-clip">
                   {photo ? (
-                    <img src={photo} alt={name} draggable={false} />
+                    <img
+                      src={photo}
+                      alt={name}
+                      draggable={false}
+                      style={{
+                        objectPosition: `${photoX}% ${photoY}%`,
+                        transformOrigin: `${photoX}% ${photoY}%`,
+                        transform: `scale(${photoZoom})`,
+                      }}
+                    />
                   ) : (
                     <svg viewBox="0 0 182 100" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
                       <defs>
@@ -640,7 +656,7 @@ export function IDCardLanyard({
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
               <path d="M12 3v18M7 8l-4 4 4 4M17 8l4 4-4 4" />
             </svg>
-            Drag to swing · Click to flip
+            {hintText}
           </div>
         )}
       </div>

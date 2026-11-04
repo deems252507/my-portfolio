@@ -186,6 +186,11 @@ export const DEFAULT_CONTENT = {
   idcard_location: "Banjarmasin, ID",
   idcard_valid: "12/2030",
   idcard_site: "rizkydm.vercel.app",
+  idcard_photo_height: "150", // tinggi area foto (px)
+  idcard_photo_x: "50", // posisi horizontal foto (%)
+  idcard_photo_y: "32", // posisi vertikal foto (%)
+  idcard_photo_zoom: "1", // zoom foto
+  idcard_anchor_x: "74", // posisi kartu di halaman desktop (% dari kiri)
   profile_scale: "1",
   profile_offset_x: "0",
   profile_offset_y: "0",
@@ -289,6 +294,22 @@ export function getProfileFit(content) {
   return {
     transformOrigin: "50% 40%",
     transform: `translate(${num(c.profile_offset_x, 0)}%, ${num(c.profile_offset_y, 0)}%) scale(${scale})`,
+  };
+}
+
+/** Pengaturan foto & posisi ID card (angka dibatasi supaya aman). */
+export function getIdCardSettings(content) {
+  const c = content || DEFAULT_CONTENT;
+  const num = (v, d, min, max) => {
+    const n = parseFloat(v);
+    return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : d;
+  };
+  return {
+    photoHeight: num(c.idcard_photo_height, 150, 100, 230),
+    photoX: num(c.idcard_photo_x, 50, 0, 100),
+    photoY: num(c.idcard_photo_y, 32, 0, 100),
+    photoZoom: num(c.idcard_photo_zoom, 1, 1, 3),
+    anchorX: num(c.idcard_anchor_x, 74, 50, 92),
   };
 }
 

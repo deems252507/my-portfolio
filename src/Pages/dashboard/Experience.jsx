@@ -247,7 +247,7 @@ const ExperienceForm = ({
         </div>
       </div>
 
-      <div className="flex justify-end gap-2 pt-1">
+      <div className="sticky bottom-0 z-10 -mx-1 flex justify-end gap-2 px-1 py-3 bg-[#0a0a1a]/95 backdrop-blur border-t border-white/10">
         <button
           type="button"
           onClick={onCancel}

@@ -261,3 +261,12 @@ Ingin websitemu bisa dibuka oleh siapa saja di internet secara gratis? Pakai **V
 ### 🎉 SELAMAT KARYAMU SIAP DIPAMERKAN!
 Jika kamu mengalami kendala, ikuti panduan ini secara perlahan dari awal. Selamat berkarya! 🚀
 
+
+
+## Pembaruan: ID card, tampilan HP, carousel project, tombol simpan admin
+
+- **ID card (Admin → Profil & Konten → "ID Card 3D")**: ada panel *Foto & posisi ID card* dengan preview langsung. Atur tinggi area foto, zoom, geser foto kiri/kanan & atas/bawah, dan posisi kartu di halaman (desktop). Tombol *Reset posisi & ukuran* mengembalikan ke bawaan.
+- **HP/tablet**: ID card kini tampil sebagai blok sendiri (di tengah) di bawah tombol Project/Contact, lalu Spotify. "Find me" tampil di semua perangkat dan sejajar dengan tombol.
+- **Carousel project**: desktop memakai kartu gambar-atas/teks-bawah (teks tidak menimpa gambar); HP memakai daftar geser (swipe) satu kartu per layar.
+- **Admin**: tombol *Simpan* melayang di pojok bawah (selalu terlihat), shortcut Ctrl/Cmd+S, penanda "belum disimpan", dan tombol Simpan/Update di form Project & Experience menempel di bawah modal.
+- Tidak ada perubahan skema Supabase: pengaturan baru (`idcard_photo_*`, `idcard_anchor_x`) otomatis tersimpan di JSON `site_content`.

@@ -131,7 +131,14 @@ export default function FullWidthTabs() {
   }, []);
 
   // Swipe handlers — wrapped in useCallback to avoid re-creation each render
-  const handleTouchStart = useCallback((e) => { touchStartX.current = e.touches[0].clientX; }, []);
+  const handleTouchStart = useCallback((e) => {
+    // Jangan pindah tab kalau geseran dimulai di dalam carousel project
+    if (e.target.closest && e.target.closest("[data-no-tab-swipe]")) {
+      touchStartX.current = null;
+      return;
+    }
+    touchStartX.current = e.touches[0].clientX;
+  }, []);
   const handleTouchEnd = useCallback((e) => {
     if (touchStartX.current === null) return;
     const diff = touchStartX.current - e.changedTouches[0].clientX;
