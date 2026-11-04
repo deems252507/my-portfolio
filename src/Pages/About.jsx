@@ -4,6 +4,7 @@ import { motion, useMotionValue, useSpring, useMotionTemplate } from "framer-mot
 import { FileText, Code, Award, Trophy, ArrowUpRight, GraduationCap, Briefcase } from "lucide-react"
 import { BorderBeamPanel } from "../components/ui/border-beam-panel"
 import { supabase } from "../supabase"
+import { getHoverFit } from "../lib/siteContent"
 
 const Header = memo(() => (
   <div className="text-center lg:mb-16 mb-10 px-[5%]">
@@ -18,7 +19,7 @@ const Header = memo(() => (
   </div>
 ))
 
-const ProfileImage = memo(({ profilePhoto, hoverPhoto }) => {
+const ProfileImage = memo(({ profilePhoto, hoverPhoto, hoverFit }) => {
   const [isHoveringImg, setIsHoveringImg] = useState(false)
   const [isTouchDevice, setIsTouchDevice] = useState(false)
   const containerRef = useRef(null)
@@ -103,14 +104,14 @@ const ProfileImage = memo(({ profilePhoto, hoverPhoto }) => {
                   : { repeat: Infinity, duration: 4, repeatDelay: 2, times: [0, 0.4, 0.6, 1], ease: "easeInOut" },
               }}
             >
-              <img src={hoverPhoto} alt="Hint" className="w-full h-full object-contain object-bottom" />
+              <img src={hoverPhoto} alt="Hint" className="w-full h-full object-contain object-bottom" style={hoverFit} />
             </motion.div>
 
             <motion.div
               className="absolute inset-0 pointer-events-none z-10"
               style={{ WebkitMaskImage: maskImage, maskImage, WebkitMaskRepeat: "no-repeat", maskRepeat: "no-repeat" }}
             >
-              <img src={hoverPhoto} alt="Reveal" className="w-full h-full object-contain object-bottom" />
+              <img src={hoverPhoto} alt="Reveal" className="w-full h-full object-contain object-bottom" style={hoverFit} />
             </motion.div>
 
             <motion.div
@@ -190,6 +191,7 @@ const StatCard = memo(({ icon: Icon, value, label, description, animation, accen
 
 const AboutPage = () => {
   const { content } = useSiteContent()
+  const hoverFit = useMemo(() => getHoverFit(content), [content])
   const [stats, setStats] = useState({ totalProjects: 0, totalCertificates: 0, totalAwards: 0 })
 
   useEffect(() => {
@@ -283,7 +285,7 @@ const AboutPage = () => {
 
           {/* Center: Image */}
           <div className="min-w-0 flex justify-center items-end">
-            <ProfileImage profilePhoto={content.profile_photo} hoverPhoto={content.hover_photo} />
+            <ProfileImage profilePhoto={content.profile_photo} hoverPhoto={content.hover_photo} hoverFit={hoverFit} />
           </div>
 
           {/* Right: Description + View Projects */}
@@ -306,7 +308,7 @@ const AboutPage = () => {
         <div className="flex flex-col items-start gap-6 lg:hidden">
           {/* Photo */}
           <div className="flex justify-center w-full">
-            <ProfileImage profilePhoto={content.profile_photo} hoverPhoto={content.hover_photo} />
+            <ProfileImage profilePhoto={content.profile_photo} hoverPhoto={content.hover_photo} hoverFit={hoverFit} />
           </div>
           {/* Name */}
           <h3 className="text-4xl sm:text-5xl font-bold tracking-tight leading-tight text-left w-full"

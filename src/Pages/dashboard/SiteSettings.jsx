@@ -66,6 +66,19 @@ const SECTIONS = [
     ],
   },
   {
+    title: "ID Card 3D (Home)",
+    hint: "Kartu gantung di hero. Foto kartu diatur di bagian Gambar → Foto ID card (kosong = pakai foto profil). Ketik false di 'Tampilkan' untuk menyembunyikan.",
+    fields: [
+      ["idcard_enabled", "Tampilkan ID card (true / false)", "text"],
+      ["idcard_brand", "Wordmark kartu", "text"],
+      ["idcard_tagline", "Caption wordmark", "text"],
+      ["idcard_number", "Nomor ID", "text"],
+      ["idcard_location", "Lokasi", "text"],
+      ["idcard_valid", "Valid thru", "text"],
+      ["idcard_site", "Situs di sisi belakang", "text"],
+    ],
+  },
+  {
     title: "Pendidikan",
     fields: [
       ["edu1_school", "Sekolah / kampus 1", "text"],
@@ -89,6 +102,7 @@ const SECTIONS = [
 
 const PHOTOS = [
   ["profile_photo", "Foto profil"],
+  ["idcard_photo", "Foto ID card (kosong = foto profil)"],
   ["edu1_logo", "Logo pendidikan 1"],
   ["edu2_logo", "Logo pendidikan 2"],
 ];
@@ -975,6 +989,40 @@ export default function SiteSettings() {
               </button>
             );
           })}
+        </div>
+
+        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 space-y-4">
+          <div>
+            <h3 className="text-sm text-white font-medium">Penyesuaian ukuran foto karakter</h3>
+            <p className="text-xs text-gray-500 mt-1">
+              Atur supaya kepala &amp; bahu karakter sejajar dengan foto profil. Geser, lalu cek di halaman About.
+            </p>
+          </div>
+          {[
+            ["hover_scale", "Ukuran", 0.6, 1.3, 0.01, "0.86"],
+            ["hover_offset_x", "Geser kiri / kanan (%)", -15, 15, 0.5, "0"],
+            ["hover_offset_y", "Geser atas / bawah (%)", -15, 15, 0.5, "1.5"],
+          ].map(([key, label, min, max, step, def]) => (
+            <label key={key} className="block space-y-1.5">
+              <span className="flex justify-between text-xs text-gray-400">
+                <span>{label}</span>
+                <span className="font-mono text-gray-300">{form[key] ?? def}</span>
+              </span>
+              <input
+                type="range" min={min} max={max} step={step}
+                value={form[key] ?? def}
+                onChange={(e) => setField(key, e.target.value)}
+                className="w-full"
+              />
+            </label>
+          ))}
+          <button
+            type="button"
+            onClick={() => setForm((prev) => ({ ...prev, hover_scale: "0.86", hover_offset_x: "0", hover_offset_y: "1.5" }))}
+            className="text-xs text-cyan-300 hover:text-cyan-200"
+          >
+            Kembalikan ke default
+          </button>
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">

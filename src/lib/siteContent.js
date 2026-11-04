@@ -176,6 +176,19 @@ export const DEFAULT_CONTENT = {
   profile_photo: "/Photo.png",
   hover_photo: "/PhotoSpiderman.png",
   hover_char: "spiderman",
+  // Penyesuaian ukuran foto karakter agar pas dengan foto profil (bisa diatur di admin)
+  // ID Card 3D di hero (Home)
+  idcard_enabled: "true",
+  idcard_photo: "", // kosong = pakai foto profil
+  idcard_brand: "RIZKY DM",
+  idcard_tagline: "Digital Product Dev",
+  idcard_number: "RDM-2026",
+  idcard_location: "Banjarmasin, ID",
+  idcard_valid: "12/2030",
+  idcard_site: "rizkydm.vercel.app",
+  hover_scale: "0.86",
+  hover_offset_x: "0",
+  hover_offset_y: "1.5",
   hover_photo_spiderman: "/PhotoSpiderman.png",
   hover_photo_ironman: "",
   hover_photo_captain: "",
@@ -251,6 +264,19 @@ export const LIGHTNING_MOODS = {
   gold:    { label: "Gold",    hue: "45",  speed: "1.2", intensity: "1.4", size: "2.0" },
   red:     { label: "Red",     hue: "0",   speed: "1.7", intensity: "1.5", size: "2.1" },
 };
+
+/** Transform foto karakter supaya kepala & bahu sejajar dengan foto profil. */
+export function getHoverFit(content) {
+  const c = content || DEFAULT_CONTENT;
+  const num = (v, d) => (Number.isFinite(parseFloat(v)) ? parseFloat(v) : d);
+  const scale = Math.min(1.5, Math.max(0.5, num(c.hover_scale, 0.86)));
+  const x = num(c.hover_offset_x, 0);
+  const y = num(c.hover_offset_y, 1.5);
+  return {
+    transformOrigin: "50% 40%", // titik tumpu di sekitar mata
+    transform: `translate(${x}%, ${y}%) scale(${scale})`,
+  };
+}
 
 export function getLightningSettings(content) {
   const c = content || DEFAULT_CONTENT;

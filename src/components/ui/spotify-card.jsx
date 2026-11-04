@@ -2,7 +2,7 @@ import { ExternalLink } from "lucide-react";
 import { useSiteContent } from "../../context/SiteContentContext";
 import { toSpotifyEmbed } from "../../lib/siteContent";
 
-export default function SpotifyCard({ className = "" }) {
+export default function SpotifyCard({ className = "", compact = false }) {
   const { content } = useSiteContent();
   const embed = toSpotifyEmbed(content.spotify_url) || "https://open.spotify.com/embed/playlist/4oQDhGjv57BzeOThOWQeS9?utm_source=generator&theme=0";
   const openUrl = content.spotify_url || "https://open.spotify.com/playlist/4oQDhGjv57BzeOThOWQeS9";
@@ -18,6 +18,7 @@ export default function SpotifyCard({ className = "" }) {
       />
       
       {/* ── Text Section ── */}
+      {!compact && (
       <div className="relative p-6 pb-2 mt-2">
         <h2 className="text-3xl font-bold tracking-tight text-white mb-3">
           {content.spotify_title}
@@ -27,14 +28,15 @@ export default function SpotifyCard({ className = "" }) {
           {content.spotify_desc}
         </p>
       </div>
+      )}
 
       {/* ── Spotify Iframe ── */}
-      <div className="relative p-2 pt-0">
+      <div className={`relative p-2 ${compact ? "" : "pt-0"}`}>
         <iframe
           title="Spotify Playlist"
           src={embed}
           width="100%"
-          height="352"
+          height={compact ? "152" : "352"}
           allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
           className="relative block overflow-hidden rounded-xl border-0"
         />

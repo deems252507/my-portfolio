@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, memo } from "react"
 import { Helmet } from "react-helmet-async"
 import { Github, Linkedin, Mail, ExternalLink, Instagram, ArrowRight } from "lucide-react"
 import SpotifyCard from "../components/ui/spotify-card"
+import IDCardLanyard from "../components/ui/id-card-lanyard"
 import { useSiteContent } from "../context/SiteContentContext"
 import { typingWords } from "../lib/siteContent"
 
@@ -118,6 +119,17 @@ const SocialLink = memo(({ icon: Icon, link, label }) => (
 /* ── Main Component ── */
 const Home = () => {
   const { content } = useSiteContent()
+  // ID card hanya di desktop (lg+); di mobile Spotify tetap di bawah seperti semula
+  const [isDesktop, setIsDesktop] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches
+  )
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)")
+    const onChange = (e) => setIsDesktop(e.matches)
+    mq.addEventListener("change", onChange)
+    return () => mq.removeEventListener("change", onChange)
+  }, [])
+  const showIdCard = isDesktop && String(content.idcard_enabled) !== "false"
   const words = typingWords(content)
   const socialLinks = [
     { icon: Github, link: content.github, label: "GitHub" },
@@ -152,6 +164,26 @@ const Home = () => {
         className="min-h-screen overflow-x-clip px-[5%] sm:px-[5%] lg:px-[10%] relative"
         id="Home"
       >
+        {showIdCard && (
+          <IDCardLanyard
+            mode="section"
+            anchorX="74%"
+            anchorY={0}
+            zIndex={20}
+            name={content.full_name}
+            role={content.job_title}
+            brand={content.idcard_brand}
+            brandTagline={content.idcard_tagline}
+            idNumber={content.idcard_number}
+            location={content.idcard_location}
+            validThru={content.idcard_valid}
+            site={content.idcard_site}
+            photo={content.idcard_photo || content.profile_photo}
+            githubUrl={content.github}
+            linkedinUrl={content.linkedin}
+            instagramUrl={content.instagram}
+          />
+        )}
         <div className="relative z-10">
           <div className="container mx-auto min-h-screen flex items-center justify-center">
             <div className="flex flex-col lg:flex-row items-center justify-center min-h-screen pt-28 pb-12 lg:pt-24 lg:pb-0 gap-8 lg:gap-16 md:justify-between w-full">
@@ -190,6 +222,13 @@ const Home = () => {
                     <SocialLink key={i} {...s} />
                   ))}
                 </div>
+
+                {/* Spotify ringkas — pindah ke kiri saat ID card tampil */}
+                {showIdCard && (
+                  <div data-aos="fade-up" data-aos-delay="1200">
+                    <SpotifyCard compact className="max-w-[420px]" />
+                  </div>
+                )}
               </div>
 
               {/* ─── Right Column — Spotify player ─── */}
@@ -197,7 +236,7 @@ const Home = () => {
                 className="w-full lg:w-1/2 min-h-[350px] sm:min-h-[450px] lg:min-h-[650px] relative flex items-center justify-center lg:justify-end order-2 mt-5 sm:mt-0 lg:translate-x-12"
                 data-aos="fade-left" data-aos-delay="500"
               >
-                <SpotifyCard className="relative z-10" />
+                {!showIdCard && <SpotifyCard className="relative z-10" />}
               </div>
 
             </div>
