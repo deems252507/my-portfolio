@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, memo } from "react"
 import { Helmet } from "react-helmet-async"
-import { Github, Linkedin, Mail, ExternalLink, Instagram, ArrowRight } from "lucide-react"
+import { ExternalLink, ArrowRight } from "lucide-react"
 import SpotifyCard from "../components/ui/spotify-card"
 import IDCardLanyard from "../components/ui/id-card-lanyard"
 import { useSiteContent } from "../context/SiteContentContext"
@@ -101,21 +101,6 @@ const CTAButton = memo(({ href, text, icon: Icon, variant = "primary" }) => {
   )
 })
 
-const SocialLink = memo(({ icon: Icon, link, label }) => (
-  <a href={link} target="_blank" rel="noopener noreferrer" aria-label={label}>
-    <button
-      className="group p-2.5 rounded-xl transition-all duration-300 hover:-translate-y-0.5"
-      style={{
-        border: "1px solid var(--col-border)",
-        background: "rgba(255,255,255,0.03)",
-      }}
-      aria-label={label}
-    >
-      <Icon className="w-5 h-5 transition-colors" style={{ color: "var(--col-blue-light)" }} />
-    </button>
-  </a>
-))
-
 /* ── Main Component ── */
 const Home = () => {
   const { content } = useSiteContent()
@@ -133,11 +118,6 @@ const Home = () => {
   const idEnabled = String(content.idcard_enabled) !== "false"
   const idc = getIdCardSettings(content)
   const words = typingWords(content)
-  const socialLinks = [
-    { icon: Github, link: content.github, label: "GitHub" },
-    { icon: Linkedin, link: content.linkedin, label: "LinkedIn" },
-    { icon: Instagram, link: content.instagram, label: "Instagram" },
-  ].filter((s) => s.link)
   const subtitle = content.hero_subtitle
 
   const cardProps = {
@@ -217,26 +197,14 @@ const Home = () => {
                   {subtitle}
                 </p>
 
-                {/* CTA + Find me — satu baris rapi (wrap otomatis di layar sempit) */}
+                {/* CTA */}
                 <div
-                  className="flex flex-wrap items-center gap-x-5 gap-y-4"
+                  className="flex flex-wrap items-center gap-3"
                   data-aos="fade-up" data-aos-delay="900"
                 >
-                  <div className="flex flex-wrap gap-3">
-                    <CTAButton href="#Portofolio" text="Project"    icon={ExternalLink} variant="primary" />
-                    <CTAButton href="#Contact"    text="Contact Me" icon={ArrowRight}   variant="secondary" />
-                  </div>
+                  <CTAButton href="#Portofolio" text="Project"    icon={ExternalLink} variant="primary" />
+                  <CTAButton href="#Contact"    text="Contact Me" icon={ArrowRight}   variant="secondary" />
 
-                  {socialLinks.length > 0 && (
-                    <div className="flex items-center gap-3 sm:pl-5 sm:border-l" style={{ borderColor: "var(--col-border)" }}>
-                      <span className="text-[11px] text-blue-400 tracking-widest uppercase">Find me</span>
-                      <div className="flex items-center gap-2">
-                        {socialLinks.map((s, i) => (
-                          <SocialLink key={i} {...s} />
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
 
                 {/* ID card — hanya mobile/tablet, blok sendiri supaya tidak menimpa teks */}
@@ -244,7 +212,6 @@ const Home = () => {
                   <div
                     className="relative mx-auto w-full max-w-[420px]"
                     style={{ height: mobileBlockHeight }}
-                    data-aos="fade-up" data-aos-delay="300"
                   >
                     <IDCardLanyard
                       mode="section"

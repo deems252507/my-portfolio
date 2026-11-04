@@ -30,12 +30,12 @@ const CSS = `
 .idcl-rope{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
 .idcl-rail{ position:absolute; top:0; width:64px; height:6px; transform:translateX(-50%);
   background:linear-gradient(180deg,#3a4150,#21252f); border-radius:0 0 4px 4px; box-shadow:0 2px 6px rgba(0,0,0,.5); pointer-events:none; }
-.idcl-card{ position:absolute; width:clamp(220px,62vw,262px); height:calc(460px + var(--idcl-photo-h,112px) - 112px); perspective:1400px;
+.idcl-card{ position:absolute; left:0; top:0; will-change:transform,opacity; opacity:0; width:clamp(220px,62vw,262px); height:calc(460px + var(--idcl-photo-h,112px) - 112px); perspective:1400px;
   cursor:grab; touch-action:none; user-select:none; transform-origin:top center; pointer-events:auto; }
 .idcl-card:active{ cursor:grabbing; }
 .idcl-flipper{ position:relative; width:100%; height:100%; transform-style:preserve-3d; }
 .idcl-face{ position:absolute; inset:0; border-radius:18px; padding:16px 16px 14px; display:flex; flex-direction:column;
-  backface-visibility:hidden;
+  backface-visibility:hidden; -webkit-backface-visibility:hidden;
   box-shadow:0 32px 60px -16px rgba(0,0,0,.6),0 10px 20px -8px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.65),inset 0 0 0 1px rgba(0,0,0,.05); }
 .idcl-face::before{ content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
   background:linear-gradient(180deg,rgba(255,255,255,.55) 0%,transparent 24%),radial-gradient(rgba(0,0,0,.07) 1px,transparent 1.3px) 0 0/3px 3px;
@@ -209,11 +209,19 @@ export function IDCardLanyard({
     }
 
     const anchor = { x: resolveAnchorX(), y: anchorY };
+    let W = 0;
+    let H = 0;
+    const reduceMotion =
+      typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     function resize() {
       const rect = scene.getBoundingClientRect();
-      canvas.width = rect.width;
-      canvas.height = rect.height;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      W = rect.width;
+      H = rect.height;
+      canvas.width = Math.round(W * dpr);
+      canvas.height = Math.round(H * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       anchor.x = resolveAnchorX();
       rail.style.left = anchor.x + "px";
       rail.style.top = anchor.y - 3 + "px";
@@ -222,7 +230,7 @@ export function IDCardLanyard({
 
     const NUM_POINTS = 13;
     const REST_LENGTH = ropeLength;
-    const SEGMENT_LENGTH = REST_LENGTH / (NUM_POINTS - 1);
+    let segLen = REST_LENGTH / (NUM_POINTS - 1);
     const GRAVITY = 0.55;
     const FRICTION = 0.98;
     const CONSTRAINT_ITERATIONS = 6;
@@ -231,7 +239,7 @@ export function IDCardLanyard({
 
     const points = [];
     for (let i = 0; i < NUM_POINTS; i++) {
-      const y = anchor.y + i * SEGMENT_LENGTH;
+      const y = anchor.y + i * segLen;
       points.push({ x: anchor.x, y, oldx: anchor.x, oldy: y, pinned: i === 0 });
     }
 
@@ -254,8 +262,8 @@ export function IDCardLanyard({
 
     function clampToScene(p) {
       const margin = 18;
-      p.x = Math.max(margin, Math.min(canvas.width - margin, p.x));
-      p.y = Math.max(anchor.y + 20, Math.min(canvas.height - 30, p.y));
+      p.x = Math.max(margin, Math.min(W - margin, p.x));
+      p.y = Math.max(anchor.y + 20, Math.min(H - 30, p.y));
       return p;
     }
 
@@ -287,7 +295,7 @@ export function IDCardLanyard({
           const dx = p2.x - p1.x;
           const dy = p2.y - p1.y;
           const dist = Math.sqrt(dx * dx + dy * dy) || 0.0001;
-          const diff = (SEGMENT_LENGTH - dist) / dist;
+          const diff = (segLen - dist) / dist;
           const offX = dx * diff * 0.5;
           const offY = dy * diff * 0.5;
           const p2Locked = dragging && i + 1 === points.length - 1;
@@ -305,7 +313,7 @@ export function IDCardLanyard({
     }
 
     function drawRope() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.clearRect(0, 0, W, H);
       const path = [];
       path.push({ x: points[0].x, y: points[0].y });
       for (let i = 1; i < points.length - 1; i++) {
@@ -389,27 +397,29 @@ export function IDCardLanyard({
       ctx.restore();
     }
 
+    const cardPos = { x: 0, y: 0 };
+
     function positionCard() {
       const last = points[points.length - 1];
       const prev = points[points.length - 2];
       const angle = Math.atan2(last.y - prev.y, last.x - prev.x) - Math.PI / 2;
-      card.style.left = last.x - card.offsetWidth / 2 + "px";
-      card.style.top = last.y + "px";
-      card.style.transform = `rotate(${angle}rad)`;
+      cardPos.x = last.x - card.offsetWidth / 2;
+      cardPos.y = last.y;
+      card.style.transform = `translate3d(${cardPos.x.toFixed(2)}px, ${cardPos.y.toFixed(2)}px, 0) rotate(${angle}rad)`;
     }
 
     function updateTiltAndSheen() {
       flipCurrent += (flipTarget - flipCurrent) * 0.16;
       const hovering = !dragging && mouse.x > -1000;
       if (hovering) {
-        const cx = card.offsetLeft + card.offsetWidth / 2;
-        const cy = card.offsetTop + card.offsetHeight / 2;
+        const cx = cardPos.x + card.offsetWidth / 2;
+        const cy = cardPos.y + card.offsetHeight / 2;
         const dx = Math.max(-1, Math.min(1, (mouse.x - cx) / (card.offsetWidth / 2)));
         const dy = Math.max(-1, Math.min(1, (mouse.y - cy) / (card.offsetHeight / 2)));
         tiltTarget.y = dx * MAX_TILT;
         tiltTarget.x = -dy * MAX_TILT;
-        const mx = Math.max(0, Math.min(100, ((mouse.x - card.offsetLeft) / card.offsetWidth) * 100));
-        const my = Math.max(0, Math.min(100, ((mouse.y - card.offsetTop) / card.offsetHeight) * 100));
+        const mx = Math.max(0, Math.min(100, ((mouse.x - cardPos.x) / card.offsetWidth) * 100));
+        const my = Math.max(0, Math.min(100, ((mouse.y - cardPos.y) / card.offsetHeight) * 100));
         card.style.setProperty("--mx", mx + "%");
         card.style.setProperty("--my", my + "%");
         card.classList.add("idcl-hovering");
@@ -423,10 +433,69 @@ export function IDCardLanyard({
       flipper.style.transform = `rotateY(${flipCurrent + tiltCurrent.y}deg) rotateX(${tiltCurrent.x}deg)`;
     }
 
+    // ── Animasi masuk: tali memanjang perlahan (sedikit overshoot), kartu fade-in ──
+    const ENTER_DELAY = 250; // ms setelah terlihat di layar
+    const ENTER_DUR = 1700; // ms
+    const START_LEN = 0.22; // panjang tali awal (rasio)
+    let visibleSince = null;
+    let entered = reduceMotion;
+    const easeOutBack = (x) => {
+      const c1 = 1.05;
+      const c3 = c1 + 1;
+      return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
+    };
+    function updateEntrance(now) {
+      if (entered) {
+        segLen = REST_LENGTH / (NUM_POINTS - 1);
+        card.style.opacity = "1";
+        return;
+      }
+      if (visibleSince == null) {
+        card.style.opacity = "0";
+        segLen = (REST_LENGTH * START_LEN) / (NUM_POINTS - 1);
+        return;
+      }
+      const t = Math.min(1, Math.max(0, (now - visibleSince - ENTER_DELAY) / ENTER_DUR));
+      const e = easeOutBack(t);
+      segLen = (REST_LENGTH * (START_LEN + (1 - START_LEN) * e)) / (NUM_POINTS - 1);
+      card.style.opacity = String(Math.min(1, t * 2.2));
+      if (t >= 1) entered = true;
+    }
+
+    let io;
+    if (typeof IntersectionObserver !== "undefined" && !reduceMotion) {
+      io = new IntersectionObserver(
+        (entries) => {
+          if (entries.some((en) => en.isIntersecting) && visibleSince == null) {
+            visibleSince = performance.now();
+          }
+        },
+        { threshold: 0.35 }
+      );
+      io.observe(scene);
+    } else {
+      visibleSince = performance.now();
+    }
+
+    // Fisika jalan di 60 Hz tetap (laptop 120/144 Hz tidak jadi "ngebut")
+    const STEP = 1000 / 60;
+    let acc = 0;
+    let last = performance.now();
     let raf = 0;
-    function loop() {
-      updatePoints();
-      applyConstraints();
+    function loop(now) {
+      let dt = now - last;
+      last = now;
+      if (dt > 100) dt = STEP; // tab sempat tidak aktif
+      acc += dt;
+      updateEntrance(now);
+      let steps = 0;
+      while (acc >= STEP && steps < 4) {
+        updatePoints();
+        applyConstraints();
+        acc -= STEP;
+        steps++;
+      }
+      if (steps === 4) acc = 0;
       drawRope();
       drawClip();
       positionCard();
@@ -488,10 +557,11 @@ export function IDCardLanyard({
       ro.observe(scene);
     }
 
-    loop();
+    raf = requestAnimationFrame(loop);
 
     return () => {
       cancelAnimationFrame(raf);
+      io?.disconnect();
       ro?.disconnect();
       card.removeEventListener("pointerdown", onCardDown);
       window.removeEventListener("pointermove", onWindowMove);

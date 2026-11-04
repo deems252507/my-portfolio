@@ -114,6 +114,58 @@ function MobileList({ projects }) {
 
   useEffect(() => () => cancelAnimationFrame(rafRef.current), []);
 
+  // ── Slide otomatis: jalan tiap beberapa detik, berhenti saat disentuh / tidak terlihat ──
+  const activeRef = useRef(0);
+  const pausedUntil = useRef(0);
+  const inView = useRef(true);
+  useEffect(() => {
+    activeRef.current = active;
+  }, [active]);
+
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el || projects.length < 2) return;
+    const pause = () => {
+      pausedUntil.current = Date.now() + 6000; // jeda 6 dtk setelah disentuh
+    };
+    el.addEventListener("touchstart", pause, { passive: true });
+    el.addEventListener("pointerdown", pause, { passive: true });
+    el.addEventListener("wheel", pause, { passive: true });
+
+    let io;
+    if (typeof IntersectionObserver !== "undefined") {
+      io = new IntersectionObserver(
+        ([entry]) => {
+          inView.current = entry.isIntersecting;
+        },
+        { threshold: 0.4 }
+      );
+      io.observe(el);
+    }
+
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const timer = reduce
+      ? null
+      : setInterval(() => {
+          if (document.hidden || !inView.current || Date.now() < pausedUntil.current) return;
+          const next = (activeRef.current + 1) % projects.length;
+          const child = el.children[next];
+          if (!child) return;
+          el.scrollTo({
+            left: child.offsetLeft - (el.clientWidth - child.offsetWidth) / 2,
+            behavior: "smooth",
+          });
+        }, 3500);
+
+    return () => {
+      if (timer) clearInterval(timer);
+      io?.disconnect();
+      el.removeEventListener("touchstart", pause);
+      el.removeEventListener("pointerdown", pause);
+      el.removeEventListener("wheel", pause);
+    };
+  }, [projects.length]);
+
   const scrollToIndex = (i) => {
     const el = trackRef.current;
     const child = el?.children[i];

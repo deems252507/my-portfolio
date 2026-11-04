@@ -270,3 +270,8 @@ Jika kamu mengalami kendala, ikuti panduan ini secara perlahan dari awal. Selama
 - **Carousel project**: desktop memakai kartu gambar-atas/teks-bawah (teks tidak menimpa gambar); HP memakai daftar geser (swipe) satu kartu per layar.
 - **Admin**: tombol *Simpan* melayang di pojok bawah (selalu terlihat), shortcut Ctrl/Cmd+S, penanda "belum disimpan", dan tombol Simpan/Update di form Project & Experience menempel di bawah modal.
 - Tidak ada perubahan skema Supabase: pengaturan baru (`idcard_photo_*`, `idcard_anchor_x`) otomatis tersimpan di JSON `site_content`.
+
+## Pembaruan 2
+- "Find me" dihapus dari hero (sosial media sudah ada di bagian bawah).
+- Carousel project di HP berjalan otomatis (3,5 dtk), berhenti 6 dtk setelah disentuh, dan berhenti saat tidak terlihat.
+- ID card: animasi masuk baru (tali turun perlahan + kartu fade-in, mulai saat kartu terlihat), fisika 60 Hz tetap supaya halus di laptop 120/144 Hz, rendering kartu pakai GPU transform dan tali tajam di layar retina. Berlaku di laptop dan HP.
