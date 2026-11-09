@@ -1,6 +1,6 @@
 import { useSiteContent } from "../context/SiteContentContext"
 import React, { useEffect, memo, useMemo, useState, useCallback, useRef } from "react"
-import { motion, useMotionValue, useSpring, useMotionTemplate } from "framer-motion"
+import { motion, useMotionValue, useSpring, useMotionTemplate, useReducedMotion } from "framer-motion"
 import { FileText, Code, Award, Trophy, ArrowUpRight, GraduationCap, Briefcase } from "lucide-react"
 import { BorderBeamPanel } from "../components/ui/border-beam-panel"
 import { supabase } from "../supabase"
@@ -18,6 +18,63 @@ const Header = memo(() => (
     </div>
   </div>
 ))
+
+/** Satu baris teks muncul dari balik "masker" (naik + blur hilang). */
+const MaskLine = ({ children, delay = 0, className = "", style }) => {
+  const reduce = useReducedMotion()
+  return (
+    <span className="block overflow-hidden" style={{ paddingBottom: "0.1em", marginBottom: "-0.1em" }}>
+      <motion.span
+        className={`block ${className}`}
+        style={style}
+        initial={reduce ? false : { y: "115%", opacity: 0, filter: "blur(8px)" }}
+        whileInView={{ y: "0%", opacity: 1, filter: "blur(0px)" }}
+        viewport={{ once: true, amount: 0.3 }}
+        transition={{ duration: 1, delay, ease: [0.22, 1, 0.36, 1] }}
+      >
+        {children}
+      </motion.span>
+    </span>
+  )
+}
+
+/** Foto: muncul naik dari bawah + fokus, glow di belakang membesar lalu "bernapas", foto melayang pelan. */
+const PhotoStage = ({ children }) => {
+  const reduce = useReducedMotion()
+  return (
+    <div className="relative w-full">
+      <motion.div
+        aria-hidden
+        className="absolute left-1/2 top-[40%] -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+        style={{ width: "74%", aspectRatio: "1 / 1" }}
+        initial={reduce ? false : { opacity: 0, scale: 0.4 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        viewport={{ once: true, amount: 0.3 }}
+        transition={{ duration: 1.6, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <motion.div
+          className="w-full h-full rounded-full"
+          style={{ background: "radial-gradient(circle, color-mix(in srgb, var(--col-blue) 60%, transparent) 0%, transparent 68%)", filter: "blur(34px)" }}
+          animate={reduce ? undefined : { scale: [1, 1.12, 1], opacity: [0.85, 1, 0.85] }}
+          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+        />
+      </motion.div>
+      <motion.div
+        initial={reduce ? false : { opacity: 0, y: 70, scale: 1.07, filter: "blur(14px)" }}
+        whileInView={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+        viewport={{ once: true, amount: 0.3 }}
+        transition={{ duration: 1.3, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <motion.div
+          animate={reduce ? undefined : { y: [0, -7, 0] }}
+          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1.6 }}
+        >
+          {children}
+        </motion.div>
+      </motion.div>
+    </div>
+  )
+}
 
 const ProfileImage = memo(({ profilePhoto, hoverPhoto, hoverFit, profileFit }) => {
   const [isHoveringImg, setIsHoveringImg] = useState(false)
@@ -67,11 +124,11 @@ const ProfileImage = memo(({ profilePhoto, hoverPhoto, hoverFit, profileFit }) =
 
   return (
     <div ref={containerRef} className="flex justify-center items-center w-full max-w-md mx-auto lg:max-w-none">
-      <div className="relative group" data-aos="fade-up" data-aos-duration="1000">
+      <div className="relative group">
 
         {/* Blended Black Background */}
         <div
-          className="absolute -inset-32"
+          className="absolute -inset-32 pointer-events-none"
           style={{ 
             background: "radial-gradient(circle at center, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.3) 50%, transparent 80%)", 
             filter: "blur(20px)" 
@@ -270,12 +327,12 @@ const AboutPage = () => {
         <div className="hidden lg:grid lg:grid-cols-[2.5fr_3fr_2fr] gap-6 items-center">
 
           {/* Left: Name + View Resume */}
-          <div className="min-w-0 space-y-6 text-left" data-aos="fade-right" data-aos-duration="1000">
+          <div className="min-w-0 space-y-6 text-left">
             <h3 className="text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight leading-tight"
               style={{ fontFamily: "var(--font-display)" }}>
-              <span className="grad-vi block">{content.greeting}</span>
-              <span className="block text-white mt-1 whitespace-nowrap">{content.first_name}</span>
-              <span className="block text-white whitespace-nowrap">{content.last_name}</span>
+              <MaskLine className="grad-vi">{content.greeting}</MaskLine>
+              <MaskLine delay={0.14} className="text-white mt-1 whitespace-nowrap">{content.first_name}</MaskLine>
+              <MaskLine delay={0.28} className="text-white whitespace-nowrap">{content.last_name}</MaskLine>
             </h3>
             <div className="mt-8">
               <a href={content.resume_url}>
@@ -289,7 +346,9 @@ const AboutPage = () => {
 
           {/* Center: Image */}
           <div className="min-w-0 flex justify-center items-end">
-            <ProfileImage profilePhoto={content.profile_photo} hoverPhoto={content.hover_photo} hoverFit={hoverFit} profileFit={profileFit} />
+            <PhotoStage>
+              <ProfileImage profilePhoto={content.profile_photo} hoverPhoto={content.hover_photo} hoverFit={hoverFit} profileFit={profileFit} />
+            </PhotoStage>
           </div>
 
           {/* Right: Description + View Projects */}
@@ -312,19 +371,21 @@ const AboutPage = () => {
         <div className="flex flex-col items-start gap-5 lg:hidden">
           <div className="relative w-full" style={{ height: am.height }}>
             <div className="absolute z-10 w-[350px] sm:w-[500px]" style={{ right: `${-am.photoX}%`, bottom: -am.photoY, transform: `scale(${am.photoSize})`, transformOrigin: "bottom right" }}>
-              <ProfileImage profilePhoto={content.profile_photo} hoverPhoto={content.hover_photo} hoverFit={hoverFit} profileFit={profileFit} />
+              <PhotoStage>
+                <ProfileImage profilePhoto={content.profile_photo} hoverPhoto={content.hover_photo} hoverFit={hoverFit} profileFit={profileFit} />
+              </PhotoStage>
             </div>
             <h3
               className="absolute font-bold tracking-tight leading-[1.05] text-left pointer-events-none"
               style={{ fontFamily: "var(--font-display)", filter: "drop-shadow(0 4px 16px rgba(0,0,0,0.75))", left: am.nameX, top: `${am.nameY}%`, fontSize: `${am.nameSize}rem`, zIndex: am.nameFront ? 20 : 5 }}
-              data-aos="fade-up" data-aos-duration="1000">
-              <span className="grad-vi block mb-1" style={{ fontSize: `${am.greetSize}em` }}>{content.greeting}</span>
-              <span className="block text-white">{content.first_name}</span>
-              <span className="block text-white">{content.last_name}</span>
+              >
+              <MaskLine className="grad-vi mb-1" style={{ fontSize: `${am.greetSize}em` }}>{content.greeting}</MaskLine>
+              <MaskLine delay={0.14} className="text-white">{content.first_name}</MaskLine>
+              <MaskLine delay={0.28} className="text-white">{content.last_name}</MaskLine>
             </h3>
           </div>
           {/* Description — ringkas, bisa dibuka */}
-          <div className="text-base leading-relaxed text-left w-full" style={{ color: "var(--col-muted)" }}>
+          <div className="relative z-30 text-base leading-relaxed text-left w-full" style={{ color: "var(--col-muted)" }}>
             <p
               className="whitespace-pre-line"
               style={bioOpen ? undefined : { display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden" }}
@@ -333,12 +394,12 @@ const AboutPage = () => {
               type="button"
               onClick={() => setBioOpen((v) => !v)}
               aria-expanded={bioOpen}
-              className="mt-2 min-h-[44px] text-sm font-semibold"
+              className="mt-2 min-h-[44px] px-1 text-sm font-semibold cursor-pointer relative z-30"
               style={{ color: "var(--col-blue-light)", fontFamily: "var(--font-display)" }}
             >{bioOpen ? "Tutup" : "Baca selengkapnya"}</button>
           </div>
           {/* Buttons — berdampingan */}
-          <div className="flex flex-wrap gap-3 w-full">
+          <div className="relative z-30 flex flex-wrap gap-3 w-full">
             <a href={content.resume_url} className="flex-1 min-w-[140px]">
               <button className="w-full px-5 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 theme-btn-primary"
                 style={{ background: "var(--col-blue)", fontFamily: "var(--font-display)", color: "white" }}>
