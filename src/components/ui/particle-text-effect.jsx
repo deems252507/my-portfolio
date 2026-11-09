@@ -1,58 +1,39 @@
 import React, { useEffect, useRef } from "react";
 
 /**
- * ParticleTextEffect (basis 21st.dev / KAINXU) — versi Welcome Screen:
- * - SELURUH kalimat tampil sekaligus ("Welcome To My" + "Portofolio Website"), bukan ganti-ganti kata
- * - partikel berkumpul membentuk huruf (grid rata, rapi), lalu teks tajam muncul di atasnya
- *   sehingga hasil akhirnya JELAS dan mudah dibaca
- * - zoom-in halus, ukuran mengikuti layar (HP: baris panjang dipecah agar huruf lebih besar)
- * - ringan untuk HP (DPR dibatasi, jumlah partikel dibatasi)
+ * ParticleTextEffect 3D — partikel BOLA bercahaya yang terbang dari kejauhan (zoom-in)
+ * lalu menyusun huruf BERVOLUME (beberapa lapis kedalaman = tebal/extrude), dengan
+ * perspektif nyata, bayangan tiap bola, dan huruf yang berayun pelan (yaw/pitch) sehingga
+ * efek 3D terlihat jelas. Sisi depan dibuat rapat agar tetap mudah dibaca.
+ * Teks, font, dan warna tetap mengikuti pengaturan admin. Ringan untuk HP.
  */
-class Particle {
-  constructor() {
-    this.pos = { x: 0, y: 0 };
-    this.vel = { x: 0, y: 0 };
-    this.target = { x: 0, y: 0 };
-    this.maxSpeed = 1;
-    this.maxForce = 0.1;
-    this.size = 2.4;
-    this.color = "255,255,255";
-  }
-  move() {
-    const dx = this.target.x - this.pos.x;
-    const dy = this.target.y - this.pos.y;
-    const dist = Math.hypot(dx, dy);
-    const prox = dist < 100 ? dist / 100 : 1;
-    let tx = 0, ty = 0;
-    if (dist > 0) {
-      tx = (dx / dist) * this.maxSpeed * prox;
-      ty = (dy / dist) * this.maxSpeed * prox;
-    }
-    let sx = tx - this.vel.x;
-    let sy = ty - this.vel.y;
-    const sm = Math.hypot(sx, sy);
-    if (sm > 0) {
-      sx = (sx / sm) * this.maxForce;
-      sy = (sy / sm) * this.maxForce;
-    }
-    this.vel.x += sx;
-    this.vel.y += sy;
-    this.pos.x += this.vel.x;
-    this.pos.y += this.vel.y;
-  }
-  draw(ctx) {
-    ctx.fillStyle = `rgb(${this.color})`;
-    ctx.fillRect(this.pos.x, this.pos.y, this.size, this.size);
-  }
-}
-
 const hexToRgb = (hex, fallback) => {
   const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || "").trim());
   if (!m) return fallback;
   const n = parseInt(m[1], 16);
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 };
-const lighten = (rgb, amt) => rgb.map((v) => Math.round(v + (255 - v) * amt));
+const mix = (rgb, to, a) => rgb.map((v) => Math.round(v + (to - v) * a));
+
+// bola 3D (highlight kiri-atas, sisi gelap kanan-bawah) dibuat sekali, dipakai ulang
+function makeSprite(rgb, shade) {
+  const S = 48;
+  const c = document.createElement("canvas");
+  c.width = c.height = S;
+  const g = c.getContext("2d");
+  const base = mix(rgb, 0, 1 - shade);
+  const hi = mix(base, 255, 0.55);
+  const lo = mix(base, 0, 0.55);
+  const grad = g.createRadialGradient(S * 0.36, S * 0.32, S * 0.04, S / 2, S / 2, S / 2);
+  grad.addColorStop(0, `rgb(${hi.join(",")})`);
+  grad.addColorStop(0.45, `rgb(${base.join(",")})`);
+  grad.addColorStop(1, `rgb(${lo.join(",")})`);
+  g.fillStyle = grad;
+  g.beginPath();
+  g.arc(S / 2, S / 2, S / 2 - 1, 0, Math.PI * 2);
+  g.fill();
+  return c;
+}
 
 export function ParticleTextEffect({
   line1 = "Welcome To My",
@@ -73,11 +54,15 @@ export function ParticleTextEffect({
     const dpr = Math.min(window.devicePixelRatio || 1, compact ? 1.5 : 2);
     const fontStack = `"${fontFamily}", "Plus Jakarta Sans", Arial, sans-serif`;
     const c1 = hexToRgb(color1, [255, 255, 255]);
-    const c2 = lighten(hexToRgb(color2, [37, 99, 235]), 0.28); // sedikit lebih terang agar terbaca di latar gelap
+    const c2 = mix(hexToRgb(color2, [37, 99, 235]), 255, 0.2);
+    const LAYERS = compact ? 3 : 6;
+    const MAX = compact ? 4200 : 8000;
+    const FOCAL = 1100;
 
-    let cssW = 0, cssH = 0, raf = 0, frame = 0;
-    let particles = [];
-    let crisp = null;
+    let cssW = 0, cssH = 0, raf = 0, frame = 0, lastT = 0;
+    let n = 0;
+    let X, Y, Z, VX, VY, VZ, TX, TY, TZ, K, SP, SZ;
+    let sprites = [];
 
     const build = () => {
       cssW = Math.max(Math.floor(wrap.clientWidth), 260);
@@ -88,114 +73,129 @@ export function ParticleTextEffect({
       canvas.style.height = `${cssH}px`;
       canvas.getContext("2d").setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      // susun baris: di layar sempit, baris ke-2 dipecah per kata supaya huruf bisa lebih besar
-      const lines = [{ text: line1, color: c1 }];
-      if (cssW < 520 && /\s/.test(line2.trim())) {
-        line2.trim().split(/\s+/).forEach((w) => lines.push({ text: w, color: c2 }));
-      } else {
-        lines.push({ text: line2, color: c2 });
-      }
+      // susun baris (layar sempit: baris 2 dipecah per kata agar huruf lebih besar)
+      const lines = [{ text: line1, ci: 0 }];
+      if (cssW < 520 && /\s/.test(line2.trim())) line2.trim().split(/\s+/).forEach((w) => lines.push({ text: w, ci: 1 }));
+      else lines.push({ text: line2, ci: 1 });
 
-      const measure = document.createElement("canvas").getContext("2d");
-      const LH = 1.22;
-      // ukuran font: sebesar mungkin, tetap muat 90% lebar & 88% tinggi (baris 1 sedikit lebih kecil)
+      const m = document.createElement("canvas").getContext("2d");
+      const LH = 1.25;
       let fs = 220;
       const fits = (f) => {
         const f1 = f * 0.62;
         let maxW = 0;
-        lines.forEach((l, i) => {
-          measure.font = `800 ${i === 0 ? f1 : f}px ${fontStack}`;
-          maxW = Math.max(maxW, measure.measureText(l.text).width);
-        });
-        const totalH = (f1 + (lines.length - 1) * f) * LH;
-        return maxW <= cssW * 0.9 && totalH <= cssH * 0.88;
+        lines.forEach((l, i) => { m.font = `800 ${i === 0 ? f1 : f}px ${fontStack}`; maxW = Math.max(maxW, m.measureText(l.text).width); });
+        return maxW <= cssW * 0.86 && (f1 + (lines.length - 1) * f) * LH <= cssH * 0.84;
       };
       while (fs > 14 && !fits(fs)) fs -= 2;
 
-      // gambar teks tajam (berwarna) ke canvas luar layar
+      // topeng teks (satu warna per baris -> indeks warna di kanal merah)
       const off = document.createElement("canvas");
-      off.width = cssW;
-      off.height = cssH;
+      off.width = cssW; off.height = cssH;
       const o = off.getContext("2d", { willReadFrequently: true });
-      o.textAlign = "center";
-      o.textBaseline = "middle";
-      const heights = lines.map((_, i) => (i === 0 ? fs * 0.62 : fs) * LH);
-      const totalH = heights.reduce((a, b) => a + b, 0);
-      let y = (cssH - totalH) / 2;
+      o.textAlign = "center"; o.textBaseline = "middle";
+      const hs = lines.map((_, i) => (i === 0 ? fs * 0.62 : fs) * LH);
+      let yy = (cssH - hs.reduce((a, b) => a + b, 0)) / 2;
       lines.forEach((l, i) => {
-        const size = i === 0 ? fs * 0.62 : fs;
-        o.font = `800 ${size}px ${fontStack}`;
-        o.fillStyle = `rgb(${l.color.join(",")})`;
-        o.fillText(l.text, cssW / 2, y + heights[i] / 2);
-        y += heights[i];
+        o.font = `800 ${i === 0 ? fs * 0.62 : fs}px ${fontStack}`;
+        o.fillStyle = l.ci === 0 ? "rgb(255,0,0)" : "rgb(0,255,0)";
+        o.fillText(l.text, cssW / 2, yy + hs[i] / 2);
+        yy += hs[i];
       });
-      crisp = off;
-
-      // partikel dari grid rata
       const px = o.getImageData(0, 0, cssW, cssH).data;
-      const step = Math.max(3, Math.round(fs / 17));
-      const size = Math.max(2, step * 0.7);
-      const coords = [];
-      for (let yy = 0; yy < cssH; yy += step) {
-        for (let xx = 0; xx < cssW; xx += step) {
-          const i = (yy * cssW + xx) * 4;
-          if (px[i + 3] > 128) coords.push([xx, yy, `${px[i]},${px[i + 1]},${px[i + 2]}`]);
-        }
-      }
-      const maxCount = compact ? 3200 : 6500;
-      let list = coords;
-      if (coords.length > maxCount) {
-        const k = coords.length / maxCount;
-        list = Array.from({ length: maxCount }, (_, i) => coords[Math.floor(i * k)]);
+
+      // titik grid; sisi depan dibuat 2 lapis bergeser setengah langkah agar rapat & mudah dibaca.
+      // Jarak grid dinaikkan bila partikel terlalu banyak (HP).
+      let step = Math.max(3, Math.round(fs / 20));
+      const sample = (off) => {
+        const arr = [];
+        for (let y = off; y < cssH; y += step)
+          for (let x = off; x < cssW; x += step) {
+            const i = (Math.floor(y) * cssW + Math.floor(x)) * 4;
+            if (px[i + 3] > 128) arr.push([x - cssW / 2, y - cssH / 2, px[i] > px[i + 1] ? 0 : 1]);
+          }
+        return arr;
+      };
+      let p0, p1;
+      for (let tries = 0; tries < 10; tries++) {
+        p0 = sample(0);
+        p1 = sample(step / 2);
+        if (p0.length * (LAYERS - 1) + p1.length <= MAX) break;
+        step += 1;
       }
 
-      particles = list.map(([tx, ty, col]) => {
-        const p = new Particle();
-        const a = Math.random() * Math.PI * 2;
-        const mag = Math.max(cssW, cssH) * (0.45 + Math.random() * 0.45);
-        p.pos.x = cssW / 2 + Math.cos(a) * mag;
-        p.pos.y = cssH / 2 + Math.sin(a) * mag;
-        p.target.x = tx;
-        p.target.y = ty;
-        p.maxSpeed = Math.random() * 4 + 6;
-        p.maxForce = p.maxSpeed * 0.07;
-        p.size = size;
-        p.color = col;
-        return p;
-      });
+      sprites = [c1, c2].map((rgb) => Array.from({ length: LAYERS }, (_, l) => makeSprite(rgb, 1 - (l / (LAYERS - 1)) * 0.62)));
+
+      const depth = fs * 0.26; // ketebalan huruf
+      n = p0.length * (LAYERS - 1) + p1.length;
+      X = new Float32Array(n); Y = new Float32Array(n); Z = new Float32Array(n);
+      VX = new Float32Array(n); VY = new Float32Array(n); VZ = new Float32Array(n);
+      TX = new Float32Array(n); TY = new Float32Array(n); TZ = new Float32Array(n);
+      K = new Float32Array(n); SP = new Uint8Array(n); SZ = new Float32Array(n);
+
+      // lapis paling belakang digambar dulu (urutan array = urutan gambar)
+      let idx = 0;
+      const put = (list, l, z, sizeMul) => {
+        for (const [px_, py_, ci] of list) {
+          TX[idx] = px_; TY[idx] = py_; TZ[idx] = z;
+          const a = Math.random() * Math.PI * 2;
+          const r = Math.max(cssW, cssH) * (0.5 + Math.random() * 0.7);
+          X[idx] = Math.cos(a) * r; Y[idx] = Math.sin(a) * r * 0.7; Z[idx] = -500 - Math.random() * 900; // datang dari jauh
+          K[idx] = 0.028 + Math.random() * 0.03;
+          SP[idx] = ci * LAYERS + l;
+          SZ[idx] = step * sizeMul;
+          idx++;
+        }
+      };
+      for (let l = LAYERS - 1; l >= 1; l--) {
+        const z = depth / 2 - (l / (LAYERS - 1)) * depth;
+        put(p0, l, z, 1.45);
+      }
+      put(p1, 0, depth / 2 + 1, 1.7); // sisi depan (lapis pengisi, paling atas)
       frame = 0;
     };
 
-    const SOLID_START = 70;  // frame ketika teks tajam mulai muncul
-    const SOLID_FADE = 50;
+    const ease = (t) => 1 - Math.pow(1 - Math.min(1, Math.max(0, t)), 3);
 
-    const animate = () => {
+    const animate = (now) => {
       raf = requestAnimationFrame(animate);
       if (document.hidden) return;
-      const ctx = canvas.getContext("2d");
+      if (compact && now - lastT < 32) return; // HP: ±30fps agar hemat baterai/memori
+      lastT = now;
       frame++;
 
-      const t = Math.min(1, Math.max(0, (frame - SOLID_START) / SOLID_FADE));
-      // jejak gerak halus, tetap transparan agar latar petir terlihat
-      ctx.globalCompositeOperation = "destination-out";
-      ctx.fillStyle = t > 0 ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0.18)";
-      ctx.fillRect(0, 0, cssW, cssH);
-      ctx.globalCompositeOperation = "source-over";
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, cssW, cssH);
 
-      ctx.globalAlpha = 1 - t * 0.9;
-      for (const p of particles) {
-        p.move();
-        p.draw(ctx);
-      }
-      ctx.globalAlpha = 1;
+      // kamera: zoom-in dari jauh + ayunan 3D (yaw besar di awal, lalu berayun pelan)
+      const settle = ease(frame / 120);
+      const t = frame / 60;
+      const yaw = Math.sin(t * 0.7) * 0.17 * settle + (1 - settle) * 0.9;
+      const pitch = Math.sin(t * 0.5) * 0.05 * settle + (1 - settle) * -0.18;
+      const camScale = 0.6 + 0.4 * ease(frame / 110);
+      const cy_ = Math.cos(yaw), sy_ = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
+      const cx0 = cssW / 2, cy0 = cssH / 2;
 
-      if (t > 0 && crisp) {
-        ctx.save();
-        ctx.globalAlpha = t;
-        ctx.shadowColor = "rgba(0,0,0,0.65)";
-        ctx.shadowBlur = 18;
-        ctx.drawImage(crisp, 0, 0, cssW, cssH);
-        ctx.restore();
+      for (let i = 0; i < n; i++) {
+        // gerak pegas menuju target (halus, tiap partikel beda kecepatan)
+        VX[i] = (VX[i] + (TX[i] - X[i]) * K[i]) * 0.86;
+        VY[i] = (VY[i] + (TY[i] - Y[i]) * K[i]) * 0.86;
+        VZ[i] = (VZ[i] + (TZ[i] - Z[i]) * K[i]) * 0.86;
+        X[i] += VX[i]; Y[i] += VY[i]; Z[i] += VZ[i];
+
+        const xr = X[i] * cy_ + Z[i] * sy_;
+        const zr = -X[i] * sy_ + Z[i] * cy_;
+        const yr = Y[i] * cp - zr * sp;
+        const zr2 = Y[i] * sp + zr * cp;
+        const den = FOCAL - zr2;
+        if (den < 80) continue;
+        const s = (FOCAL / den) * camScale;
+        const size = SZ[i] * s;
+        const sx = cx0 + xr * s;
+        const sy = cy0 + yr * s;
+        if (sx < -size || sx > cssW + size || sy < -size || sy > cssH + size) continue;
+        const spr = sprites[(SP[i] / LAYERS) | 0][SP[i] % LAYERS];
+        ctx.drawImage(spr, sx - size / 2, sy - size / 2, size, size);
       }
     };
 
@@ -203,10 +203,7 @@ export function ParticleTextEffect({
     raf = requestAnimationFrame(animate);
 
     let timer;
-    const onResize = () => {
-      clearTimeout(timer);
-      timer = setTimeout(build, 150);
-    };
+    const onResize = () => { clearTimeout(timer); timer = setTimeout(build, 150); };
     window.addEventListener("resize", onResize);
     return () => {
       cancelAnimationFrame(raf);
@@ -217,21 +214,15 @@ export function ParticleTextEffect({
 
   return (
     <div className="absolute inset-0 w-full h-full pointer-events-none z-10 flex items-center justify-center">
-      {/* bayangan gelap lembut di belakang teks supaya mudah dibaca di atas petir */}
       <div
         aria-hidden
         className="absolute inset-0"
-        style={{ background: "radial-gradient(ellipse at center, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.25) 45%, transparent 72%)" }}
+        style={{ background: "radial-gradient(ellipse at center, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.22) 45%, transparent 72%)" }}
       />
       <span className="sr-only">{`${line1} ${line2}`}</span>
-      <div
-        ref={wrapRef}
-        className="relative w-full h-full"
-        style={{ animation: "particleZoomIn 5s cubic-bezier(0.22,1,0.36,1) forwards" }}
-      >
+      <div ref={wrapRef} className="relative w-full h-full">
         <canvas ref={canvasRef} className="block mx-auto" aria-hidden />
       </div>
-      <style>{`@keyframes particleZoomIn{from{transform:scale(0.8)}to{transform:scale(1.05)}}`}</style>
     </div>
   );
 }
