@@ -1,10 +1,8 @@
 import React, { useEffect, useRef } from "react";
 
 /**
- * ParticleTextEffect 3D — partikel BOLA bercahaya yang terbang dari kejauhan (zoom-in)
- * lalu menyusun huruf BERVOLUME (beberapa lapis kedalaman = tebal/extrude), dengan
- * perspektif nyata, bayangan tiap bola, dan huruf yang berayun pelan (yaw/pitch) sehingga
- * efek 3D terlihat jelas. Sisi depan dibuat rapat agar tetap mudah dibaca.
+ * ParticleTextEffect — titik-titik kecil membentuk BOLA 3D yang berputar pelan, lalu
+ * menyatu (tertarik) menjadi teks yang datar dan tajam, seperti di video referensi.
  * Teks, font, dan warna tetap mengikuti pengaturan admin. Ringan untuk HP.
  */
 const hexToRgb = (hex, fallback) => {
@@ -15,23 +13,18 @@ const hexToRgb = (hex, fallback) => {
 };
 const mix = (rgb, to, a) => rgb.map((v) => Math.round(v + (to - v) * a));
 
-// bola 3D (highlight kiri-atas, sisi gelap kanan-bawah) dibuat sekali, dipakai ulang
-function makeSprite(rgb, shade) {
-  const S = 48;
+// titik bulat kecil dengan tepi lembut, dibuat sekali lalu dipakai ulang
+function makeSprite(rgb) {
+  const S = 32;
   const c = document.createElement("canvas");
   c.width = c.height = S;
   const g = c.getContext("2d");
-  const base = mix(rgb, 0, 1 - shade);
-  const hi = mix(base, 255, 0.55);
-  const lo = mix(base, 0, 0.55);
-  const grad = g.createRadialGradient(S * 0.36, S * 0.32, S * 0.04, S / 2, S / 2, S / 2);
-  grad.addColorStop(0, `rgb(${hi.join(",")})`);
-  grad.addColorStop(0.45, `rgb(${base.join(",")})`);
-  grad.addColorStop(1, `rgb(${lo.join(",")})`);
+  const grad = g.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
+  grad.addColorStop(0, `rgba(${rgb.join(",")},1)`);
+  grad.addColorStop(0.55, `rgba(${rgb.join(",")},0.95)`);
+  grad.addColorStop(1, `rgba(${rgb.join(",")},0)`);
   g.fillStyle = grad;
-  g.beginPath();
-  g.arc(S / 2, S / 2, S / 2 - 1, 0, Math.PI * 2);
-  g.fill();
+  g.fillRect(0, 0, S, S);
   return c;
 }
 
@@ -55,13 +48,13 @@ export function ParticleTextEffect({
     const fontStack = `"${fontFamily}", "Plus Jakarta Sans", Arial, sans-serif`;
     const c1 = hexToRgb(color1, [255, 255, 255]);
     const c2 = mix(hexToRgb(color2, [37, 99, 235]), 255, 0.2);
-    const LAYERS = compact ? 3 : 6;
-    const MAX = compact ? 4200 : 8000;
-    const FOCAL = 1100;
+    const MAX = compact ? 3200 : 6500;
+    const FOCAL = 900;
+    const SPHERE_FRAMES = compact ? 55 : 70; // lama bola berputar sebelum menyatu jadi teks
 
     let cssW = 0, cssH = 0, raf = 0, frame = 0, lastT = 0;
-    let n = 0;
-    let X, Y, Z, VX, VY, VZ, TX, TY, TZ, K, SP, SZ;
+    let n = 0, R = 200;
+    let X, Y, Z, VX, VY, VZ, TX, TY, BX, BY, BZ, K, SP, SZ;
     let sprites = [];
 
     const build = () => {
@@ -104,58 +97,53 @@ export function ParticleTextEffect({
       });
       const px = o.getImageData(0, 0, cssW, cssH).data;
 
-      // titik grid; sisi depan dibuat 2 lapis bergeser setengah langkah agar rapat & mudah dibaca.
-      // Jarak grid dinaikkan bila partikel terlalu banyak (HP).
-      let step = Math.max(3, Math.round(fs / 20));
-      const sample = (off) => {
+      // titik grid rapat (datar, 1 lapis) agar teks tajam & mudah dibaca
+      let step = Math.max(2, Math.round(fs / 30));
+      const sample = (shift) => {
         const arr = [];
-        for (let y = off; y < cssH; y += step)
-          for (let x = off; x < cssW; x += step) {
+        for (let y = shift; y < cssH; y += step)
+          for (let x = shift; x < cssW; x += step) {
             const i = (Math.floor(y) * cssW + Math.floor(x)) * 4;
             if (px[i + 3] > 128) arr.push([x - cssW / 2, y - cssH / 2, px[i] > px[i + 1] ? 0 : 1]);
           }
         return arr;
       };
-      let p0, p1;
-      for (let tries = 0; tries < 10; tries++) {
-        p0 = sample(0);
-        p1 = sample(step / 2);
-        if (p0.length * (LAYERS - 1) + p1.length <= MAX) break;
+      let pts;
+      for (let tries = 0; tries < 14; tries++) {
+        pts = sample(0).concat(sample(step / 2));
+        if (pts.length <= MAX) break;
         step += 1;
       }
 
-      sprites = [c1, c2].map((rgb) => Array.from({ length: LAYERS }, (_, l) => makeSprite(rgb, 1 - (l / (LAYERS - 1)) * 0.62)));
-
-      const depth = fs * 0.26; // ketebalan huruf
-      n = p0.length * (LAYERS - 1) + p1.length;
+      sprites = [c1, c2].map(makeSprite);
+      n = pts.length;
       X = new Float32Array(n); Y = new Float32Array(n); Z = new Float32Array(n);
       VX = new Float32Array(n); VY = new Float32Array(n); VZ = new Float32Array(n);
-      TX = new Float32Array(n); TY = new Float32Array(n); TZ = new Float32Array(n);
+      TX = new Float32Array(n); TY = new Float32Array(n);
+      BX = new Float32Array(n); BY = new Float32Array(n); BZ = new Float32Array(n);
       K = new Float32Array(n); SP = new Uint8Array(n); SZ = new Float32Array(n);
 
-      // lapis paling belakang digambar dulu (urutan array = urutan gambar)
-      let idx = 0;
-      const put = (list, l, z, sizeMul) => {
-        for (const [px_, py_, ci] of list) {
-          TX[idx] = px_; TY[idx] = py_; TZ[idx] = z;
-          const a = Math.random() * Math.PI * 2;
-          const r = Math.max(cssW, cssH) * (0.5 + Math.random() * 0.7);
-          X[idx] = Math.cos(a) * r; Y[idx] = Math.sin(a) * r * 0.7; Z[idx] = -500 - Math.random() * 900; // datang dari jauh
-          K[idx] = 0.028 + Math.random() * 0.03;
-          SP[idx] = ci * LAYERS + l;
-          SZ[idx] = step * sizeMul;
-          idx++;
-        }
-      };
-      for (let l = LAYERS - 1; l >= 1; l--) {
-        const z = depth / 2 - (l / (LAYERS - 1)) * depth;
-        put(p0, l, z, 1.45);
+      R = Math.min(cssW * 0.4, cssH * 0.5); // jari-jari bola
+      const golden = Math.PI * (3 - Math.sqrt(5));
+      for (let i = 0; i < n; i++) {
+        const [px_, py_, ci] = pts[i];
+        TX[i] = px_; TY[i] = py_;
+        // titik tersebar merata di PERMUKAAN + isi bola (spiral Fibonacci), urutan diacak
+        const j = (Math.random() * n) | 0;
+        const yv = 1 - (2 * (j + 0.5)) / n;
+        const rr = Math.sqrt(1 - yv * yv);
+        const th = golden * j;
+        const rad = R * (0.35 + 0.65 * Math.cbrt(Math.random()));
+        BX[i] = Math.cos(th) * rr * rad * 1.25; // sedikit melebar seperti di video
+        BY[i] = yv * rad;
+        BZ[i] = Math.sin(th) * rr * rad;
+        X[i] = BX[i]; Y[i] = BY[i]; Z[i] = BZ[i];
+        K[i] = 0.035 + Math.random() * 0.045;
+        SP[i] = ci;
+        SZ[i] = Math.max(2.2, step * 1.25);
       }
-      put(p1, 0, depth / 2 + 1, 1.7); // sisi depan (lapis pengisi, paling atas)
       frame = 0;
     };
-
-    const ease = (t) => 1 - Math.pow(1 - Math.min(1, Math.max(0, t)), 3);
 
     const animate = (now) => {
       raf = requestAnimationFrame(animate);
@@ -167,36 +155,43 @@ export function ParticleTextEffect({
       const ctx = canvas.getContext("2d");
       ctx.clearRect(0, 0, cssW, cssH);
 
-      // kamera: zoom-in dari jauh + ayunan 3D (yaw besar di awal, lalu berayun pelan)
-      const settle = ease(frame / 120);
-      const t = frame / 60;
-      const yaw = Math.sin(t * 0.7) * 0.17 * settle + (1 - settle) * 0.9;
-      const pitch = Math.sin(t * 0.5) * 0.05 * settle + (1 - settle) * -0.18;
-      const camScale = 0.6 + 0.4 * ease(frame / 110);
-      const cy_ = Math.cos(yaw), sy_ = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
       const cx0 = cssW / 2, cy0 = cssH / 2;
+      const inSphere = frame < SPHERE_FRAMES;
+      // bola berputar (yaw) pelan sambil sedikit mengempis sebelum menyatu jadi teks
+      const spin = frame * 0.035;
+      const cs = Math.cos(spin), sn = Math.sin(spin);
+      const fade = Math.min(1, frame / 18);
+      const shrink = 1 - 0.12 * Math.min(1, frame / SPHERE_FRAMES);
 
       for (let i = 0; i < n; i++) {
-        // gerak pegas menuju target (halus, tiap partikel beda kecepatan)
-        VX[i] = (VX[i] + (TX[i] - X[i]) * K[i]) * 0.86;
-        VY[i] = (VY[i] + (TY[i] - Y[i]) * K[i]) * 0.86;
-        VZ[i] = (VZ[i] + (TZ[i] - Z[i]) * K[i]) * 0.86;
+        let tx, ty, tz, k;
+        if (inSphere) {
+          // target = titik pada bola yang sedang berputar
+          tx = (BX[i] * cs + BZ[i] * sn) * shrink;
+          tz = (-BX[i] * sn + BZ[i] * cs) * shrink;
+          ty = BY[i] * shrink;
+          k = 0.12;
+        } else {
+          tx = TX[i]; ty = TY[i]; tz = 0; k = K[i];
+        }
+        VX[i] = (VX[i] + (tx - X[i]) * k) * 0.82;
+        VY[i] = (VY[i] + (ty - Y[i]) * k) * 0.82;
+        VZ[i] = (VZ[i] + (tz - Z[i]) * k) * 0.82;
         X[i] += VX[i]; Y[i] += VY[i]; Z[i] += VZ[i];
 
-        const xr = X[i] * cy_ + Z[i] * sy_;
-        const zr = -X[i] * sy_ + Z[i] * cy_;
-        const yr = Y[i] * cp - zr * sp;
-        const zr2 = Y[i] * sp + zr * cp;
-        const den = FOCAL - zr2;
+        const den = FOCAL - Z[i];
         if (den < 80) continue;
-        const s = (FOCAL / den) * camScale;
-        const size = SZ[i] * s;
-        const sx = cx0 + xr * s;
-        const sy = cy0 + yr * s;
+        const s = FOCAL / den;
+        const size = SZ[i] * s * (inSphere ? 0.55 : 1);
+        const sx = cx0 + X[i] * s;
+        const sy = cy0 + Y[i] * s;
         if (sx < -size || sx > cssW + size || sy < -size || sy > cssH + size) continue;
-        const spr = sprites[(SP[i] / LAYERS) | 0][SP[i] % LAYERS];
-        ctx.drawImage(spr, sx - size / 2, sy - size / 2, size, size);
+        // titik jauh lebih redup, titik dekat lebih terang -> kesan bola 3D
+        const depth = inSphere ? 0.35 + 0.65 * ((Z[i] / R + 1) / 2) : 1;
+        ctx.globalAlpha = fade * Math.min(1, Math.max(0.15, depth));
+        ctx.drawImage(sprites[SP[i]], sx - size / 2, sy - size / 2, size, size);
       }
+      ctx.globalAlpha = 1;
     };
 
     build();

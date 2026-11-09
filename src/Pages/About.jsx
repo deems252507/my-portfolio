@@ -6,6 +6,21 @@ import { BorderBeamPanel } from "../components/ui/border-beam-panel"
 import { supabase } from "../supabase"
 import { getHoverFit, getProfileFit, getAboutMobileSettings } from "../lib/siteContent"
 
+/** true bila lebar >= 1024px. Dipakai agar hanya SATU layout (desktop / HP) yang di-mount;
+ *  sebelumnya keduanya dimuat sekaligus (satu cuma disembunyikan CSS) sehingga foto
+ *  dan animasinya dua kali lipat berat -> Safari iPhone kehabisan memori & reload terus. */
+const useIsDesktop = () => {
+  const get = () => typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches
+  const [isDesktop, setIsDesktop] = useState(get)
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)")
+    const on = () => setIsDesktop(mq.matches)
+    mq.addEventListener("change", on)
+    return () => mq.removeEventListener("change", on)
+  }, [])
+  return isDesktop
+}
+
 const Header = memo(() => (
   <div className="text-center lg:mb-16 mb-2 px-[5%]">
     <div data-aos="fade-up" data-aos-duration="600">
@@ -69,7 +84,7 @@ const PhotoStage = ({ children }) => {
       >
         <motion.div
           className="w-full h-full rounded-full"
-          style={{ background: "radial-gradient(circle, color-mix(in srgb, var(--col-blue) 60%, transparent) 0%, transparent 68%)", filter: "blur(34px)" }}
+          style={{ background: "radial-gradient(circle, color-mix(in srgb, var(--col-blue) 55%, transparent) 0%, color-mix(in srgb, var(--col-blue) 18%, transparent) 38%, transparent 68%)" }}
           animate={reduce ? undefined : { scale: [1, 1.12, 1], opacity: [0.85, 1, 0.85] }}
           transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
         />
@@ -144,10 +159,7 @@ const ProfileImage = memo(({ profilePhoto, hoverPhoto, hoverFit, profileFit }) =
         {/* Blended Black Background */}
         <div
           className="absolute -inset-32 pointer-events-none"
-          style={{ 
-            background: "radial-gradient(circle at center, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.3) 50%, transparent 80%)", 
-            filter: "blur(20px)" 
-          }}
+          style={{ background: "radial-gradient(circle at center, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.3) 50%, transparent 80%)" }}
         />
 
         <div 
@@ -165,7 +177,7 @@ const ProfileImage = memo(({ profilePhoto, hoverPhoto, hoverFit, profileFit }) =
               alt="Profile"
               className="absolute inset-0 w-full h-full object-contain object-bottom grayscale-[20%] group-hover:grayscale-0 transition-all duration-700 pointer-events-none"
               style={profileFit}
-              loading="lazy"
+              decoding="async"
             />
 
             <motion.div
@@ -213,9 +225,7 @@ const StatCard = memo(({ icon: Icon, value, label, description, animation, accen
     <BorderBeamPanel
       className="relative rounded-2xl h-full flex flex-col justify-between overflow-hidden transition-all duration-300 hover:scale-105 p-6"
       style={{
-        background: "rgba(30, 41, 59, 0.5)",
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
+        background: "rgba(24, 33, 50, 0.78)",
         borderColor: "rgba(255,255,255,0.08)"
       }}
       beams={2}
@@ -268,6 +278,7 @@ const AboutPage = () => {
   const profileFit = useMemo(() => getProfileFit(content), [content])
   const am = useMemo(() => getAboutMobileSettings(content), [content])
   const [bioOpen, setBioOpen] = useState(false)
+  const isDesktop = useIsDesktop()
   const [stats, setStats] = useState({ totalProjects: 0, totalCertificates: 0, totalAwards: 0 })
 
   useEffect(() => {
@@ -339,7 +350,8 @@ const AboutPage = () => {
 
       <div className="w-full mx-auto pt-2 sm:pt-12 relative">
         {/* ── Desktop Layout (lg+) ── */}
-        <div className="hidden lg:grid lg:grid-cols-[2.5fr_3fr_2fr] gap-6 items-center">
+        {isDesktop && (
+        <div className="grid grid-cols-[2.5fr_3fr_2fr] gap-6 items-center">
 
           {/* Left: Name + View Resume */}
           <div className="min-w-0 space-y-6 text-left">
@@ -381,9 +393,11 @@ const AboutPage = () => {
             </div>
           </div>
         </div>
+        )}
 
         {/* ── Mobile Layout (below lg): nama di kiri, foto di kanan seperti tampilan laptop ── */}
-        <div className="flex flex-col items-start gap-5 lg:hidden">
+        {!isDesktop && (
+        <div className="flex flex-col items-start gap-5">
           <div className="relative w-full" style={{ height: am.height }}>
             <div className="absolute z-10 w-[350px] sm:w-[500px]" style={{ right: `${-am.photoX}%`, bottom: -am.photoY, transform: `scale(${am.photoSize})`, transformOrigin: "bottom right" }}>
               <PhotoStage>
@@ -430,6 +444,7 @@ const AboutPage = () => {
             </a>
           </div>
         </div>
+        )}
 
         {/* ── Education & Experience: daftar bersih ── */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-12 mt-14">

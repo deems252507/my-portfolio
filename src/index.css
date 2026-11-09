@@ -194,9 +194,9 @@ body {
 /* =========================================
    AOS
    ========================================= */
-[data-aos] {
-  will-change: transform, opacity !important;
-}
+/* will-change hanya selama animasi; kalau permanen, tiap elemen jadi layer GPU sendiri (boros memori di iPhone) */
+[data-aos]:not(.aos-animate) { will-change: transform, opacity; }
+[data-aos].aos-animate { will-change: auto; }
 
 /* =========================================
    GLASS CARD
@@ -239,7 +239,7 @@ body {
 /* =========================================
    ANIMASI MEWAH: reveal halus (fade + blur), kilau tombol
    ========================================= */
-@media (prefers-reduced-motion: no-preference) {
+@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
   body [data-aos^="fade"] {
     filter: blur(8px);
     transition-property: opacity, transform, filter;

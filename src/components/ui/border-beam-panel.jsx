@@ -123,7 +123,8 @@ function BorderBeamPanelBase({
   const systemReduced = useReducedMotion();
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => setHydrated(true), []);
-  const staticMode = reducedMotion === true || (hydrated && systemReduced);
+  const coarse = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
+  const staticMode = reducedMotion === true || (hydrated && systemReduced) || coarse;
   const onScreen = useVisibilityPause(rootRef, { threshold: 0.05 });
   const paused = pauseWhenHidden && !onScreen;
   const animate = !staticMode && !paused;
@@ -226,7 +227,7 @@ function BorderBeamPanelBase({
       {...props}
     >
       <style dangerouslySetInnerHTML={{ __html: css }} />
-      {glow ? <div aria-hidden="true" className="mk-beam-glow" /> : null}
+      {glow && !coarse ? <div aria-hidden="true" className="mk-beam-glow" /> : null}
       <div aria-hidden="true" className="mk-beam-ring" />
       {children}
     </div>

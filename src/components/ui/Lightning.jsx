@@ -8,14 +8,12 @@ const WebGLLightning = ({
   size = 1,
 }) => {
   const canvasRef = useRef(null);
-  const isCompact = typeof window !== "undefined" && window.matchMedia("(max-width: 767px), (pointer: coarse)").matches;
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return; // HP: memakai glow CSS (lihat bawah), tanpa WebGL
+    if (!canvas) return;
 
     const compactDevice = window.matchMedia("(max-width: 767px), (pointer: coarse)").matches;
-    if (compactDevice) return; // HP tidak memakai WebGL
     const targetFrameDuration = 1000 / (compactDevice ? 30 : 45);
 
     const resizeCanvas = () => {
@@ -211,36 +209,6 @@ const WebGLLightning = ({
     };
   }, [hue, xOffset, speed, intensity, size]);
 
-  if (isCompact) {
-    // HP/iPhone: WebGL penuh-layar terlalu berat (Safari menutup halaman). Ganti glow petir CSS ringan.
-    const c = `hsl(${hue} 90% 62%)`;
-    return (
-      <div className="w-full h-full relative overflow-hidden" aria-hidden>
-        <div
-          className="absolute left-1/2 top-0 bottom-0"
-          style={{
-            width: "46%",
-            transform: "translateX(-50%)",
-            background: `radial-gradient(ellipse at center, ${c} 0%, transparent 62%)`,
-            opacity: 0.34 * Math.min(intensity, 1.5),
-            animation: "lightningPulse 2.4s ease-in-out infinite",
-          }}
-        />
-        <div
-          className="absolute left-1/2 top-0 bottom-0"
-          style={{
-            width: "2px",
-            transform: "translateX(-50%)",
-            background: `linear-gradient(to bottom, transparent, #fff 30%, ${c} 70%, transparent)`,
-            boxShadow: `0 0 18px 4px ${c}`,
-            opacity: 0.8,
-            animation: "lightningPulse 1.6s ease-in-out infinite",
-          }}
-        />
-        <style>{"@keyframes lightningPulse{0%,100%{opacity:.45}50%{opacity:1}}"}</style>
-      </div>
-    );
-  }
   return <canvas ref={canvasRef} className="w-full h-full" />;
 };
 

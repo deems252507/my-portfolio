@@ -84,6 +84,11 @@ export default function AnimatedBackground({
   starColor = "#fff",
   ...props
 }) {
+  // HP/tablet: bintang jauh lebih sedikit (ribuan box-shadow berat di Safari iPhone)
+  const lite = React.useMemo(
+    () => typeof window !== "undefined" && window.matchMedia("(max-width: 1023px), (pointer: coarse)").matches,
+    [],
+  );
   const offsetX = useMotionValue(0);
   const offsetY = useMotionValue(0);
   const springX = useSpring(offsetX, transition);
@@ -122,19 +127,19 @@ export default function AnimatedBackground({
     >
       <motion.div style={{ x: springX, y: springY }}>
         <StarLayer
-          count={1000}
+          count={lite ? 220 : 1000}
           size={1}
           transition={{ repeat: Infinity, duration: speed, ease: "linear" }}
           starColor={starColor}
         />
         <StarLayer
-          count={400}
+          count={lite ? 80 : 400}
           size={2}
           transition={{ repeat: Infinity, duration: speed * 2, ease: "linear" }}
           starColor={starColor}
         />
         <StarLayer
-          count={200}
+          count={lite ? 40 : 200}
           size={3}
           transition={{ repeat: Infinity, duration: speed * 3, ease: "linear" }}
           starColor={starColor}
