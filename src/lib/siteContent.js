@@ -199,6 +199,7 @@ export const DEFAULT_CONTENT = {
   about_m_name_x: "0", // geser nama ke kanan (px)
   about_m_name_y: "4", // posisi nama dari atas (%)
   about_m_name_size: "2.3", // ukuran nama (rem)
+  about_m_greet_size: "0.62", // ukuran tulisan sapaan "Hi, I'm" (x ukuran nama)
   about_m_name_front: "true", // nama di depan foto (false = di belakang)
   profile_scale: "1",
   profile_offset_x: "0",
@@ -321,6 +322,7 @@ export function getAboutMobileSettings(content) {
     nameX: num(c.about_m_name_x, 0, 0, 160),
     nameY: num(c.about_m_name_y, 4, 0, 80),
     nameSize: num(c.about_m_name_size, 2.3, 1.6, 3.6),
+    greetSize: num(c.about_m_greet_size, 0.62, 0.3, 1.4),
     nameFront: String(c.about_m_name_front) !== "false",
   };
 }

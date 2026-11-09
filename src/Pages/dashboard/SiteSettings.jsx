@@ -243,7 +243,7 @@ function AboutMobileEditor({ form, setField }) {
   const a = getAboutMobileSettings(form);
   const SCALE = 0.62;
   const reset = () => {
-    ["about_m_height","about_m_photo_x","about_m_photo_y","about_m_photo_size","about_m_name_x","about_m_name_y","about_m_name_size","about_m_name_front"]
+    ["about_m_height","about_m_photo_x","about_m_photo_y","about_m_photo_size","about_m_name_x","about_m_name_y","about_m_name_size","about_m_greet_size","about_m_name_front"]
       .forEach((k) => setField(k, DEFAULT_CONTENT[k]));
   };
   return (
@@ -265,7 +265,7 @@ function AboutMobileEditor({ form, setField }) {
                 </div>
                 <div className="absolute font-bold leading-[1.05] text-white pointer-events-none"
                   style={{ left: a.nameX, top: `${a.nameY}%`, fontSize: `${a.nameSize}rem`, zIndex: a.nameFront ? 20 : 5 }}>
-                  <span className="block text-violet-400" style={{ fontSize: "0.62em" }}>{form.greeting}</span>
+                  <span className="block text-violet-400" style={{ fontSize: `${a.greetSize}em` }}>{form.greeting}</span>
                   <span className="block">{form.first_name}</span>
                   <span className="block">{form.last_name}</span>
                 </div>
@@ -275,10 +275,17 @@ function AboutMobileEditor({ form, setField }) {
           <p className="text-[10px] text-gray-600 mt-1.5 text-center">Preview tampilan HP</p>
         </div>
         <div className="grid sm:grid-cols-2 gap-4">
+          <div className="sm:col-span-2 grid sm:grid-cols-3 gap-3 rounded-xl border border-white/10 bg-white/[0.02] p-3">
+            <div className="sm:col-span-3 text-xs text-gray-400">Ketik teks langsung di sini (berlaku juga di tampilan laptop)</div>
+            <Field label="Sapaan" value={form.greeting || ""} onChange={(v) => setField("greeting", v)} />
+            <Field label="Nama depan" value={form.first_name || ""} onChange={(v) => setField("first_name", v)} />
+            <Field label="Nama belakang" value={form.last_name || ""} onChange={(v) => setField("last_name", v)} />
+          </div>
           <RangeField label="Tinggi area foto + nama" min={280} max={600} step={5} unit="px" value={form.about_m_height || "400"} onChange={(v) => setField("about_m_height", v)} />
           <RangeField label="Ukuran foto" min={0.5} max={1.4} step={0.02} unit="x" value={form.about_m_photo_size || "0.92"} onChange={(v) => setField("about_m_photo_size", v)} />
           <RangeField label="Geser foto kiri ↔ kanan" hint="Minus = ke kiri, plus = ke kanan" min={-40} max={40} step={1} unit="%" value={form.about_m_photo_x || "10"} onChange={(v) => setField("about_m_photo_x", v)} />
           <RangeField label="Geser foto atas ↕ bawah" hint="Minus = naik, plus = turun" min={-80} max={160} step={2} unit="px" value={form.about_m_photo_y || "30"} onChange={(v) => setField("about_m_photo_y", v)} />
+          <RangeField label="Ukuran sapaan (Hi, I'm)" hint="Relatif terhadap ukuran nama. 1 = sama besar" min={0.3} max={1.4} step={0.02} unit="x" value={form.about_m_greet_size || "0.62"} onChange={(v) => setField("about_m_greet_size", v)} />
           <RangeField label="Ukuran nama" min={1.6} max={3.6} step={0.05} unit="rem" value={form.about_m_name_size || "2.3"} onChange={(v) => setField("about_m_name_size", v)} />
           <RangeField label="Geser nama kiri → kanan" min={0} max={160} step={2} unit="px" value={form.about_m_name_x || "0"} onChange={(v) => setField("about_m_name_x", v)} />
           <RangeField label="Geser nama atas ↕ bawah" min={0} max={80} step={1} unit="%" value={form.about_m_name_y || "4"} onChange={(v) => setField("about_m_name_y", v)} />

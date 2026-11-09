@@ -318,7 +318,7 @@ const AboutPage = () => {
               className="absolute font-bold tracking-tight leading-[1.05] text-left pointer-events-none"
               style={{ fontFamily: "var(--font-display)", filter: "drop-shadow(0 4px 16px rgba(0,0,0,0.75))", left: am.nameX, top: `${am.nameY}%`, fontSize: `${am.nameSize}rem`, zIndex: am.nameFront ? 20 : 5 }}
               data-aos="fade-up" data-aos-duration="1000">
-              <span className="grad-vi block mb-1" style={{ fontSize: "0.62em" }}>{content.greeting}</span>
+              <span className="grad-vi block mb-1" style={{ fontSize: `${am.greetSize}em` }}>{content.greeting}</span>
               <span className="block text-white">{content.first_name}</span>
               <span className="block text-white">{content.last_name}</span>
             </h3>
