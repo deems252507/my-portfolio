@@ -360,11 +360,18 @@ const AboutPage = () => {
             <h4 className="text-xs font-semibold uppercase tracking-[0.2em] mb-3" style={{ color: "var(--col-muted)", fontFamily: "var(--font-display)" }}>Education</h4>
             <div className="border-t border-white/10">
               {[1, 2].filter((n) => content[`edu${n}_school`]).map((n, idx) => (
-                <div key={n} className="flex gap-4 sm:gap-6 py-4 border-b border-white/10" data-aos="fade-up" data-aos-delay={idx * 120}>
-                  <div className="w-24 sm:w-28 flex-shrink-0 text-sm pt-0.5" style={{ color: "var(--col-muted)" }}>{content[`edu${n}_year`]}</div>
-                  <div className="min-w-0">
+                <div key={n} className="flex items-center gap-4 py-4 border-b border-white/10" data-aos="fade-up" data-aos-delay={idx * 120}>
+                  <div className="w-12 h-12 flex-shrink-0 rounded-xl bg-white/[0.06] p-1.5 flex items-center justify-center overflow-hidden">
+                    {content[`edu${n}_logo`] ? (
+                      <img src={content[`edu${n}_logo`]} alt="" className="w-full h-full object-contain" loading="lazy" />
+                    ) : (
+                      <GraduationCap className="w-5 h-5 text-gray-500" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
                     <p className="text-base font-semibold text-white leading-snug">{content[`edu${n}_school`]}</p>
-                    <p className="text-sm mt-1" style={{ color: "var(--col-muted)" }}>{content[`edu${n}_major`]}</p>
+                    <p className="text-sm mt-0.5" style={{ color: "var(--col-muted)" }}>{content[`edu${n}_major`]}</p>
+                    <p className="text-xs mt-1 font-medium" style={{ color: "var(--col-blue-light)" }}>{content[`edu${n}_year`]}</p>
                   </div>
                 </div>
               ))}
@@ -380,11 +387,18 @@ const AboutPage = () => {
                 <div className="py-4 text-gray-500 text-sm">No experiences found.</div>
               ) : (
                 experiences.map((exp, idx) => (
-                  <div key={exp.id} className="flex gap-4 sm:gap-6 py-4 border-b border-white/10" data-aos="fade-up" data-aos-delay={Math.min(idx, 4) * 120}>
-                    <div className="w-24 sm:w-28 flex-shrink-0 text-sm pt-0.5" style={{ color: "var(--col-muted)" }}>{exp.year}</div>
-                    <div className="min-w-0">
+                  <div key={exp.id} className="flex items-center gap-4 py-4 border-b border-white/10" data-aos="fade-up" data-aos-delay={Math.min(idx, 4) * 120}>
+                    <div className="w-12 h-12 flex-shrink-0 rounded-xl bg-white/[0.06] p-1.5 flex items-center justify-center overflow-hidden">
+                      {exp.logo ? (
+                        <img src={exp.logo} alt="" className="w-full h-full object-contain" loading="lazy" />
+                      ) : (
+                        <Briefcase className="w-5 h-5 text-gray-500" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
                       <p className="text-base font-semibold text-white leading-snug">{exp.company}</p>
-                      <p className="text-sm mt-1" style={{ color: "var(--col-muted)" }}>{exp.role}</p>
+                      <p className="text-sm mt-0.5" style={{ color: "var(--col-muted)" }}>{exp.role}</p>
+                      <p className="text-xs mt-1 font-medium" style={{ color: "var(--col-blue-light)" }}>{exp.year}</p>
                     </div>
                   </div>
                 ))
