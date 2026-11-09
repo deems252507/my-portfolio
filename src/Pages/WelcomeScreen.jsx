@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ParticleTextEffect } from '../components/ui/particle-text-effect';
 import { useSiteContent } from '../context/SiteContentContext';
@@ -7,6 +7,7 @@ import LoadingProgress from '../components/LoadingProgress';
 
 const WelcomeScreen = ({ onLoadingComplete }) => {
   const [isLoading, setIsLoading] = useState(true);
+  const anchorRef = useRef(null);
   const { content } = useSiteContent();
 
   const loadDuration = Math.max(1500, (parseFloat(content?.loading_duration) || 4.5) * 1000);
@@ -58,21 +59,24 @@ const WelcomeScreen = ({ onLoadingComplete }) => {
         >
           <WelcomeBackground content={content} />
 
+          {/* Kanvas partikel memenuhi seluruh layar (tanpa kotak); teks muncul di area anchor di bawah */}
+          <ParticleTextEffect
+            anchorRef={anchorRef}
+            line1={content.welcome_line1 || "Welcome To My"}
+            line2={content.welcome_line2 || "Portofolio Website"}
+            fontFamily={content.welcome_font || "Arial"}
+            color1={content.welcome_color1 || "#ffffff"}
+            color2={content.welcome_color2 || "#2563eb"}
+          />
+
           <div className="relative z-10 min-h-[100dvh] flex items-center justify-center px-4 sm:px-8">
             <div className="w-full max-w-5xl mx-auto">
-              <motion.div
-                className="relative text-center mb-6 sm:mb-8 md:mb-12 w-full flex justify-center"
+              <div
+                ref={anchorRef}
+                aria-hidden
+                className="relative mb-6 sm:mb-8 md:mb-12 w-full"
                 style={{ height: "clamp(260px, 40vh, 380px)" }}
-                variants={childVariants}
-              >
-                <ParticleTextEffect
-                  line1={content.welcome_line1 || "Welcome To My"}
-                  line2={content.welcome_line2 || "Portofolio Website"}
-                  fontFamily={content.welcome_font || "Arial"}
-                  color1={content.welcome_color1 || "#ffffff"}
-                  color2={content.welcome_color2 || "#2563eb"}
-                />
-              </motion.div>
+              />
 
               <motion.div
                 className="text-center"
