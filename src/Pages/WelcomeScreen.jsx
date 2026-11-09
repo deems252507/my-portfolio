@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ParticleTextEffect } from '../components/ui/particle-text-effect';
+import { ZoomTextReveal } from '../components/ui/zoom-text-reveal';
 import { useSiteContent } from '../context/SiteContentContext';
 import WelcomeBackground from '../components/WelcomeBackground';
 import LoadingProgress from '../components/LoadingProgress';
@@ -25,11 +25,11 @@ const WelcomeScreen = ({ onLoadingComplete }) => {
   const containerVariants = {
     exit: {
       opacity: 0,
-      scale: 1.1,
-      filter: "blur(10px)",
+      scale: 1.6,
+      filter: "blur(14px)",
       transition: {
-        duration: 0.8,
-        ease: "easeInOut",
+        duration: 0.9,
+        ease: [0.7, 0, 0.84, 0],
         when: "beforeChildren",
         staggerChildren: 0.1
       }
@@ -38,10 +38,10 @@ const WelcomeScreen = ({ onLoadingComplete }) => {
 
   const childVariants = {
     exit: {
-      y: -20,
+      scale: 1.2,
       opacity: 0,
       transition: {
-        duration: 0.4,
+        duration: 0.5,
         ease: "easeInOut"
       }
     }
@@ -63,10 +63,10 @@ const WelcomeScreen = ({ onLoadingComplete }) => {
             <div className="w-full max-w-5xl mx-auto">
               <motion.div
                 className="relative text-center mb-6 sm:mb-8 md:mb-12 w-full flex justify-center"
-                style={{ height: "clamp(170px, 26vh, 320px)" }}
+                style={{ height: "clamp(190px, 30vh, 340px)" }}
                 variants={childVariants}
               >
-                <ParticleTextEffect
+                <ZoomTextReveal
                   line1={content.welcome_line1 || "Welcome To My"}
                   line2={content.welcome_line2 || "Portofolio Website"}
                   fontFamily={content.welcome_font || "Arial"}

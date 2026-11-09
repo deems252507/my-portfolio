@@ -19,22 +19,35 @@ const Header = memo(() => (
   </div>
 ))
 
-/** Satu baris teks muncul dari balik "masker" (naik + blur hilang). */
+/** Satu baris teks muncul dari balik "masker" (naik + blur hilang).
+ *  Pemicu scroll dipasang di pembungkus (yang selalu terlihat), BUKAN di teks yang
+ *  tersembunyi di balik overflow-hidden — kalau tidak, browser menganggap teks tidak
+ *  pernah terlihat dan animasinya tidak pernah jalan (teks jadi hilang). */
 const MaskLine = ({ children, delay = 0, className = "", style }) => {
   const reduce = useReducedMotion()
+  const variants = {
+    hidden: { y: "110%", opacity: 0, rotateX: -35, filter: "blur(10px)" },
+    show: {
+      y: "0%", opacity: 1, rotateX: 0, filter: "blur(0px)",
+      transition: { duration: 1.1, delay, ease: [0.16, 1, 0.3, 1] },
+    },
+  }
   return (
-    <span className="block overflow-hidden" style={{ paddingBottom: "0.1em", marginBottom: "-0.1em" }}>
+    <motion.span
+      className="block overflow-hidden"
+      style={{ paddingBottom: "0.12em", marginBottom: "-0.12em", perspective: 600 }}
+      initial={reduce ? "show" : "hidden"}
+      whileInView="show"
+      viewport={{ once: true, amount: 0.2 }}
+    >
       <motion.span
         className={`block ${className}`}
-        style={style}
-        initial={reduce ? false : { y: "115%", opacity: 0, filter: "blur(8px)" }}
-        whileInView={{ y: "0%", opacity: 1, filter: "blur(0px)" }}
-        viewport={{ once: true, amount: 0.3 }}
-        transition={{ duration: 1, delay, ease: [0.22, 1, 0.36, 1] }}
+        style={{ ...style, transformOrigin: "50% 100%" }}
+        variants={variants}
       >
         {children}
       </motion.span>
-    </span>
+    </motion.span>
   )
 }
 
