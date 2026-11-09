@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ZoomTextReveal } from '../components/ui/zoom-text-reveal';
+import { ParticleTextEffect } from '../components/ui/particle-text-effect';
 import { useSiteContent } from '../context/SiteContentContext';
 import WelcomeBackground from '../components/WelcomeBackground';
 import LoadingProgress from '../components/LoadingProgress';
@@ -66,12 +66,10 @@ const WelcomeScreen = ({ onLoadingComplete }) => {
                 style={{ height: "clamp(190px, 30vh, 340px)" }}
                 variants={childVariants}
               >
-                <ZoomTextReveal
+                <ParticleTextEffect
                   line1={content.welcome_line1 || "Welcome To My"}
                   line2={content.welcome_line2 || "Portofolio Website"}
                   fontFamily={content.welcome_font || "Arial"}
-                  color1={content.welcome_color1 || "#ffffff"}
-                  color2={content.welcome_color2 || "#2563eb"}
                 />
               </motion.div>
 
