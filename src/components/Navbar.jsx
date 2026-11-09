@@ -161,7 +161,7 @@ export default function Navbar({ defaultActive = "Home" }) {
         <motion.div
           className="pointer-events-auto flex items-center gap-1 sm:gap-2 backdrop-blur-lg py-1.5 px-1.5 sm:py-2 sm:px-2 rounded-full shadow-lg relative"
           style={{
-            background: "color-mix(in srgb, var(--col-bg2) 75%, transparent)",
+            background: "color-mix(in srgb, var(--col-bg2) 92%, transparent)",
             border: "1px solid var(--col-border)",
           }}
           initial={{ y: -20, opacity: 0 }}
@@ -222,7 +222,7 @@ export default function Navbar({ defaultActive = "Home" }) {
                 {isActive && showMascot && (
                   <motion.div
                     layoutId="nav-mascot"
-                    className="absolute -top-11 sm:-top-12 left-1/2 -translate-x-1/2 pointer-events-none"
+                    className="hidden sm:block absolute -top-11 sm:-top-12 left-1/2 -translate-x-1/2 pointer-events-none"
                     initial={false}
                     transition={{ type: "spring", stiffness: 300, damping: 28 }}
                   >

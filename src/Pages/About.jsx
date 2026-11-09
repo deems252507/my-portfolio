@@ -194,6 +194,7 @@ const AboutPage = () => {
   const { content } = useSiteContent()
   const hoverFit = useMemo(() => getHoverFit(content), [content])
   const profileFit = useMemo(() => getProfileFit(content), [content])
+  const [bioOpen, setBioOpen] = useState(false)
   const [stats, setStats] = useState({ totalProjects: 0, totalCertificates: 0, totalAwards: 0 })
 
   useEffect(() => {
@@ -306,33 +307,45 @@ const AboutPage = () => {
           </div>
         </div>
 
-        {/* ── Mobile Layout (below lg) ── */}
-        <div className="flex flex-col items-start gap-6 lg:hidden">
-          {/* Photo */}
-          <div className="flex justify-center w-full">
-            <ProfileImage profilePhoto={content.profile_photo} hoverPhoto={content.hover_photo} hoverFit={hoverFit} profileFit={profileFit} />
+        {/* ── Mobile Layout (below lg): nama di kiri, foto di kanan seperti tampilan laptop ── */}
+        <div className="flex flex-col items-start gap-5 lg:hidden">
+          <div className="relative w-full h-[370px] sm:h-[460px]">
+            <div className="absolute right-[-14%] sm:right-0 bottom-0 w-[350px] sm:w-[500px]">
+              <ProfileImage profilePhoto={content.profile_photo} hoverPhoto={content.hover_photo} hoverFit={hoverFit} profileFit={profileFit} />
+            </div>
+            <h3
+              className="absolute left-0 top-[12%] z-20 text-[2.5rem] sm:text-6xl font-bold tracking-tight leading-[1.05] text-left pointer-events-none"
+              style={{ fontFamily: "var(--font-display)", filter: "drop-shadow(0 4px 16px rgba(0,0,0,0.75))" }}
+              data-aos="fade-up" data-aos-duration="1000">
+              <span className="grad-vi block text-2xl sm:text-4xl mb-1">{content.greeting}</span>
+              <span className="block text-white">{content.first_name}</span>
+              <span className="block text-white">{content.last_name}</span>
+            </h3>
           </div>
-          {/* Name */}
-          <h3 className="text-4xl sm:text-5xl font-bold tracking-tight leading-tight text-left w-full"
-            style={{ fontFamily: "var(--font-display)" }}
-            data-aos="fade-up" data-aos-duration="1000">
-            <span className="grad-vi block">{content.greeting}</span>
-            <span className="block text-white mt-1">{content.full_name}</span>
-          </h3>
-          {/* Description */}
-          <div className="text-base sm:text-lg leading-relaxed text-left w-full" style={{ color: "var(--col-muted)" }}>
-            <p className="whitespace-pre-line">{content.bio}</p>
+          {/* Description — ringkas, bisa dibuka */}
+          <div className="text-base leading-relaxed text-left w-full" style={{ color: "var(--col-muted)" }}>
+            <p
+              className="whitespace-pre-line"
+              style={bioOpen ? undefined : { display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden" }}
+            >{content.bio}</p>
+            <button
+              type="button"
+              onClick={() => setBioOpen((v) => !v)}
+              aria-expanded={bioOpen}
+              className="mt-2 min-h-[44px] text-sm font-semibold"
+              style={{ color: "var(--col-blue-light)", fontFamily: "var(--font-display)" }}
+            >{bioOpen ? "Tutup" : "Baca selengkapnya"}</button>
           </div>
-          {/* Buttons — full width, stacked */}
-          <div className="flex flex-col gap-3 w-full">
-            <a href={content.resume_url} className="w-full">
-              <button className="w-full px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2 theme-btn-primary"
+          {/* Buttons — berdampingan */}
+          <div className="flex flex-wrap gap-3 w-full">
+            <a href={content.resume_url} className="flex-1 min-w-[140px]">
+              <button className="w-full px-5 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 theme-btn-primary"
                 style={{ background: "var(--col-blue)", fontFamily: "var(--font-display)", color: "white" }}>
                 <FileText className="w-4 h-4" /> View Resume
               </button>
             </a>
-            <a href="#Portofolio" className="w-full">
-              <button className="w-full px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2 theme-btn-outline"
+            <a href="#Portofolio" className="flex-1 min-w-[140px]">
+              <button className="w-full px-5 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 theme-btn-outline"
                 style={{ border: "1px solid color-mix(in srgb, var(--col-blue) 45%, transparent)", color: "var(--col-blue-light)", fontFamily: "var(--font-display)", background: "transparent" }}>
                 <Code className="w-4 h-4" /> View Projects
               </button>

@@ -19,12 +19,12 @@ export default function WhatsAppButton() {
       rel="noopener noreferrer"
       aria-label={text}
       title={text}
-      className="fixed bottom-5 right-5 z-[60] group flex items-center gap-2"
+      className="fixed bottom-4 right-3 sm:bottom-5 sm:right-5 z-[60] group flex items-center gap-2"
     >
       <span className="hidden sm:inline-block opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0 transition-all duration-200 text-xs font-medium text-white bg-[#075e54] px-3 py-1.5 rounded-full shadow-lg whitespace-nowrap">
         {text}
       </span>
-      <span className="relative flex items-center justify-center w-14 h-14 rounded-full bg-[#25D366] shadow-[0_4px_20px_rgba(37,211,102,0.45)] hover:scale-110 active:scale-95 transition-transform duration-200">
+      <span className="relative flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#25D366] shadow-[0_4px_20px_rgba(37,211,102,0.45)] hover:scale-110 active:scale-95 transition-transform duration-200">
         <span className="absolute inset-0 rounded-full bg-[#25D366] animate-ping opacity-20" />
         <svg
           viewBox="0 0 32 32"

@@ -57,10 +57,10 @@ const CSS = `
 .idcl-brand{ display:flex; align-items:flex-start; gap:6px; }
 .idcl-brand-mark{ font-size:12px; color:var(--idcl-accent); line-height:1; margin-top:1px; }
 .idcl-brand-text{ display:flex; flex-direction:column; }
-.idcl-brand-text b{ font-family:var(--idcl-font-display); font-weight:800; font-size:11.5px; letter-spacing:.01em; color:var(--idcl-card-ink); line-height:1.2; }
-.idcl-brand-text small{ font-family:var(--idcl-font-mono); font-size:6.3px; letter-spacing:.09em; text-transform:uppercase; color:var(--idcl-card-soft); }
+.idcl-brand-text b{ font-family:var(--idcl-font-display); font-weight:800; font-size:13px; letter-spacing:.01em; color:var(--idcl-card-ink); line-height:1.2; }
+.idcl-brand-text small{ font-family:var(--idcl-font-mono); font-size:8px; letter-spacing:.09em; text-transform:uppercase; color:var(--idcl-card-soft); }
 .idcl-pillars{ display:flex; flex-direction:column; align-items:flex-end; gap:1px; }
-.idcl-pillars span{ font-family:var(--idcl-font-mono); font-size:7px; letter-spacing:.1em; text-transform:uppercase; color:var(--idcl-card-soft); }
+.idcl-pillars span{ font-family:var(--idcl-font-mono); font-size:8.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--idcl-card-soft); }
 .idcl-pillars i{ width:16px; height:2px; background:var(--idcl-card-ink); margin-top:3px; }
 .idcl-photo{ position:relative; width:100%; height:var(--idcl-photo-h,112px); border-radius:10px; background:#eae7de; overflow:visible; margin-bottom:12px; flex-shrink:0;
   box-shadow:inset 0 0 0 1px rgba(0,0,0,.08),inset 0 2px 6px rgba(0,0,0,.12); }
@@ -73,15 +73,15 @@ const CSS = `
   box-shadow:0 2px 6px rgba(0,0,0,.4),0 0 0 3px var(--idcl-card); }
 .idcl-verified svg{ width:11px; height:11px; }
 .idcl-name{ margin:0 0 2px; font-family:var(--idcl-font-display); font-weight:800; font-size:18px; color:var(--idcl-card-ink); letter-spacing:-.01em; white-space:nowrap; }
-.idcl-role{ margin:0 0 10px; font-size:10px; color:var(--idcl-card-soft); font-weight:600; letter-spacing:.09em; text-transform:uppercase; }
+.idcl-role{ margin:0 0 10px; font-size:11px; color:var(--idcl-card-soft); font-weight:600; letter-spacing:.09em; text-transform:uppercase; }
 .idcl-divider{ width:100%; height:1px; background:var(--idcl-card-line); margin-bottom:10px; }
 .idcl-idrow{ width:100%; display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:16px; }
 .idcl-idrow-labels{ display:flex; flex-direction:column; gap:5px; font-family:var(--idcl-font-mono); }
 .idcl-idrow-labels div{ display:flex; gap:8px; align-items:baseline; }
-.idcl-idrow-labels span{ width:56px; flex-shrink:0; font-size:7.6px; letter-spacing:.06em; text-transform:uppercase; color:var(--idcl-card-soft); }
-.idcl-idrow-labels b{ font-size:9.5px; font-weight:600; color:var(--idcl-card-ink); }
+.idcl-idrow-labels span{ width:62px; flex-shrink:0; font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--idcl-card-soft); }
+.idcl-idrow-labels b{ font-size:11px; font-weight:600; color:var(--idcl-card-ink); }
 .idcl-footer{ width:100%; margin-top:auto; padding-top:10px; border-top:1px solid var(--idcl-card-line); text-align:center;
-  font-family:var(--idcl-font-mono); font-size:8.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--idcl-card-soft); }
+  font-family:var(--idcl-font-mono); font-size:9.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--idcl-card-soft); }
 .idcl-footer i{ color:var(--idcl-card-line); font-style:normal; margin:0 5px; }
 .idcl-stripe{ width:100%; height:30px; background:repeating-linear-gradient(45deg,#1b1d24,#1b1d24 6px,#26282f 6px,#26282f 12px); border-radius:3px; margin-bottom:12px; }
 .idcl-barcode{ display:flex; align-items:flex-end; gap:2px; height:32px; width:100%; background:#fff; border-radius:3px; padding:0 4px; margin-bottom:8px; overflow:hidden; }
@@ -434,16 +434,13 @@ export function IDCardLanyard({
     }
 
     // ── Animasi masuk: tali memanjang perlahan (sedikit overshoot), kartu fade-in ──
-    const ENTER_DELAY = 250; // ms setelah terlihat di layar
-    const ENTER_DUR = 1700; // ms
-    const START_LEN = 0.22; // panjang tali awal (rasio)
+    const ENTER_DELAY = 150; // ms setelah terlihat di layar
+    const ENTER_DUR = 1100; // ms
+    const START_LEN = 0.55; // panjang tali awal (rasio)
     let visibleSince = null;
     let entered = reduceMotion;
-    const easeOutBack = (x) => {
-      const c1 = 1.05;
-      const c3 = c1 + 1;
-      return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
-    };
+    const easeOutBack = (x) => 1 - Math.pow(1 - x, 3); // easeOutCubic: tanpa overshoot, lebih halus
+    let nudged = reduceMotion;
     function updateEntrance(now) {
       if (entered) {
         segLen = REST_LENGTH / (NUM_POINTS - 1);
@@ -458,8 +455,16 @@ export function IDCardLanyard({
       const t = Math.min(1, Math.max(0, (now - visibleSince - ENTER_DELAY) / ENTER_DUR));
       const e = easeOutBack(t);
       segLen = (REST_LENGTH * (START_LEN + (1 - START_LEN) * e)) / (NUM_POINTS - 1);
-      card.style.opacity = String(Math.min(1, t * 2.2));
-      if (t >= 1) entered = true;
+      card.style.opacity = String(Math.min(1, t * 3));
+      if (t >= 1) {
+        entered = true;
+        if (!nudged) {
+          // dorongan kecil sekali supaya kartu berayun pelan lalu diam
+          const lp = points[points.length - 1];
+          lp.oldx = lp.x - 1.6;
+          nudged = true;
+        }
+      }
     }
 
     let io;
