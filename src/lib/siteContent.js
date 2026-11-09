@@ -454,7 +454,32 @@ export async function saveSiteContent(content) {
   return payload;
 }
 
+/** Kecilkan gambar besar (foto kamera/HP bisa 4000px+) sebelum diupload.
+ *  Gambar raksasa membuat Safari iPhone kehabisan memori ("Terjadi masalah berulang kali"). */
+async function downscaleImage(file, maxDim = 1600) {
+  try {
+    if (!file || !/^image\/(png|jpe?g|webp)$/i.test(file.type)) return file;
+    const bmp = await createImageBitmap(file);
+    const ratio = Math.min(1, maxDim / Math.max(bmp.width, bmp.height));
+    if (ratio >= 1) { bmp.close?.(); return file; }
+    const w = Math.round(bmp.width * ratio);
+    const h = Math.round(bmp.height * ratio);
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    canvas.getContext("2d").drawImage(bmp, 0, 0, w, h);
+    bmp.close?.();
+    const type = file.type === "image/png" ? "image/png" : "image/jpeg"; // PNG tetap PNG (transparan)
+    const blob = await new Promise((res) => canvas.toBlob(res, type, 0.9));
+    if (!blob || blob.size >= file.size) return file;
+    return new File([blob], file.name, { type });
+  } catch {
+    return file;
+  }
+}
+
 export async function uploadSiteImage(file) {
+  file = await downscaleImage(file);
   const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
   const fileName = `site/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
   const { error } = await supabase.storage.from("project-images").upload(fileName, file, {
