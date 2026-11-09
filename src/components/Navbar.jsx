@@ -157,7 +157,7 @@ export default function Navbar({ defaultActive = "Home" }) {
 
   return (
     <div className="fixed top-3 sm:top-5 left-0 right-0 z-[9999] px-2 pointer-events-none">
-      <div className="flex justify-center pt-4 sm:pt-6">
+      <div className={`flex justify-center sm:pt-6 ${showMascot ? "pt-11" : "pt-4"}`}>
         <motion.div
           className="pointer-events-auto flex items-center gap-1 sm:gap-2 backdrop-blur-lg py-1.5 px-1.5 sm:py-2 sm:px-2 rounded-full shadow-lg relative"
           style={{
@@ -222,7 +222,7 @@ export default function Navbar({ defaultActive = "Home" }) {
                 {isActive && showMascot && (
                   <motion.div
                     layoutId="nav-mascot"
-                    className="hidden sm:block absolute -top-11 sm:-top-12 left-1/2 -translate-x-1/2 pointer-events-none"
+                    className="absolute -top-10 sm:-top-12 left-1/2 -translate-x-1/2 pointer-events-none scale-90 sm:scale-100"
                     initial={false}
                     transition={{ type: "spring", stiffness: 300, damping: 28 }}
                   >
