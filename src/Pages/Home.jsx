@@ -13,6 +13,34 @@ const PAUSE_DURATION = 2000
 
 /* ── Sub-components ── */
 
+/** Paragraf deskripsi: di HP/tablet dipotong 4 baris + tombol "Baca selengkapnya". Desktop tampil penuh. */
+const ReadMoreText = ({ text, isDesktop, ...rest }) => {
+  const [open, setOpen] = useState(false)
+  const clamp = !isDesktop && !open
+  return (
+    <div>
+      <p
+        {...rest}
+        lang="id"
+        style={{
+          ...(rest.style || {}),
+          textAlign: "justify", textJustify: "inter-word", hyphens: "auto", WebkitHyphens: "auto",
+          ...(clamp ? { display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden" } : {}),
+        }}
+      >{text}</p>
+      {!isDesktop && (
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          className="mt-1 min-h-[44px] px-1 text-sm font-semibold cursor-pointer"
+          style={{ color: "var(--col-blue-light)", fontFamily: "var(--font-display)" }}
+        >{open ? "Tutup" : "Baca selengkapnya"}</button>
+      )}
+    </div>
+  )
+}
+
 const HeroTitle = memo(({ line1, line2 }) => (
   <div className="space-y-1" data-aos="fade-up" data-aos-delay="400">
     <div
@@ -189,13 +217,13 @@ const Home = () => {
                 <TypeWriter key={words.join('|')} words={words} />
 
                 {/* Description */}
-                <p
+                <ReadMoreText
+                  text={subtitle}
+                  isDesktop={isDesktop}
                   className="text-sm sm:text-base lg:text-[0.95rem] xl:text-lg max-w-xl leading-relaxed font-light"
                   style={{ color: "var(--col-muted)" }}
                   data-aos="fade-up" data-aos-delay="700"
-                >
-                  {subtitle}
-                </p>
+                />
 
                 {/* CTA */}
                 <div
