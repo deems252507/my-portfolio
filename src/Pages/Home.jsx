@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, memo } from "react"
 import { Helmet } from "react-helmet-async"
 import { ExternalLink, ArrowRight } from "lucide-react"
 import SpotifyCard from "../components/ui/spotify-card"
+import { TextEffect } from "../components/ui/text-effect"
 import IDCardLanyard from "../components/ui/id-card-lanyard"
 import { useSiteContent } from "../context/SiteContentContext"
 import { typingWords, getIdCardSettings } from "../lib/siteContent"
@@ -19,15 +20,21 @@ const ReadMoreText = ({ text, isDesktop, ...rest }) => {
   const clamp = !isDesktop && !open
   return (
     <div>
-      <p
+      <TextEffect
+        as="p"
+        per="word"
+        preset="slide"
+        inView
+        delay={0.15}
         {...rest}
+        className={`whitespace-pre-line ${rest.className || ""}`}
         lang="id"
         style={{
           ...(rest.style || {}),
-          textAlign: "justify", textJustify: "inter-word", hyphens: "auto", WebkitHyphens: "auto",
+          textAlign: "justify", textJustify: "inter-word",
           ...(clamp ? { display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden" } : {}),
         }}
-      >{text}</p>
+      >{text}</TextEffect>
       {!isDesktop && (
         <button
           type="button"
@@ -222,7 +229,6 @@ const Home = () => {
                   isDesktop={isDesktop}
                   className="text-sm sm:text-base lg:text-[0.95rem] xl:text-lg max-w-xl leading-relaxed font-light"
                   style={{ color: "var(--col-muted)" }}
-                  data-aos="fade-up" data-aos-delay="700"
                 />
 
                 {/* CTA */}

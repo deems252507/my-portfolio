@@ -3,6 +3,7 @@ import React, { useEffect, memo, useMemo, useState, useCallback, useRef } from "
 import { motion, useMotionValue, useSpring, useMotionTemplate, useReducedMotion } from "framer-motion"
 import { FileText, Code, Award, Trophy, ArrowUpRight, GraduationCap, Briefcase } from "lucide-react"
 import { BorderBeamPanel } from "../components/ui/border-beam-panel"
+import { TextEffect } from "../components/ui/text-effect"
 import { supabase } from "../supabase"
 import { getHoverFit, getProfileFit, getAboutMobileSettings } from "../lib/siteContent"
 
@@ -381,7 +382,7 @@ const AboutPage = () => {
           {/* Right: Description + View Projects */}
           <div className="min-w-0 space-y-6 text-left" data-aos="fade-left" data-aos-duration="1000">
             <div className="text-base sm:text-lg leading-relaxed" style={{ color: "var(--col-muted)" }}>
-              <p className="whitespace-pre-line" lang="id" style={{ textAlign: "justify", textJustify: "inter-word", hyphens: "auto", WebkitHyphens: "auto" }}>{content.bio}</p>
+              <TextEffect as="p" per="word" preset="slide" inView className="whitespace-pre-line" lang="id" style={{ textAlign: "justify", textJustify: "inter-word" }}>{content.bio}</TextEffect>
             </div>
             <div className="mt-8">
               <a href="#Portofolio">
@@ -415,11 +416,15 @@ const AboutPage = () => {
           </div>
           {/* Description — ringkas, bisa dibuka */}
           <div className="relative z-30 text-base leading-relaxed text-left w-full" style={{ color: "var(--col-muted)" }}>
-            <p
+            <TextEffect
+              as="p"
+              per="word"
+              preset="slide"
+              inView
               className="whitespace-pre-line"
               lang="id"
-              style={bioOpen ? { textAlign: "justify", textJustify: "inter-word", hyphens: "auto", WebkitHyphens: "auto" } : { textAlign: "justify", textJustify: "inter-word", hyphens: "auto", WebkitHyphens: "auto", display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden" }}
-            >{content.bio}</p>
+              style={bioOpen ? { textAlign: "justify", textJustify: "inter-word" } : { textAlign: "justify", textJustify: "inter-word", display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden" }}
+            >{content.bio}</TextEffect>
             <button
               type="button"
               onClick={() => setBioOpen((v) => !v)}

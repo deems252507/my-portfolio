@@ -122,7 +122,7 @@ function runEffect(canvas, textCanvas, anchor, o) {
       tc.font = `800 ${i === 0 ? fs * 0.62 : fs}px ${fontStack}`;
       const col = l.ci === 0 ? o.color1 || "#ffffff" : o.color2 || "#2563eb";
       tc.fillStyle = col;
-      tc.shadowColor = col; tc.shadowBlur = Math.max(6, fs * 0.12);
+      tc.shadowColor = col; tc.shadowBlur = Math.max(4, fs * 0.07);
       tc.fillText(l.text, acx, ty + hs[i] / 2);
       tc.shadowBlur = 0;
       tc.fillText(l.text, acx, ty + hs[i] / 2);
@@ -204,11 +204,11 @@ function runEffect(canvas, textCanvas, anchor, o) {
     ctx.globalAlpha = 1;
 
     // sebagian besar partikel sudah di tempatnya (atau sudah >3.4 dtk) -> munculkan teks solid
-    if (!revealT && (near > particles.length * 0.9 || now - startT > 3400)) {
+    if (!revealT && (near > particles.length * 0.85 || now - startT > 3000)) {
       revealT = now;
       textCanvas.style.opacity = "1";
     }
-    if (revealT && now - revealT > 750) finish();
+    if (revealT && now - revealT > 200) finish(); // teks solid langsung menggantikan titik-titik
   };
 
   build();
@@ -255,7 +255,7 @@ export function ParticleTextEffect({
   return (
     <div className="absolute inset-0 pointer-events-none z-10" aria-hidden>
       <span className="sr-only">{`${line1} ${line2}`}</span>
-      <canvas ref={textRef} className="absolute inset-0 w-full h-full block" style={{ opacity: 0, transition: "opacity 0.7s ease" }} />
+      <canvas ref={textRef} className="absolute inset-0 w-full h-full block" style={{ opacity: 0, transition: "opacity 0.16s ease-out" }} />
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full block" />
     </div>
   );
