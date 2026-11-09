@@ -19,16 +19,16 @@ const Header = memo(() => (
   </div>
 ))
 
-/** Satu baris teks muncul dari balik "masker" (naik + blur hilang).
- *  Pemicu scroll dipasang di pembungkus (yang selalu terlihat), BUKAN di teks yang
- *  tersembunyi di balik overflow-hidden — kalau tidak, browser menganggap teks tidak
- *  pernah terlihat dan animasinya tidak pernah jalan (teks jadi hilang). */
+/** Satu baris teks muncul dari balik "masker" (naik + sedikit miring 3D).
+ *  Pemicu dipasang di pembungkus yang selalu terlihat (bukan di teks yang tersembunyi
+ *  di balik overflow-hidden). once:false => animasi MAIN LAGI setiap kali bagian ini
+ *  masuk layar saat scroll naik/turun. Tanpa filter blur supaya ringan di HP. */
 const MaskLine = ({ children, delay = 0, className = "", style }) => {
   const reduce = useReducedMotion()
   const variants = {
-    hidden: { y: "110%", opacity: 0, rotateX: -35, filter: "blur(10px)" },
+    hidden: { y: "115%", opacity: 0, rotateX: -40, transition: { duration: 0.35, ease: "easeIn" } },
     show: {
-      y: "0%", opacity: 1, rotateX: 0, filter: "blur(0px)",
+      y: "0%", opacity: 1, rotateX: 0,
       transition: { duration: 1.1, delay, ease: [0.16, 1, 0.3, 1] },
     },
   }
@@ -38,7 +38,7 @@ const MaskLine = ({ children, delay = 0, className = "", style }) => {
       style={{ paddingBottom: "0.12em", marginBottom: "-0.12em", perspective: 600 }}
       initial={reduce ? "show" : "hidden"}
       whileInView="show"
-      viewport={{ once: true, amount: 0.2 }}
+      viewport={{ once: false, amount: 0.25 }}
     >
       <motion.span
         className={`block ${className}`}
@@ -51,19 +51,21 @@ const MaskLine = ({ children, delay = 0, className = "", style }) => {
   )
 }
 
-/** Foto: muncul naik dari bawah + fokus, glow di belakang membesar lalu "bernapas", foto melayang pelan. */
+/** Foto: masuk dari KANAN ke KIRI (meluncur + membesar halus), glow di belakang menyala,
+ *  lalu foto melayang pelan. Main ulang setiap kali bagian About masuk layar. */
 const PhotoStage = ({ children }) => {
   const reduce = useReducedMotion()
+  const viewport = { once: false, amount: 0.25 }
   return (
     <div className="relative w-full">
       <motion.div
         aria-hidden
         className="absolute left-1/2 top-[40%] -translate-x-1/2 -translate-y-1/2 pointer-events-none"
         style={{ width: "74%", aspectRatio: "1 / 1" }}
-        initial={reduce ? false : { opacity: 0, scale: 0.4 }}
-        whileInView={{ opacity: 1, scale: 1 }}
-        viewport={{ once: true, amount: 0.3 }}
-        transition={{ duration: 1.6, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+        initial={reduce ? false : { opacity: 0, scale: 0.4, x: "30%" }}
+        whileInView={{ opacity: 1, scale: 1, x: "0%" }}
+        viewport={viewport}
+        transition={{ duration: 1.6, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
       >
         <motion.div
           className="w-full h-full rounded-full"
@@ -73,14 +75,14 @@ const PhotoStage = ({ children }) => {
         />
       </motion.div>
       <motion.div
-        initial={reduce ? false : { opacity: 0, y: 70, scale: 1.07, filter: "blur(14px)" }}
-        whileInView={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-        viewport={{ once: true, amount: 0.3 }}
-        transition={{ duration: 1.3, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+        initial={reduce ? false : { opacity: 0, x: 140, scale: 0.92 }}
+        whileInView={{ opacity: 1, x: 0, scale: 1 }}
+        viewport={viewport}
+        transition={{ duration: 1.5, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
       >
         <motion.div
           animate={reduce ? undefined : { y: [0, -7, 0] }}
-          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1.6 }}
+          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1.8 }}
         >
           {children}
         </motion.div>
@@ -367,7 +369,7 @@ const AboutPage = () => {
           {/* Right: Description + View Projects */}
           <div className="min-w-0 space-y-6 text-left" data-aos="fade-left" data-aos-duration="1000">
             <div className="text-base sm:text-lg leading-relaxed" style={{ color: "var(--col-muted)" }}>
-              <p className="whitespace-pre-line">{content.bio}</p>
+              <p className="whitespace-pre-line" lang="id" style={{ textAlign: "justify", textJustify: "inter-word", hyphens: "auto", WebkitHyphens: "auto" }}>{content.bio}</p>
             </div>
             <div className="mt-8">
               <a href="#Portofolio">
@@ -401,7 +403,8 @@ const AboutPage = () => {
           <div className="relative z-30 text-base leading-relaxed text-left w-full" style={{ color: "var(--col-muted)" }}>
             <p
               className="whitespace-pre-line"
-              style={bioOpen ? undefined : { display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden" }}
+              lang="id"
+              style={bioOpen ? { textAlign: "justify", textJustify: "inter-word", hyphens: "auto", WebkitHyphens: "auto" } : { textAlign: "justify", textJustify: "inter-word", hyphens: "auto", WebkitHyphens: "auto", display: "-webkit-box", WebkitLineClamp: 4, WebkitBoxOrient: "vertical", overflow: "hidden" }}
             >{content.bio}</p>
             <button
               type="button"

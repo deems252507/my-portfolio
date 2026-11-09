@@ -1,34 +1,28 @@
 import React, { useEffect, useRef } from "react";
 
 /**
- * ParticleTextEffect (basis: 21st.dev by KAINXU) — dirapikan untuk Welcome Screen:
- * - ukuran canvas mengikuti container + devicePixelRatio (tajam, tidak terpotong)
- * - titik diambil dari grid rata (bukan per baris) jadi huruf rapi, tidak bergaris
- * - kata berganti otomatis (baris 1 lalu baris 2) dan berhenti di kata terakhir
- * - zoom-in halus pada seluruh teks selama loading
+ * ParticleTextEffect (basis 21st.dev / KAINXU) — versi Welcome Screen:
+ * - SELURUH kalimat tampil sekaligus ("Welcome To My" + "Portofolio Website"), bukan ganti-ganti kata
+ * - partikel berkumpul membentuk huruf (grid rata, rapi), lalu teks tajam muncul di atasnya
+ *   sehingga hasil akhirnya JELAS dan mudah dibaca
+ * - zoom-in halus, ukuran mengikuti layar (HP: baris panjang dipecah agar huruf lebih besar)
+ * - ringan untuk HP (DPR dibatasi, jumlah partikel dibatasi)
  */
 class Particle {
   constructor() {
     this.pos = { x: 0, y: 0 };
     this.vel = { x: 0, y: 0 };
     this.target = { x: 0, y: 0 };
-    this.closeEnoughTarget = 100;
     this.maxSpeed = 1;
     this.maxForce = 0.1;
     this.size = 2.4;
-    this.isKilled = false;
-    this.startColor = { r: 0, g: 0, b: 0 };
-    this.targetColor = { r: 0, g: 0, b: 0 };
-    this.colorWeight = 0;
-    this.colorBlendRate = 0.01;
+    this.color = "255,255,255";
   }
-
   move() {
     const dx = this.target.x - this.pos.x;
     const dy = this.target.y - this.pos.y;
     const dist = Math.hypot(dx, dy);
-    const prox = dist < this.closeEnoughTarget ? dist / this.closeEnoughTarget : 1;
-
+    const prox = dist < 100 ? dist / 100 : 1;
     let tx = 0, ty = 0;
     if (dist > 0) {
       tx = (dx / dist) * this.maxSpeed * prox;
@@ -46,197 +40,198 @@ class Particle {
     this.pos.x += this.vel.x;
     this.pos.y += this.vel.y;
   }
-
   draw(ctx) {
-    if (this.colorWeight < 1) this.colorWeight = Math.min(this.colorWeight + this.colorBlendRate, 1);
-    const w = this.colorWeight;
-    const r = Math.round(this.startColor.r + (this.targetColor.r - this.startColor.r) * w);
-    const g = Math.round(this.startColor.g + (this.targetColor.g - this.startColor.g) * w);
-    const b = Math.round(this.startColor.b + (this.targetColor.b - this.startColor.b) * w);
-    ctx.fillStyle = `rgb(${r},${g},${b})`;
+    ctx.fillStyle = `rgb(${this.color})`;
     ctx.fillRect(this.pos.x, this.pos.y, this.size, this.size);
   }
-
-  kill(width, height) {
-    if (this.isKilled) return;
-    const a = Math.random() * Math.PI * 2;
-    const mag = Math.max(width, height) * 0.8;
-    this.target.x = width / 2 + Math.cos(a) * mag;
-    this.target.y = height / 2 + Math.sin(a) * mag;
-    const w = this.colorWeight;
-    this.startColor = {
-      r: this.startColor.r + (this.targetColor.r - this.startColor.r) * w,
-      g: this.startColor.g + (this.targetColor.g - this.startColor.g) * w,
-      b: this.startColor.b + (this.targetColor.b - this.startColor.b) * w,
-    };
-    this.targetColor = { r: 0, g: 0, b: 0 };
-    this.colorWeight = 0;
-    this.isKilled = true;
-  }
 }
 
-// warna cerah acak per kata (HSL → RGB) supaya tidak pernah kusam/gelap
-function randomBrightColor() {
-  const h = Math.random() * 360, s = 0.85, l = 0.62;
-  const k = (n) => (n + h / 30) % 12;
-  const a = s * Math.min(l, 1 - l);
-  const f = (n) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
-  return { r: f(0) * 255, g: f(8) * 255, b: f(4) * 255 };
-}
+const hexToRgb = (hex, fallback) => {
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || "").trim());
+  if (!m) return fallback;
+  const n = parseInt(m[1], 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+};
+const lighten = (rgb, amt) => rgb.map((v) => Math.round(v + (255 - v) * amt));
 
 export function ParticleTextEffect({
   line1 = "Welcome To My",
   line2 = "Portofolio Website",
   fontFamily = "Arial",
-  wordInterval = 2200,
+  color1 = "#ffffff",
+  color2 = "#2563eb",
 }) {
-  const canvasRef = useRef(null);
   const wrapRef = useRef(null);
+  const canvasRef = useRef(null);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
     const wrap = wrapRef.current;
-    if (!canvas || !wrap) return;
+    const canvas = canvasRef.current;
+    if (!wrap || !canvas) return;
 
-    const words = [line1, line2].filter(Boolean);
+    const compact = window.matchMedia("(max-width: 767px), (pointer: coarse)").matches;
+    const dpr = Math.min(window.devicePixelRatio || 1, compact ? 1.5 : 2);
     const fontStack = `"${fontFamily}", "Plus Jakarta Sans", Arial, sans-serif`;
-    const particles = [];
-    let cssW = 0, cssH = 0, raf = 0, wordIndex = 0, lastSwitch = performance.now();
+    const c1 = hexToRgb(color1, [255, 255, 255]);
+    const c2 = lighten(hexToRgb(color2, [37, 99, 235]), 0.28); // sedikit lebih terang agar terbaca di latar gelap
 
-    const setWord = (word) => {
-      const off = document.createElement("canvas");
-      off.width = cssW;
-      off.height = cssH;
-      const octx = off.getContext("2d", { willReadFrequently: true });
+    let cssW = 0, cssH = 0, raf = 0, frame = 0;
+    let particles = [];
+    let crisp = null;
 
-      // ukuran font: sebesar mungkin (zoom-in) tapi tetap muat 90% lebar & 70% tinggi
-      let fs = Math.min(cssH * 0.7, 160);
-      octx.font = `bold ${fs}px ${fontStack}`;
-      const tw = octx.measureText(word).width;
-      if (tw > cssW * 0.9) fs *= (cssW * 0.9) / tw;
-
-      octx.fillStyle = "#fff";
-      octx.font = `bold ${fs}px ${fontStack}`;
-      octx.textAlign = "center";
-      octx.textBaseline = "middle";
-      octx.fillText(word, cssW / 2, cssH / 2);
-
-      const px = octx.getImageData(0, 0, cssW, cssH).data;
-      const step = Math.max(3, Math.round(fs / 20)); // jarak titik grid (px)
-      const size = Math.max(2, step * 0.62);
-      const color = randomBrightColor();
-
-      const coords = [];
-      for (let y = 0; y < cssH; y += step) {
-        for (let x = 0; x < cssW; x += step) {
-          if (px[(y * cssW + x) * 4 + 3] > 128) coords.push([x, y]);
-        }
-      }
-      for (let i = coords.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [coords[i], coords[j]] = [coords[j], coords[i]];
-      }
-
-      let pi = 0;
-      for (const [x, y] of coords) {
-        let p;
-        if (pi < particles.length) {
-          p = particles[pi++];
-          p.isKilled = false;
-        } else {
-          p = new Particle();
-          const a = Math.random() * Math.PI * 2;
-          const mag = Math.max(cssW, cssH) * (0.5 + Math.random() * 0.4);
-          p.pos.x = cssW / 2 + Math.cos(a) * mag;
-          p.pos.y = cssH / 2 + Math.sin(a) * mag;
-          p.maxSpeed = Math.random() * 4 + 5;
-          p.maxForce = p.maxSpeed * 0.06;
-          p.colorBlendRate = Math.random() * 0.0275 + 0.0125;
-          particles.push(p);
-        }
-        p.size = size;
-        const w = p.colorWeight;
-        p.startColor = {
-          r: p.startColor.r + (p.targetColor.r - p.startColor.r) * w,
-          g: p.startColor.g + (p.targetColor.g - p.startColor.g) * w,
-          b: p.startColor.b + (p.targetColor.b - p.startColor.b) * w,
-        };
-        p.targetColor = color;
-        p.colorWeight = 0;
-        p.target.x = x;
-        p.target.y = y;
-      }
-      for (let i = pi; i < particles.length; i++) particles[i].kill(cssW, cssH);
-    };
-
-    const resize = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      cssW = Math.max(Math.floor(wrap.clientWidth), 280);
+    const build = () => {
+      cssW = Math.max(Math.floor(wrap.clientWidth), 260);
       cssH = Math.max(Math.floor(wrap.clientHeight), 160);
       canvas.width = Math.floor(cssW * dpr);
       canvas.height = Math.floor(cssH * dpr);
       canvas.style.width = `${cssW}px`;
       canvas.style.height = `${cssH}px`;
       canvas.getContext("2d").setTransform(dpr, 0, 0, dpr, 0, 0);
-      setWord(words[wordIndex]);
+
+      // susun baris: di layar sempit, baris ke-2 dipecah per kata supaya huruf bisa lebih besar
+      const lines = [{ text: line1, color: c1 }];
+      if (cssW < 520 && /\s/.test(line2.trim())) {
+        line2.trim().split(/\s+/).forEach((w) => lines.push({ text: w, color: c2 }));
+      } else {
+        lines.push({ text: line2, color: c2 });
+      }
+
+      const measure = document.createElement("canvas").getContext("2d");
+      const LH = 1.22;
+      // ukuran font: sebesar mungkin, tetap muat 90% lebar & 88% tinggi (baris 1 sedikit lebih kecil)
+      let fs = 220;
+      const fits = (f) => {
+        const f1 = f * 0.62;
+        let maxW = 0;
+        lines.forEach((l, i) => {
+          measure.font = `800 ${i === 0 ? f1 : f}px ${fontStack}`;
+          maxW = Math.max(maxW, measure.measureText(l.text).width);
+        });
+        const totalH = (f1 + (lines.length - 1) * f) * LH;
+        return maxW <= cssW * 0.9 && totalH <= cssH * 0.88;
+      };
+      while (fs > 14 && !fits(fs)) fs -= 2;
+
+      // gambar teks tajam (berwarna) ke canvas luar layar
+      const off = document.createElement("canvas");
+      off.width = cssW;
+      off.height = cssH;
+      const o = off.getContext("2d", { willReadFrequently: true });
+      o.textAlign = "center";
+      o.textBaseline = "middle";
+      const heights = lines.map((_, i) => (i === 0 ? fs * 0.62 : fs) * LH);
+      const totalH = heights.reduce((a, b) => a + b, 0);
+      let y = (cssH - totalH) / 2;
+      lines.forEach((l, i) => {
+        const size = i === 0 ? fs * 0.62 : fs;
+        o.font = `800 ${size}px ${fontStack}`;
+        o.fillStyle = `rgb(${l.color.join(",")})`;
+        o.fillText(l.text, cssW / 2, y + heights[i] / 2);
+        y += heights[i];
+      });
+      crisp = off;
+
+      // partikel dari grid rata
+      const px = o.getImageData(0, 0, cssW, cssH).data;
+      const step = Math.max(3, Math.round(fs / 17));
+      const size = Math.max(2, step * 0.7);
+      const coords = [];
+      for (let yy = 0; yy < cssH; yy += step) {
+        for (let xx = 0; xx < cssW; xx += step) {
+          const i = (yy * cssW + xx) * 4;
+          if (px[i + 3] > 128) coords.push([xx, yy, `${px[i]},${px[i + 1]},${px[i + 2]}`]);
+        }
+      }
+      const maxCount = compact ? 3200 : 6500;
+      let list = coords;
+      if (coords.length > maxCount) {
+        const k = coords.length / maxCount;
+        list = Array.from({ length: maxCount }, (_, i) => coords[Math.floor(i * k)]);
+      }
+
+      particles = list.map(([tx, ty, col]) => {
+        const p = new Particle();
+        const a = Math.random() * Math.PI * 2;
+        const mag = Math.max(cssW, cssH) * (0.45 + Math.random() * 0.45);
+        p.pos.x = cssW / 2 + Math.cos(a) * mag;
+        p.pos.y = cssH / 2 + Math.sin(a) * mag;
+        p.target.x = tx;
+        p.target.y = ty;
+        p.maxSpeed = Math.random() * 4 + 6;
+        p.maxForce = p.maxSpeed * 0.07;
+        p.size = size;
+        p.color = col;
+        return p;
+      });
+      frame = 0;
     };
 
-    const animate = (now) => {
+    const SOLID_START = 70;  // frame ketika teks tajam mulai muncul
+    const SOLID_FADE = 50;
+
+    const animate = () => {
       raf = requestAnimationFrame(animate);
       if (document.hidden) return;
       const ctx = canvas.getContext("2d");
+      frame++;
 
-      // jejak gerak halus (motion blur) tanpa menutup latar petir di belakang
+      const t = Math.min(1, Math.max(0, (frame - SOLID_START) / SOLID_FADE));
+      // jejak gerak halus, tetap transparan agar latar petir terlihat
       ctx.globalCompositeOperation = "destination-out";
-      ctx.fillStyle = "rgba(0,0,0,0.16)";
+      ctx.fillStyle = t > 0 ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0.18)";
       ctx.fillRect(0, 0, cssW, cssH);
       ctx.globalCompositeOperation = "source-over";
 
-      for (let i = particles.length - 1; i >= 0; i--) {
-        const p = particles[i];
+      ctx.globalAlpha = 1 - t * 0.9;
+      for (const p of particles) {
         p.move();
         p.draw(ctx);
-        if (p.isKilled && (p.pos.x < -20 || p.pos.x > cssW + 20 || p.pos.y < -20 || p.pos.y > cssH + 20)) {
-          particles.splice(i, 1);
-        }
       }
+      ctx.globalAlpha = 1;
 
-      if (wordIndex < words.length - 1 && now - lastSwitch > wordInterval) {
-        wordIndex++;
-        lastSwitch = now;
-        setWord(words[wordIndex]);
+      if (t > 0 && crisp) {
+        ctx.save();
+        ctx.globalAlpha = t;
+        ctx.shadowColor = "rgba(0,0,0,0.65)";
+        ctx.shadowBlur = 18;
+        ctx.drawImage(crisp, 0, 0, cssW, cssH);
+        ctx.restore();
       }
     };
 
-    resize();
+    build();
     raf = requestAnimationFrame(animate);
 
-    let t;
+    let timer;
     const onResize = () => {
-      clearTimeout(t);
-      t = setTimeout(resize, 120);
+      clearTimeout(timer);
+      timer = setTimeout(build, 150);
     };
     window.addEventListener("resize", onResize);
     return () => {
       cancelAnimationFrame(raf);
-      clearTimeout(t);
+      clearTimeout(timer);
       window.removeEventListener("resize", onResize);
     };
-  }, [line1, line2, fontFamily, wordInterval]);
+  }, [line1, line2, fontFamily, color1, color2]);
 
   return (
     <div className="absolute inset-0 w-full h-full pointer-events-none z-10 flex items-center justify-center">
+      {/* bayangan gelap lembut di belakang teks supaya mudah dibaca di atas petir */}
+      <div
+        aria-hidden
+        className="absolute inset-0"
+        style={{ background: "radial-gradient(ellipse at center, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.25) 45%, transparent 72%)" }}
+      />
+      <span className="sr-only">{`${line1} ${line2}`}</span>
       <div
         ref={wrapRef}
-        className="w-full h-full"
-        style={{
-          transform: "scale(1.0)",
-          animation: "particleZoomIn 6s cubic-bezier(0.22,1,0.36,1) forwards",
-        }}
+        className="relative w-full h-full"
+        style={{ animation: "particleZoomIn 5s cubic-bezier(0.22,1,0.36,1) forwards" }}
       >
-        <canvas ref={canvasRef} className="block mx-auto" />
+        <canvas ref={canvasRef} className="block mx-auto" aria-hidden />
       </div>
-      <style>{`@keyframes particleZoomIn{from{transform:scale(0.82)}to{transform:scale(1.06)}}`}</style>
+      <style>{`@keyframes particleZoomIn{from{transform:scale(0.8)}to{transform:scale(1.05)}}`}</style>
     </div>
   );
 }

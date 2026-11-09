@@ -19,7 +19,7 @@ const WebGLLightning = ({
     const resizeCanvas = () => {
       // A real phone often has DPR 2–4. Rendering at that resolution made this
       // full-screen shader disproportionately expensive and visually inconsistent.
-      const dpr = Math.min(window.devicePixelRatio || 1, compactDevice ? 1 : 1.5);
+      const dpr = compactDevice ? 0.55 : Math.min(window.devicePixelRatio || 1, 1.5); // HP: resolusi rendah (glow lembut, jauh lebih ringan)
       const width = Math.max(1, Math.floor(canvas.clientWidth * dpr));
       const height = Math.max(1, Math.floor(canvas.clientHeight * dpr));
       if (canvas.width !== width || canvas.height !== height) {
@@ -31,7 +31,7 @@ const WebGLLightning = ({
     const resizeObserver = new ResizeObserver(resizeCanvas);
     resizeObserver.observe(canvas);
 
-    const gl = canvas.getContext("webgl");
+    const gl = canvas.getContext("webgl", { antialias: false, alpha: true, powerPreference: "low-power", preserveDrawingBuffer: false });
     if (!gl) return;
 
     const vertexShaderSource = `
@@ -50,7 +50,7 @@ const WebGLLightning = ({
       uniform float uSpeed;
       uniform float uIntensity;
       uniform float uSize;
-      #define OCTAVE_COUNT 10
+      #define OCTAVE_COUNT ${compactDevice ? 4 : 10}
       vec3 hsv2rgb(vec3 c) {
           vec3 rgb = clamp(abs(mod(c.x * 6.0 + vec3(0.0,4.0,2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
           return c.z * mix(vec3(1.0), rgb, c.y);
@@ -196,12 +196,16 @@ const WebGLLightning = ({
       if (isPageVisible) startRendering();
     };
     document.addEventListener("visibilitychange", handleVisibilityChange);
+    const handleContextLost = (e) => { e.preventDefault(); isPageVisible = false; if (animId) cancelAnimationFrame(animId); animId = 0; };
+    canvas.addEventListener("webglcontextlost", handleContextLost);
     startRendering();
 
     return () => {
       resizeObserver.disconnect();
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      canvas.removeEventListener("webglcontextlost", handleContextLost);
       if (animId) cancelAnimationFrame(animId);
+      gl.getExtension("WEBGL_lose_context")?.loseContext();
     };
   }, [hue, xOffset, speed, intensity, size]);
 

@@ -25,8 +25,7 @@ const WelcomeScreen = ({ onLoadingComplete }) => {
   const containerVariants = {
     exit: {
       opacity: 0,
-      scale: 1.6,
-      filter: "blur(14px)",
+      scale: 1.35,
       transition: {
         duration: 0.9,
         ease: [0.7, 0, 0.84, 0],
@@ -63,13 +62,15 @@ const WelcomeScreen = ({ onLoadingComplete }) => {
             <div className="w-full max-w-5xl mx-auto">
               <motion.div
                 className="relative text-center mb-6 sm:mb-8 md:mb-12 w-full flex justify-center"
-                style={{ height: "clamp(190px, 30vh, 340px)" }}
+                style={{ height: "clamp(260px, 40vh, 380px)" }}
                 variants={childVariants}
               >
                 <ParticleTextEffect
                   line1={content.welcome_line1 || "Welcome To My"}
                   line2={content.welcome_line2 || "Portofolio Website"}
                   fontFamily={content.welcome_font || "Arial"}
+                  color1={content.welcome_color1 || "#ffffff"}
+                  color2={content.welcome_color2 || "#2563eb"}
                 />
               </motion.div>
 
