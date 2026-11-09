@@ -51,6 +51,12 @@ const CSS = `
   background:repeating-linear-gradient(125deg,#eef1f7 0%,#cfd6e4 10%,#b9c2d6 20%,#e7ebf3 30%,#eef1f7 40%);
   background-size:220% 220%; animation:idcl-foil 7s linear infinite; box-shadow:inset 0 0 0 1px rgba(0,0,0,.1),0 0 6px rgba(255,255,255,.3); }
 @keyframes idcl-foil{ to{ background-position:220% 0%; } }
+.idcl-sheen{ position:absolute; inset:0; border-radius:inherit; overflow:hidden; pointer-events:none; z-index:3; }
+.idcl-sheen::before{ content:""; position:absolute; top:-20%; bottom:-20%; left:-60%; width:45%; transform:skewX(-18deg);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.75),transparent); opacity:0; }
+.idcl-card.idcl-entered .idcl-sheen::before{ animation:idcl-sheen 1.8s cubic-bezier(.22,.8,.3,1) .35s 1 both; }
+@keyframes idcl-sheen{ 0%{ left:-60%; opacity:0; } 15%{ opacity:.9; } 100%{ left:130%; opacity:0; } }
+@media (prefers-reduced-motion:reduce){ .idcl-card.idcl-entered .idcl-sheen::before{ animation:none; } }
 @media (prefers-reduced-motion:reduce){ .idcl-holo{ animation:none; } }
 .idcl-hole{ width:32px; height:9px; background:var(--idcl-card-ink); border-radius:5px; margin:0 auto 10px; flex-shrink:0; opacity:.85; }
 .idcl-header{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; }
@@ -430,7 +436,7 @@ export function IDCardLanyard({
       }
       tiltCurrent.x += (tiltTarget.x - tiltCurrent.x) * 0.12;
       tiltCurrent.y += (tiltTarget.y - tiltCurrent.y) * 0.12;
-      flipper.style.transform = `rotateY(${flipCurrent + tiltCurrent.y}deg) rotateX(${tiltCurrent.x}deg)`;
+      flipper.style.transform = `rotateY(${flipCurrent + tiltCurrent.y}deg) rotateX(${tiltCurrent.x}deg) scale(${(0.94 + 0.06 * enterP).toFixed(4)})`;
     }
 
     // ── Animasi masuk: tali memanjang perlahan (sedikit overshoot), kartu fade-in ──
@@ -441,10 +447,15 @@ export function IDCardLanyard({
     let entered = reduceMotion;
     const easeOutBack = (x) => 1 - Math.pow(1 - x, 3); // easeOutCubic: tanpa overshoot, lebih halus
     let nudged = reduceMotion;
+    let enterP = reduceMotion ? 1 : 0;
+    let nextSway = 0;
     function updateEntrance(now) {
       if (entered) {
         segLen = REST_LENGTH / (NUM_POINTS - 1);
+        enterP = 1;
         card.style.opacity = "1";
+        card.style.filter = "";
+        card.classList.add("idcl-entered");
         return;
       }
       if (visibleSince == null) {
@@ -454,6 +465,8 @@ export function IDCardLanyard({
       }
       const t = Math.min(1, Math.max(0, (now - visibleSince - ENTER_DELAY) / ENTER_DUR));
       const e = easeOutBack(t);
+      enterP = e;
+      card.style.filter = `blur(${((1 - e) * 5).toFixed(2)}px)`;
       segLen = (REST_LENGTH * (START_LEN + (1 - START_LEN) * e)) / (NUM_POINTS - 1);
       card.style.opacity = String(Math.min(1, t * 3));
       if (t >= 1) {
@@ -493,6 +506,11 @@ export function IDCardLanyard({
       if (dt > 100) dt = STEP; // tab sempat tidak aktif
       acc += dt;
       updateEntrance(now);
+      if (entered && !dragging && !reduceMotion && !document.hidden && now > nextSway) {
+        const lp = points[points.length - 1];
+        lp.oldx = lp.x - (Math.sin(now / 1000) > 0 ? 0.9 : -0.9);
+        nextSway = now + 6500;
+      }
       let steps = 0;
       while (acc >= STEP && steps < 4) {
         updatePoints();
@@ -594,6 +612,7 @@ export function IDCardLanyard({
             <div className="idcl-face idcl-front">
               <div className="idcl-hole" />
               <div className="idcl-holo" />
+              <span className="idcl-sheen" />
 
               <div className="idcl-header">
                 <div className="idcl-brand">

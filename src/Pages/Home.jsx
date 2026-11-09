@@ -82,7 +82,7 @@ const CTAButton = memo(({ href, text, icon: Icon, variant = "primary" }) => {
   return (
     <a href={href}>
       <button
-        className="group relative flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 hover:scale-[1.03]"
+        className={`group relative flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 hover:scale-[1.03] ${isPrimary ? "theme-btn-primary" : ""}`}
         style={{
           fontFamily: "var(--font-display)",
           ...(isPrimary

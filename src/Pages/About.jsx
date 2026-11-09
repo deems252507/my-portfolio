@@ -4,10 +4,10 @@ import { motion, useMotionValue, useSpring, useMotionTemplate } from "framer-mot
 import { FileText, Code, Award, Trophy, ArrowUpRight, GraduationCap, Briefcase } from "lucide-react"
 import { BorderBeamPanel } from "../components/ui/border-beam-panel"
 import { supabase } from "../supabase"
-import { getHoverFit, getProfileFit } from "../lib/siteContent"
+import { getHoverFit, getProfileFit, getAboutMobileSettings } from "../lib/siteContent"
 
 const Header = memo(() => (
-  <div className="text-center lg:mb-16 mb-10 px-[5%]">
+  <div className="text-center lg:mb-16 mb-2 px-[5%]">
     <div data-aos="fade-up" data-aos-duration="600">
       <h2
         className="section-label mx-auto"
@@ -194,6 +194,7 @@ const AboutPage = () => {
   const { content } = useSiteContent()
   const hoverFit = useMemo(() => getHoverFit(content), [content])
   const profileFit = useMemo(() => getProfileFit(content), [content])
+  const am = useMemo(() => getAboutMobileSettings(content), [content])
   const [bioOpen, setBioOpen] = useState(false)
   const [stats, setStats] = useState({ totalProjects: 0, totalCertificates: 0, totalAwards: 0 })
 
@@ -257,14 +258,14 @@ const AboutPage = () => {
 
   return (
     <div
-      className="h-auto pb-[10%] text-white overflow-x-clip px-[5%] sm:px-[5%] lg:px-[10%] mt-20 sm:mt-10"
+      className="h-auto pb-[10%] text-white overflow-x-clip px-[5%] sm:px-[5%] lg:px-[10%] mt-16 sm:mt-10"
       id="About"
       itemScope
       itemType="https://schema.org/Person"
     >
       <Header />
 
-      <div className="w-full mx-auto pt-8 sm:pt-12 relative">
+      <div className="w-full mx-auto pt-2 sm:pt-12 relative">
         {/* ── Desktop Layout (lg+) ── */}
         <div className="hidden lg:grid lg:grid-cols-[2.5fr_3fr_2fr] gap-6 items-center">
 
@@ -309,15 +310,15 @@ const AboutPage = () => {
 
         {/* ── Mobile Layout (below lg): nama di kiri, foto di kanan seperti tampilan laptop ── */}
         <div className="flex flex-col items-start gap-5 lg:hidden">
-          <div className="relative w-full h-[370px] sm:h-[460px]">
-            <div className="absolute right-[-14%] sm:right-0 bottom-0 w-[350px] sm:w-[500px]">
+          <div className="relative w-full" style={{ height: am.height }}>
+            <div className="absolute z-10 w-[350px] sm:w-[500px]" style={{ right: `${-am.photoX}%`, bottom: -am.photoY, transform: `scale(${am.photoSize})`, transformOrigin: "bottom right" }}>
               <ProfileImage profilePhoto={content.profile_photo} hoverPhoto={content.hover_photo} hoverFit={hoverFit} profileFit={profileFit} />
             </div>
             <h3
-              className="absolute left-0 top-[12%] z-20 text-[2.5rem] sm:text-6xl font-bold tracking-tight leading-[1.05] text-left pointer-events-none"
-              style={{ fontFamily: "var(--font-display)", filter: "drop-shadow(0 4px 16px rgba(0,0,0,0.75))" }}
+              className="absolute font-bold tracking-tight leading-[1.05] text-left pointer-events-none"
+              style={{ fontFamily: "var(--font-display)", filter: "drop-shadow(0 4px 16px rgba(0,0,0,0.75))", left: am.nameX, top: `${am.nameY}%`, fontSize: `${am.nameSize}rem`, zIndex: am.nameFront ? 20 : 5 }}
               data-aos="fade-up" data-aos-duration="1000">
-              <span className="grad-vi block text-2xl sm:text-4xl mb-1">{content.greeting}</span>
+              <span className="grad-vi block mb-1" style={{ fontSize: "0.62em" }}>{content.greeting}</span>
               <span className="block text-white">{content.first_name}</span>
               <span className="block text-white">{content.last_name}</span>
             </h3>
@@ -353,94 +354,41 @@ const AboutPage = () => {
           </div>
         </div>
 
-        {/* ── Education & Experience full-width ── */}
-        <div
-          className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 mt-14"
-          data-aos="fade-up" data-aos-duration="1300"
-        >
-          {/* Education Column */}
-          <div>
-            <h4
-              className="text-xl font-bold text-white mb-5"
-              style={{ fontFamily: "var(--font-display)" }}
-            >
-              Education
-            </h4>
-            <div className="space-y-4">
-
-              {/* Card 1 */}
-              <div className="rounded-xl px-6 py-5 flex items-center gap-4 bg-slate-800/50 hover:bg-slate-700/50 border border-white/5 transition-colors duration-200">
-                <div className="w-14 h-14 flex-shrink-0 overflow-hidden rounded-2xl">
-                  <img src={content.edu1_logo} alt="Logo" className="w-full h-full object-contain" />
+        {/* ── Education & Experience: daftar bersih ── */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-12 mt-14">
+          <div data-aos="fade-up" data-aos-duration="900">
+            <h4 className="text-xs font-semibold uppercase tracking-[0.2em] mb-3" style={{ color: "var(--col-muted)", fontFamily: "var(--font-display)" }}>Education</h4>
+            <div className="border-t border-white/10">
+              {[1, 2].filter((n) => content[`edu${n}_school`]).map((n, idx) => (
+                <div key={n} className="flex gap-4 sm:gap-6 py-4 border-b border-white/10" data-aos="fade-up" data-aos-delay={idx * 120}>
+                  <div className="w-24 sm:w-28 flex-shrink-0 text-sm pt-0.5" style={{ color: "var(--col-muted)" }}>{content[`edu${n}_year`]}</div>
+                  <div className="min-w-0">
+                    <p className="text-base font-semibold text-white leading-snug">{content[`edu${n}_school`]}</p>
+                    <p className="text-sm mt-1" style={{ color: "var(--col-muted)" }}>{content[`edu${n}_major`]}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-base font-semibold text-white leading-snug">{content.edu1_school}</p>
-                  <p className="text-sm mt-0.5" style={{ color: "var(--col-muted)" }}>{content.edu1_major}</p>
-                  <p className="text-sm mt-1 font-medium" style={{ color: "#93c5fd" }}>{content.edu1_year}</p>
-                </div>
-              </div>
-
-              {/* Card 2 */}
-              <div className="rounded-xl px-6 py-5 flex items-center gap-4 bg-slate-800/50 hover:bg-slate-700/50 border border-white/5 transition-colors duration-200">
-                <div className="w-14 h-14 flex-shrink-0 overflow-hidden rounded-2xl">
-                  <img src={content.edu2_logo} alt="Logo" className="w-full h-full object-contain" />
-                </div>
-                <div>
-                  <p className="text-base font-semibold text-white leading-snug">{content.edu2_school}</p>
-                  <p className="text-sm mt-0.5" style={{ color: "var(--col-muted)" }}>{content.edu2_major}</p>
-                  <p className="text-sm mt-1 font-medium" style={{ color: "#93c5fd" }}>{content.edu2_year}</p>
-                </div>
-              </div>
-
+              ))}
             </div>
           </div>
 
-          {/* Experience Column */}
-          <div>
-            <h4
-              className="text-xl font-bold text-white mb-5"
-              style={{ fontFamily: "var(--font-display)" }}
-            >
-              Experience
-            </h4>
-            <div
-              className="space-y-4 overflow-y-auto pr-1"
-              style={{
-                maxHeight: "320px",
-                scrollbarWidth: "thin",
-                scrollbarColor: "rgba(37,99,235,0.4) transparent",
-                WebkitOverflowScrolling: "touch",
-                overscrollBehavior: "contain",
-                willChange: "scroll-position",
-              }}
-            >
-              {/* Looping Experience dari Database */}
+          <div data-aos="fade-up" data-aos-duration="900" data-aos-delay="150">
+            <h4 className="text-xs font-semibold uppercase tracking-[0.2em] mb-3" style={{ color: "var(--col-muted)", fontFamily: "var(--font-display)" }}>Experience</h4>
+            <div className="border-t border-white/10">
               {loadingExp ? (
-                <div className="text-center py-4 text-gray-500 text-sm animate-pulse">Loading experiences...</div>
+                <div className="py-4 text-gray-500 text-sm animate-pulse">Loading experiences...</div>
               ) : experiences.length === 0 ? (
-                <div className="text-center py-4 text-gray-500 text-sm">No experiences found.</div>
+                <div className="py-4 text-gray-500 text-sm">No experiences found.</div>
               ) : (
-                experiences.map((exp) => (
-                  <div
-                    key={exp.id}
-                   className="rounded-xl px-6 py-5 flex items-center gap-4 bg-slate-800/50 hover:bg-slate-700/50 border border-white/5 transition-colors duration-200"
-                  >
-                    <div className="w-14 h-14 rounded-2xl flex-shrink-0 overflow-hidden flex items-center justify-center">
-                      {exp.logo ? (
-                        <img src={exp.logo} alt="Logo" className="w-full h-full object-contain" />
-                      ) : (
-                        <Briefcase className="w-6 h-6 text-gray-500" />
-                      )}
-                    </div>
-                    <div>
+                experiences.map((exp, idx) => (
+                  <div key={exp.id} className="flex gap-4 sm:gap-6 py-4 border-b border-white/10" data-aos="fade-up" data-aos-delay={Math.min(idx, 4) * 120}>
+                    <div className="w-24 sm:w-28 flex-shrink-0 text-sm pt-0.5" style={{ color: "var(--col-muted)" }}>{exp.year}</div>
+                    <div className="min-w-0">
                       <p className="text-base font-semibold text-white leading-snug">{exp.company}</p>
-                      <p className="text-sm mt-0.5" style={{ color: "var(--col-muted)" }}>{exp.role}</p>
-                      <p className="text-sm mt-1 font-medium" style={{ color: "#93c5fd" }}>{exp.year}</p>
+                      <p className="text-sm mt-1" style={{ color: "var(--col-muted)" }}>{exp.role}</p>
                     </div>
                   </div>
                 ))
               )}
-
             </div>
           </div>
         </div>

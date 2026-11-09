@@ -6,8 +6,8 @@
    FONTS
    ========================================= */
 :root {
-  --font-display: "Verdana", Geneva, Tahoma, sans-serif;
-  --font-body:    "Verdana", Geneva, Tahoma, sans-serif;
+  --font-display: "Plus Jakarta Sans", "Verdana", Geneva, Tahoma, sans-serif;
+  --font-body:    "Plus Jakarta Sans", "Verdana", Geneva, Tahoma, sans-serif;
 
   /* Core Palette */
   --col-bg:       #050510;
@@ -234,3 +234,25 @@ body {
 /* Sembunyikan scrollbar pada daftar geser (carousel mobile) */
 .hide-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
 .hide-scrollbar::-webkit-scrollbar { display: none; }
+
+
+/* =========================================
+   ANIMASI MEWAH: reveal halus (fade + blur), kilau tombol
+   ========================================= */
+@media (prefers-reduced-motion: no-preference) {
+  body [data-aos^="fade"] {
+    filter: blur(8px);
+    transition-property: opacity, transform, filter;
+  }
+  body [data-aos^="fade"].aos-animate { filter: blur(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  body [data-aos] { transition: none !important; filter: none !important; transform: none !important; opacity: 1 !important; }
+}
+.theme-btn-primary { position: relative; overflow: hidden; }
+.theme-btn-primary::after {
+  content: ""; position: absolute; top: 0; bottom: 0; left: -80%; width: 50%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent);
+  transform: skewX(-20deg); transition: left .7s ease; pointer-events: none;
+}
+.theme-btn-primary:hover::after { left: 130%; }

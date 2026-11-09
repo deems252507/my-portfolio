@@ -191,6 +191,15 @@ export const DEFAULT_CONTENT = {
   idcard_photo_y: "32", // posisi vertikal foto (%)
   idcard_photo_zoom: "1", // zoom foto
   idcard_anchor_x: "74", // posisi kartu di halaman desktop (% dari kiri)
+  // Tampilan About di HP (bisa diatur di admin > Bio & resume)
+  about_m_height: "400", // tinggi area foto+nama (px)
+  about_m_photo_x: "10", // geser foto: minus = kiri, plus = kanan (%)
+  about_m_photo_y: "30", // geser foto: minus = naik, plus = turun (px)
+  about_m_photo_size: "0.92", // ukuran foto (x)
+  about_m_name_x: "0", // geser nama ke kanan (px)
+  about_m_name_y: "4", // posisi nama dari atas (%)
+  about_m_name_size: "2.3", // ukuran nama (rem)
+  about_m_name_front: "true", // nama di depan foto (false = di belakang)
   profile_scale: "1",
   profile_offset_x: "0",
   profile_offset_y: "0",
@@ -294,6 +303,25 @@ export function getProfileFit(content) {
   return {
     transformOrigin: "50% 40%",
     transform: `translate(${num(c.profile_offset_x, 0)}%, ${num(c.profile_offset_y, 0)}%) scale(${scale})`,
+  };
+}
+
+/** Pengaturan tampilan About di HP (angka dibatasi supaya aman). */
+export function getAboutMobileSettings(content) {
+  const c = content || DEFAULT_CONTENT;
+  const num = (v, d, min, max) => {
+    const n = parseFloat(v);
+    return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : d;
+  };
+  return {
+    height: num(c.about_m_height, 400, 280, 600),
+    photoX: num(c.about_m_photo_x, 10, -40, 40),
+    photoY: num(c.about_m_photo_y, 30, -80, 160),
+    photoSize: num(c.about_m_photo_size, 0.92, 0.5, 1.4),
+    nameX: num(c.about_m_name_x, 0, 0, 160),
+    nameY: num(c.about_m_name_y, 4, 0, 80),
+    nameSize: num(c.about_m_name_size, 2.3, 1.6, 3.6),
+    nameFront: String(c.about_m_name_front) !== "false",
   };
 }
 

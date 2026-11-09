@@ -13,6 +13,7 @@ import {
   uploadSiteImage,
   applyTheme,
   getIdCardSettings,
+  getAboutMobileSettings,
 } from "../../lib/siteContent";
 import { useSiteContent } from "../../context/SiteContentContext";
 import { WELCOME_BG_STYLES } from "../../components/WelcomeBackground";
@@ -234,6 +235,65 @@ function RangeField({ label, hint, value, min, max, step, unit = "", onChange })
       />
       {hint && <span className="block text-[10px] text-gray-600">{hint}</span>}
     </label>
+  );
+}
+
+/** Atur foto & nama di bagian About untuk tampilan HP. Ada preview langsung. */
+function AboutMobileEditor({ form, setField }) {
+  const a = getAboutMobileSettings(form);
+  const SCALE = 0.62;
+  const reset = () => {
+    ["about_m_height","about_m_photo_x","about_m_photo_y","about_m_photo_size","about_m_name_x","about_m_name_y","about_m_name_size","about_m_name_front"]
+      .forEach((k) => setField(k, DEFAULT_CONTENT[k]));
+  };
+  return (
+    <div className="rounded-xl border border-white/10 bg-black/20 p-4 space-y-4">
+      <div>
+        <p className="text-sm text-white">Foto & nama di HP (bagian About)</p>
+        <p className="text-xs text-gray-500 mt-0.5">
+          Geser slider untuk memindahkan foto dan nama. Preview di kiri meniru layar HP dan langsung berubah.
+          Klik Simpan di bawah supaya tampil di website.
+        </p>
+      </div>
+      <div className="grid md:grid-cols-[260px_1fr] gap-5 items-start">
+        <div className="mx-auto md:mx-0" style={{ width: 390 * SCALE }}>
+          <div className="relative overflow-hidden rounded-xl border border-white/10 bg-[#07071a]" style={{ width: 390 * SCALE, height: a.height * SCALE }}>
+            <div className="absolute left-0 top-0 origin-top-left" style={{ width: 390, height: a.height, transform: `scale(${SCALE})`, padding: "0 20px" }}>
+              <div className="relative w-full h-full">
+                <div className="absolute z-10" style={{ width: 350, right: `${-a.photoX}%`, bottom: -a.photoY, transform: `scale(${a.photoSize})`, transformOrigin: "bottom right" }}>
+                  {form.profile_photo && <img src={form.profile_photo} alt="" draggable={false} className="w-[350px] h-[350px] object-contain object-bottom" />}
+                </div>
+                <div className="absolute font-bold leading-[1.05] text-white pointer-events-none"
+                  style={{ left: a.nameX, top: `${a.nameY}%`, fontSize: `${a.nameSize}rem`, zIndex: a.nameFront ? 20 : 5 }}>
+                  <span className="block text-violet-400" style={{ fontSize: "0.62em" }}>{form.greeting}</span>
+                  <span className="block">{form.first_name}</span>
+                  <span className="block">{form.last_name}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p className="text-[10px] text-gray-600 mt-1.5 text-center">Preview tampilan HP</p>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <RangeField label="Tinggi area foto + nama" min={280} max={600} step={5} unit="px" value={form.about_m_height || "400"} onChange={(v) => setField("about_m_height", v)} />
+          <RangeField label="Ukuran foto" min={0.5} max={1.4} step={0.02} unit="x" value={form.about_m_photo_size || "0.92"} onChange={(v) => setField("about_m_photo_size", v)} />
+          <RangeField label="Geser foto kiri ↔ kanan" hint="Minus = ke kiri, plus = ke kanan" min={-40} max={40} step={1} unit="%" value={form.about_m_photo_x || "10"} onChange={(v) => setField("about_m_photo_x", v)} />
+          <RangeField label="Geser foto atas ↕ bawah" hint="Minus = naik, plus = turun" min={-80} max={160} step={2} unit="px" value={form.about_m_photo_y || "30"} onChange={(v) => setField("about_m_photo_y", v)} />
+          <RangeField label="Ukuran nama" min={1.6} max={3.6} step={0.05} unit="rem" value={form.about_m_name_size || "2.3"} onChange={(v) => setField("about_m_name_size", v)} />
+          <RangeField label="Geser nama kiri → kanan" min={0} max={160} step={2} unit="px" value={form.about_m_name_x || "0"} onChange={(v) => setField("about_m_name_x", v)} />
+          <RangeField label="Geser nama atas ↕ bawah" min={0} max={80} step={1} unit="%" value={form.about_m_name_y || "4"} onChange={(v) => setField("about_m_name_y", v)} />
+          <label className="flex items-center gap-2 text-xs text-gray-300 sm:self-end pb-1">
+            <input type="checkbox" checked={String(form.about_m_name_front) !== "false"} onChange={(e) => setField("about_m_name_front", e.target.checked ? "true" : "false")} />
+            Nama tampil di depan foto
+          </label>
+          <div className="flex items-end">
+            <button type="button" onClick={reset} className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-white/10 text-xs text-gray-300 hover:text-white hover:bg-white/5">
+              <RotateCcw className="w-3.5 h-3.5" /> Reset posisi & ukuran
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -1105,6 +1165,7 @@ export default function SiteSettings() {
             ))}
           </div>
           {section.title.startsWith("ID Card") && <IdCardPhotoEditor form={form} setField={setField} />}
+          {section.title.startsWith("Bio") && <AboutMobileEditor form={form} setField={setField} />}
         </section>
       ))}
 
