@@ -54,7 +54,7 @@ class Particle {
   }
 }
 
-function runEffect(canvas, anchor, o) {
+function runEffect(canvas, textCanvas, anchor, o) {
   const compact = window.matchMedia("(max-width: 767px), (pointer: coarse)").matches;
   const dpr = Math.min(window.devicePixelRatio || 1, compact ? 1.5 : 2);
   const fontStack = `"${o.fontFamily}", "Plus Jakarta Sans", Arial, sans-serif`;
@@ -63,6 +63,7 @@ function runEffect(canvas, anchor, o) {
   const MAX = compact ? 3200 : 6000;
 
   let W = 0, H = 0, raf = 0, lastT = 0, particles = [];
+  let done = false, startT = 0, revealT = 0;
   const PSIZE = compact ? 1.7 : 2;
 
   const build = () => {
@@ -72,6 +73,8 @@ function runEffect(canvas, anchor, o) {
     canvas.width = Math.floor(W * dpr);
     canvas.height = Math.floor(H * dpr);
     canvas.getContext("2d").setTransform(dpr, 0, 0, dpr, 0, 0);
+    textCanvas.width = canvas.width;
+    textCanvas.height = canvas.height;
 
     // area teks = kotak "anchor" (tengah-nya) di dalam kanvas layar penuh
     const ar = anchor.getBoundingClientRect();
@@ -108,6 +111,23 @@ function runEffect(canvas, anchor, o) {
       yy += hs[i];
     });
     const px = oc.getImageData(0, 0, tw, th).data;
+
+    // teks FINAL yang jelas & tajam (bukan titik-titik): muncul memudar setelah partikel berkumpul
+    const tc = textCanvas.getContext("2d");
+    tc.setTransform(dpr, 0, 0, dpr, 0, 0);
+    tc.clearRect(0, 0, W, H);
+    tc.textAlign = "center"; tc.textBaseline = "middle";
+    let ty = acy - th / 2 + (th - hs.reduce((a, b) => a + b, 0)) / 2;
+    lines.forEach((l, i) => {
+      tc.font = `800 ${i === 0 ? fs * 0.62 : fs}px ${fontStack}`;
+      const col = l.ci === 0 ? o.color1 || "#ffffff" : o.color2 || "#2563eb";
+      tc.fillStyle = col;
+      tc.shadowColor = col; tc.shadowBlur = Math.max(6, fs * 0.12);
+      tc.fillText(l.text, acx, ty + hs[i] / 2);
+      tc.shadowBlur = 0;
+      tc.fillText(l.text, acx, ty + hs[i] / 2);
+      ty += hs[i];
+    });
 
     // seperti aslinya: setiap baris piksel disampel tiap `pixelSteps` piksel (offset acak per baris
     // -> tepi huruf "berdebu", bukan grid kotak). Jarak dinaikkan jika partikel terlalu banyak.
@@ -147,11 +167,18 @@ function runEffect(canvas, anchor, o) {
     });
   };
 
+  const finish = () => {
+    done = true;
+    cancelAnimationFrame(raf);
+    canvas.getContext("2d").clearRect(0, 0, W, H); // partikel hilang, tinggal teks solid (hemat baterai)
+  };
+
   const animate = (now) => {
     raf = requestAnimationFrame(animate);
     if (document.hidden) return;
-    const dtMs = lastT ? now - lastT : 16.7;
-    if (compact && dtMs < 30) return; // HP: ±30fps
+    if (!lastT) { lastT = now - 16.7; startT = now; } // (bug lama: lastT=0 membuat HP tak pernah menggambar)
+    const dtMs = now - lastT;
+    if (compact && dtMs < 28) return; // HP: ±30fps
     lastT = now;
     const steps = Math.min(3, Math.max(1, Math.round(dtMs / 16.7)));
 
@@ -162,23 +189,38 @@ function runEffect(canvas, anchor, o) {
     ctx.fillRect(0, 0, W, H);
     ctx.globalCompositeOperation = "source-over";
 
-    let cur = -1;
+    let cur = -1, near = 0;
     for (let i = 0; i < particles.length; i++) {
       const q = particles[i];
       for (let k = 0; k < steps; k++) q.move();
       if (q.weight < 1) q.weight = Math.min(1, q.weight + q.blendRate * steps);
+      const ex = q.tx - q.x, ey = q.ty - q.y;
+      if (ex * ex + ey * ey < 6) near++;
       if (q.x < -2 || q.x > W + 2 || q.y < -2 || q.y > H + 2) continue;
       if (q.bucket !== cur) { cur = q.bucket; ctx.fillStyle = palette[cur]; }
       ctx.globalAlpha = q.weight;
       ctx.fillRect(q.x, q.y, PSIZE, PSIZE);
     }
     ctx.globalAlpha = 1;
+
+    // sebagian besar partikel sudah di tempatnya (atau sudah >3.4 dtk) -> munculkan teks solid
+    if (!revealT && (near > particles.length * 0.9 || now - startT > 3400)) {
+      revealT = now;
+      textCanvas.style.opacity = "1";
+    }
+    if (revealT && now - revealT > 750) finish();
   };
 
   build();
   raf = requestAnimationFrame(animate);
   let timer;
-  const onResize = () => { clearTimeout(timer); timer = setTimeout(() => { build(); }, 150); };
+  const onResize = () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      build(); // kanvas teks digambar ulang sesuai ukuran baru
+      if (done) canvas.getContext("2d").clearRect(0, 0, W, H); // animasi sudah selesai: jangan diulang
+    }, 150);
+  };
   window.addEventListener("resize", onResize);
   return () => {
     cancelAnimationFrame(raf);
@@ -200,17 +242,20 @@ export function ParticleTextEffect({
   color2 = "#2563eb",
 }) {
   const canvasRef = useRef(null);
+  const textRef = useRef(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
+    const textCanvas = textRef.current;
     const anchor = anchorRef?.current;
-    if (!canvas || !anchor) return;
-    return runEffect(canvas, anchor, { line1, line2, fontFamily, color1, color2 });
+    if (!canvas || !textCanvas || !anchor) return;
+    return runEffect(canvas, textCanvas, anchor, { line1, line2, fontFamily, color1, color2 });
   }, [anchorRef, line1, line2, fontFamily, color1, color2]);
 
   return (
     <div className="absolute inset-0 pointer-events-none z-10" aria-hidden>
       <span className="sr-only">{`${line1} ${line2}`}</span>
+      <canvas ref={textRef} className="absolute inset-0 w-full h-full block" style={{ opacity: 0, transition: "opacity 0.7s ease" }} />
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full block" />
     </div>
   );
