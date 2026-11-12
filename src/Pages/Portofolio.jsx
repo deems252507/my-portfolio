@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback, useRef, useMemo, memo } from "
 import { supabase } from "../supabase";
 import CardProject from "../components/CardProject";
 import ProjectCarousel from "../components/ProjectCarousel";
+import ProjectShowcase from "../components/ProjectShowcase";
 import { useSiteContent } from "../context/SiteContentContext";
 import TechStackIcon from "../components/TechStackIcon";
 import Certificate from "../components/Certificate";
@@ -50,7 +51,7 @@ const TABS = [
 
 export default function FullWidthTabs() {
   const { content } = useSiteContent();
-  const projectLayout = content.project_layout || "carousel";
+  const projectLayout = content.project_layout || "showcase";
   const [value, setValue] = useState(0);
   const [projects, setProjects] = useState([]);
   const [certificates, setCertificates] = useState([]);
@@ -196,7 +197,11 @@ export default function FullWidthTabs() {
         {/* Tab 0 — Projects */}
         {value === 0 && (
           <div className="px-1 sm:px-3 py-4">
-            {projectLayout === "carousel" ? (
+            {projectLayout === "showcase" ? (
+              <div className="container mx-auto">
+                <ProjectShowcase projects={projects} limit={initialItems} />
+              </div>
+            ) : projectLayout === "carousel" ? (
               <div className="container mx-auto">
                 <ProjectCarousel projects={projects} />
               </div>

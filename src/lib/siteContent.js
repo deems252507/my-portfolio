@@ -172,7 +172,7 @@ export const DEFAULT_CONTENT = {
   // Navbar mascot
   nav_mascot: "panda",
   nav_mascot_url: "",
-  project_layout: "carousel",
+  project_layout: "showcase",
   profile_photo: "/default-avatar.jpg",
   hover_photo: "",
   hover_char: "spiderman",
