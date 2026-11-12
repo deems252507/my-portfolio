@@ -139,33 +139,33 @@ export const CHARACTER_THEMES = {
 };
 
 export const DEFAULT_CONTENT = {
-  full_name: "Rizky Dwi Maulana",
-  first_name: "Eka Wahyu",
-  last_name: "Maulidan",
+  full_name: "Nama Kamu",
+  first_name: "Nama",
+  last_name: "Kamu",
   greeting: "Hi, I'm",
-  job_title: "Junior Developer",
+  job_title: "Job Title",
   hero_line_1: "Turning Ideas",
   hero_line_2: "Into Reality",
   hero_subtitle:
-    "Dimulai dari rasa penasaran, berkembang menjadi passion.\nAku membangun pengalaman digital yang tidak hanya terlihat bagus,\ntapi juga terasa bermakna bagi penggunanya.",
-  typing_words: "IT Edu Student\nTech Enthusiast\nJunior Developer",
-  bio: "Sebagai mahasiswa Fakultas Ilmu Komputer Universitas Brawijaya,\nAku berfokus pada pengembangan teknologi yang tidak hanya fungsional,\ntetapi juga menghadirkan pengalaman digital yang menarik dan berdampak.",
+    "Tulis deskripsi singkat tentang dirimu di Dashboard > Site Settings.",
+  typing_words: "Your Role\nYour Skill",
+  bio: "Tulis bio kamu di Dashboard > Site Settings.",
   meta_description:
-    "Website resmi Eka Wahyu Maulidan. Aku berfokus pada pengembangan teknologi yang tidak hanya fungsional, tetapi juga menghadirkan pengalaman digital yang menarik dan berdampak.",
-  footer_brand: "Eka Wahyu™",
+    "Website portofolio.",
+  footer_brand: "Portfolio™",
   resume_url:
-    "https://drive.google.com/file/d/1_Isso2Qk9xqHtEG5ac5uCiDjaOsk49Yl/view?usp=drive_link",
-  github: "https://github.com/ekawahyu-project",
+    "",
+  github: "",
   linkedin:
-    "https://www.linkedin.com/in/eka-wahyu-maulidan-484021315?utm_source=share_via&utm_content=profile",
-  instagram: "https://www.instagram.com/eka.wahyu.m",
+    "",
+  instagram: "",
 
   // FIND ME section (Contact)
   find_me_title: "FIND ME",
   find_linkedin_title: "Let's Connect",
   find_linkedin_sub: "on LinkedIn",
   find_instagram_title: "Instagram",
-  find_instagram_sub: "dm_rizky",
+  find_instagram_sub: "",
   find_github_title: "Github",
   find_github_sub: "",
 
@@ -173,19 +173,19 @@ export const DEFAULT_CONTENT = {
   nav_mascot: "panda",
   nav_mascot_url: "",
   project_layout: "carousel",
-  profile_photo: "/Photo.png",
-  hover_photo: "/PhotoSpiderman.png",
+  profile_photo: "/default-avatar.jpg",
+  hover_photo: "",
   hover_char: "spiderman",
   // Penyesuaian ukuran foto karakter agar pas dengan foto profil (bisa diatur di admin)
   // ID Card 3D di hero (Home)
   idcard_enabled: "true",
   idcard_photo: "", // kosong = pakai foto profil
-  idcard_brand: "RIZKY DM",
-  idcard_tagline: "Digital Product Dev",
-  idcard_number: "RDM-2026",
-  idcard_location: "Banjarmasin, ID",
-  idcard_valid: "12/2030",
-  idcard_site: "rizkydm.vercel.app",
+  idcard_brand: "NAMA KAMU",
+  idcard_tagline: "Your Tagline",
+  idcard_number: "ID-0000",
+  idcard_location: "Kota, ID",
+  idcard_valid: "00/0000",
+  idcard_site: "",
   idcard_photo_height: "150", // tinggi area foto (px)
   idcard_photo_x: "50", // posisi horizontal foto (%)
   idcard_photo_y: "32", // posisi vertikal foto (%)
@@ -207,7 +207,7 @@ export const DEFAULT_CONTENT = {
   hover_scale: "0.86",
   hover_offset_x: "0",
   hover_offset_y: "1.5",
-  hover_photo_spiderman: "/PhotoSpiderman.png",
+  hover_photo_spiderman: "",
   hover_photo_ironman: "",
   hover_photo_captain: "",
   hover_photo_hulk: "",
@@ -216,19 +216,19 @@ export const DEFAULT_CONTENT = {
   hover_photo_superman: "",
   hover_photo_batman: "",
 
-  edu1_logo: "/ub.png",
-  edu1_school: "Universitas Brawijaya",
-  edu1_major: "IT Edu | Faculty of Computer Science",
-  edu1_year: "2025 – Present",
-  edu2_logo: "/smkn.png",
-  edu2_school: "SMKN WINONGAN",
-  edu2_major: "Teknik Komputer dan Jaringan",
-  edu2_year: "2021 – 2024",
+  edu1_logo: "",
+  edu1_school: "",
+  edu1_major: "",
+  edu1_year: "",
+  edu2_logo: "",
+  edu2_school: "",
+  edu2_major: "",
+  edu2_year: "",
   spotify_url:
-    "https://open.spotify.com/playlist/4oQDhGjv57BzeOThOWQeS9?si=f46b0196ab0a4cdc",
-  spotify_title: "Daily Rotation",
+    "",
+  spotify_title: "",
   spotify_desc:
-    "A curated collection of tracks that keep me in the zone and inspired while coding.",
+    "",
 
   // Welcome Screen (Loading)
   welcome_line1: "Welcome To My",
@@ -243,9 +243,9 @@ export const DEFAULT_CONTENT = {
 
   // WhatsApp
   wa_enabled: "true",
-  wa_number: "6281234567890",
+  wa_number: "",
   wa_button_text: "Chat WhatsApp",
-  wa_message: "Halo! Saya tertarik dengan portofolio Anda.",
+  wa_message: "",
 
   // Welcome background style
   welcome_bg_style: "lightning",

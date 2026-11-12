@@ -199,7 +199,7 @@ Semua teks & foto pribadi bisa kamu ganti dengan mudah lewat VS Code:
 
 ### 👤 A. Mengubah Nama, Bio, & Foto Profil
 Buka file: **`src/Pages/About.jsx`**
-- **Nama & Bio**: Cari teks *"Eka Wahyu Maulidan"* atau kalimat deskripsi bio, lalu ganti dengan nama & deskripsimu sendiri.
+- **Nama & Bio**: Cari teks *"Nama Kamu"* atau kalimat deskripsi bio, lalu ganti dengan nama & deskripsimu sendiri.
 - **Foto Profil**: Masukkan foto barumu ke folder `public/`, beri nama misalnya `foto-saya.webp`. Lalu di file `About.jsx`, ganti `/Photo.webp` menjadi `/foto-saya.webp`.
 
 ### 🔗 B. Mengubah Link Sosial Media (LinkedIn, Instagram, GitHub)

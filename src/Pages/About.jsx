@@ -190,14 +190,14 @@ const ProfileImage = memo(({ profilePhoto, hoverPhoto, hoverFit, profileFit }) =
                   : { repeat: Infinity, duration: 4, repeatDelay: 2, times: [0, 0.4, 0.6, 1], ease: "easeInOut" },
               }}
             >
-              <img src={hoverPhoto} alt="Hint" className="w-full h-full object-contain object-bottom" style={hoverFit} />
+              {hoverPhoto && <img src={hoverPhoto} alt="Hint" className="w-full h-full object-contain object-bottom" style={hoverFit} />}
             </motion.div>
 
             <motion.div
               className="absolute inset-0 pointer-events-none z-10"
               style={{ WebkitMaskImage: maskImage, maskImage, WebkitMaskRepeat: "no-repeat", maskRepeat: "no-repeat" }}
             >
-              <img src={hoverPhoto} alt="Reveal" className="w-full h-full object-contain object-bottom" style={hoverFit} />
+              {hoverPhoto && <img src={hoverPhoto} alt="Reveal" className="w-full h-full object-contain object-bottom" style={hoverFit} />}
             </motion.div>
 
             <motion.div
@@ -362,14 +362,14 @@ const AboutPage = () => {
               <MaskLine delay={0.14} className="text-white mt-1 whitespace-nowrap">{content.first_name}</MaskLine>
               <MaskLine delay={0.28} className="text-white whitespace-nowrap">{content.last_name}</MaskLine>
             </h3>
-            <div className="mt-8">
+            {content.resume_url && <div className="mt-8">
               <a href={content.resume_url}>
                 <button className="px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 flex items-center gap-2 whitespace-nowrap theme-btn-primary"
                   style={{ background: "var(--col-blue)", fontFamily: "var(--font-display)", color: "white", boxShadow: "0 0 0 transparent" }}>
                   <FileText className="w-4 h-4" /> View Resume
                 </button>
               </a>
-            </div>
+            </div>}
           </div>
 
           {/* Center: Image */}
@@ -435,12 +435,12 @@ const AboutPage = () => {
           </div>
           {/* Buttons — berdampingan */}
           <div className="relative z-30 flex flex-wrap gap-3 w-full">
-            <a href={content.resume_url} className="flex-1 min-w-[140px]">
+            {content.resume_url && <a href={content.resume_url} className="flex-1 min-w-[140px]">
               <button className="w-full px-5 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 theme-btn-primary"
                 style={{ background: "var(--col-blue)", fontFamily: "var(--font-display)", color: "white" }}>
                 <FileText className="w-4 h-4" /> View Resume
               </button>
-            </a>
+            </a>}
             <a href="#Portofolio" className="flex-1 min-w-[140px]">
               <button className="w-full px-5 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 theme-btn-outline"
                 style={{ border: "1px solid color-mix(in srgb, var(--col-blue) 45%, transparent)", color: "var(--col-blue-light)", fontFamily: "var(--font-display)", background: "transparent" }}>

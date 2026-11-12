@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { useSiteContent } from "../context/SiteContentContext";
 import React, { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { useParams, useNavigate } from "react-router-dom";
@@ -47,6 +48,7 @@ const TechBadge = ({ tech }) => {
 const ProjectDetails = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const { content } = useSiteContent();
   const [project, setProject] = useState(null);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
 
@@ -75,16 +77,17 @@ const ProjectDetails = () => {
     );
   }
 
-  const projectUrl = `https://ekawahyu-portofolio.vercel.app/project/${toSlug(project.title)}`;
+  const ownerName = content.full_name;
+  const projectUrl = `${window.location.origin}/project/${toSlug(project.title)}`;
 
   return (
     <>
       <Helmet>
-        <title>{project.title} — Eka Wahyu Maulidan</title>
-        <meta name="description" content={project.description ? project.description.slice(0, 155) : `Project ${project.title} oleh Eka Wahyu Maulidan.`} />
+        <title>{project.title} — {ownerName}</title>
+        <meta name="description" content={project.description ? project.description.slice(0, 155) : `Project ${project.title} oleh ${ownerName}.`} />
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href={projectUrl} />
-        <meta property="og:title" content={`${project.title} — Eka Wahyu Maulidan`} />
+        <meta property="og:title" content={`${project.title} — {ownerName}`} />
         <meta property="og:description" content={project.description?.slice(0, 155)} />
         <meta property="og:url" content={projectUrl} />
         <meta property="og:type" content="website" />

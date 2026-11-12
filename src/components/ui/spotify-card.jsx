@@ -4,8 +4,9 @@ import { toSpotifyEmbed } from "../../lib/siteContent";
 
 export default function SpotifyCard({ className = "", compact = false }) {
   const { content } = useSiteContent();
-  const embed = toSpotifyEmbed(content.spotify_url) || "https://open.spotify.com/embed/playlist/4oQDhGjv57BzeOThOWQeS9?utm_source=generator&theme=0";
-  const openUrl = content.spotify_url || "https://open.spotify.com/playlist/4oQDhGjv57BzeOThOWQeS9";
+  const embed = toSpotifyEmbed(content.spotify_url);
+  const openUrl = content.spotify_url;
+  if (!embed) return null;
   return (
     <section
       className={`group relative w-full max-w-[470px] overflow-hidden rounded-xl border border-[rgba(255,255,255,0.07)] shadow-2xl backdrop-blur-md transition-all duration-300 hover:border-[rgba(37,99,235,0.35)] hover:shadow-[0_0_30px_rgba(37,99,235,0.12)] ${className}`}
