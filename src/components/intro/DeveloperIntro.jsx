@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { useSiteContent } from "../../context/SiteContentContext";
 
 // Mount scene 3D. three.js + gsap dimuat lazy (code-split) agar halaman utama tetap ringan.
-export default function DeveloperIntro({ onReveal, onFade, onDone, onError }) {
+export default function DeveloperIntro({ audio, onReveal, onFade, onDone, onError }) {
   const hostRef = useRef(null);
   const { content } = useSiteContent();
   const contentRef = useRef(content);
@@ -33,6 +33,7 @@ export default function DeveloperIntro({ onReveal, onFade, onDone, onError }) {
             blue: cssVar("--col-blue", "#2563eb"),
             accent: cssVar("--col-accent", "#06b6d4"),
           },
+          audio,
           onReveal: () => cb.current.onReveal?.(),
           onFade: () => cb.current.onFade?.(),
           onDone: () => cb.current.onDone?.(),
@@ -51,5 +52,15 @@ export default function DeveloperIntro({ onReveal, onFade, onDone, onError }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return <div ref={hostRef} className="absolute inset-0" />;
+  return (
+    <>
+      <div ref={hostRef} className="absolute inset-0" />
+      {/* vignette sinematik (tidak menghalangi klik) */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{ background: "radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.55) 100%)" }}
+      />
+    </>
+  );
 }

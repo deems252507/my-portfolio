@@ -7,10 +7,13 @@ import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
-import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { RectAreaLightUniformsLib } from "three/examples/jsm/lights/RectAreaLightUniformsLib.js";
 import { BrowserScreen } from "./browserScreen";
+import { LightningBG } from "./lightningBG";
+import { buildSpaceRoom } from "./spaceRoom";
+import { buildCharacter } from "./character";
+import { getLightningSettings } from "../../lib/siteContent";
 
 /* =====================  PENGATURAN YANG MUDAH DIUBAH  ===================== */
 export const INTRO_CONFIG = {
@@ -25,23 +28,32 @@ export const INTRO_CONFIG = {
   },
   // Gambar pratinjau hero (opsional) untuk layar monitor: public/intro/portfolio-preview.jpg
   previewImage: "/intro/portfolio-preview.jpg",
+  // null = pakai warna petir dari pengaturan situs (Dashboard Admin). Isi mis. 270 untuk memaksa ungu.
+  lightningHue: null,
   // Waktu (detik) tiap adegan
   t: {
     powerOn: 0.4,
-    camMoveEnd: 7.2,
-    typeStart: 4.6,
-    typeDur: 2.8,
-    enter: 7.5,
-    loadStart: 7.7,
-    loadDur: 1.4,
-    pageStart: 9.0,
-    dive: 9.6,
+    camMoveEnd: 7.8,
+    mouseIn: 2.4,        // tangan kanan ke mouse
+    cursorStart: 2.9,    // kursor bergerak ke address bar
+    cursorEnd: 4.3,
+    click: 4.4,          // klik address bar
+    mouseOut: 4.6,       // tangan kembali ke keyboard
+    typeStart: 5.2,
+    typeDur: 2.8,        // selesai 8.0
+    reach: 7.7,          // jari kelingking bergerak ke tombol ENTER
+    reachDur: 0.75,
+    enter: 8.5,          // jari menekan ENTER (turun 0.11s, naik 0.24s)
+    loadStart: 8.7,
+    loadDur: 1.5,
+    pageStart: 10.0,
+    dive: 11.0,          // dolly menuju layar
     diveDur: 2.4,
-    through: 12.0,
-    throughDur: 0.95,
-    reveal: 12.35,
-    fade: 12.7,
-    done: 13.5,
+    through: 13.4,       // menembus permukaan layar
+    throughDur: 1.0,
+    reveal: 14.0,
+    fade: 14.3,
+    done: 15.1,
   },
 };
 /* ======================================================================== */
@@ -113,113 +125,6 @@ function gridTexture() {
   t.colorSpace = THREE.SRGBColorSpace;
   t.anisotropy = 8;
   return t;
-}
-
-/* ------------------------------- karakter -------------------------------- */
-function buildCharacter(scene) {
-  const skin = std("#c08a62", { roughness: 0.62 });
-  const jacket = std("#262d3a", { roughness: 0.88 });
-  const jacketLight = std("#323b4c", { roughness: 0.85 });
-  const pants = std("#12161f", { roughness: 0.9 });
-  const hairM = std("#0c0b0d", { roughness: 0.55 });
-  const shoe = std("#0b0d12", { roughness: 0.5, metalness: 0.2 });
-
-  const root = new THREE.Group();
-  scene.add(root);
-
-  // badan atas (pivot di pinggul)
-  const upper = new THREE.Group();
-  upper.position.set(0, 0.58, 0.62);
-  root.add(upper);
-  const torso = mk(new THREE.CapsuleGeometry(0.15, 0.3, 8, 20), jacket, 0, 0.27, 0);
-  torso.scale.set(1.15, 1, 0.78);
-  upper.add(torso);
-  const collar = mk(new THREE.TorusGeometry(0.085, 0.03, 10, 24), jacketLight, 0, 0.56, -0.01);
-  collar.rotation.x = Math.PI / 2;
-  upper.add(collar);
-  const neck = mk(new THREE.CylinderGeometry(0.043, 0.05, 0.12, 14), skin, 0, 0.62, -0.015);
-  upper.add(neck);
-
-  const shoulderL = new THREE.Vector3(-0.2, 0.44, 0);
-  const shoulderR = new THREE.Vector3(0.2, 0.44, 0);
-  [shoulderL, shoulderR].forEach((p) => upper.add(mk(new THREE.SphereGeometry(0.078, 18, 14), jacket, p.x, p.y, p.z)));
-
-  const head = new THREE.Group();
-  head.position.set(0, 0.74, -0.03);
-  upper.add(head);
-  const skull = mk(new THREE.SphereGeometry(0.105, 28, 22), skin);
-  skull.scale.set(0.93, 1.13, 1.0);
-  head.add(skull);
-  const jaw = mk(new THREE.SphereGeometry(0.085, 22, 16), skin, 0, -0.07, -0.015);
-  jaw.scale.set(0.95, 0.85, 0.95);
-  head.add(jaw);
-  const hair = mk(new THREE.SphereGeometry(0.114, 28, 20, 0, Math.PI * 2, 0, Math.PI * 0.64), hairM, 0, 0.012, 0.012);
-  hair.scale.set(0.97, 1.16, 1.04);
-  hair.rotation.x = 0.45;
-  head.add(hair);
-  const nape = mk(new THREE.SphereGeometry(0.1, 20, 14), hairM, 0, -0.02, 0.035);
-  nape.scale.set(0.9, 1.0, 0.8);
-  head.add(nape);
-  [-1, 1].forEach((s) => head.add(mk(new THREE.SphereGeometry(0.022, 12, 10), skin, s * 0.098, -0.005, 0.0)));
-  head.add(mk(new THREE.SphereGeometry(0.018, 12, 10), skin, 0, -0.03, -0.108));
-
-  // lengan (dihitung IK setiap frame)
-  const armMat = jacket;
-  const mkArm = () => ({
-    upper: mk(new THREE.CylinderGeometry(0.052, 0.047, 1, 14), armMat),
-    fore: mk(new THREE.CylinderGeometry(0.045, 0.036, 1, 14), armMat),
-    elbow: mk(new THREE.SphereGeometry(0.05, 14, 12), armMat),
-    elbowPos: new THREE.Vector3(),
-  });
-  const armL = mkArm(), armR = mkArm();
-  [armL, armR].forEach((a) => root.add(a.upper, a.fore, a.elbow));
-
-  // tangan + jari
-  const mkHand = (side) => {
-    const g = new THREE.Group();
-    g.add(mk(new THREE.BoxGeometry(0.082, 0.02, 0.088), skin, 0, 0, 0.0));
-    const fingers = [];
-    [-0.03, -0.01, 0.01, 0.03].forEach((x, i) => {
-      const pivot = new THREE.Group();
-      pivot.position.set(x, 0, -0.044);
-      const len = 0.052 + (i === 1 || i === 2 ? 0.008 : 0);
-      const cyl = new THREE.CylinderGeometry(0.0085, 0.0075, len, 8);
-      cyl.rotateX(Math.PI / 2);
-      pivot.add(mk(cyl, skin, 0, 0, -len / 2, false));
-      g.add(pivot);
-      fingers.push({ pivot, phase: Math.random() * 6.28, speed: 9 + Math.random() * 7 + i });
-    });
-    const thumbPivot = new THREE.Group();
-    thumbPivot.position.set(-side * 0.045, 0, -0.012);
-    thumbPivot.rotation.y = side * 0.55;
-    const tc = new THREE.CylinderGeometry(0.0095, 0.008, 0.045, 8);
-    tc.rotateX(Math.PI / 2);
-    thumbPivot.add(mk(tc, skin, 0, 0, -0.022, false));
-    g.add(thumbPivot);
-    root.add(g);
-    return { group: g, fingers };
-  };
-  const handL = mkHand(-1), handR = mkHand(1);
-
-  // kaki
-  const legMat = pants;
-  const limbs = [];
-  [-1, 1].forEach((s) => {
-    const thigh = mk(new THREE.CylinderGeometry(0.085, 0.07, 1, 14), legMat);
-    const shin = mk(new THREE.CylinderGeometry(0.065, 0.05, 1, 14), legMat);
-    const knee = mk(new THREE.SphereGeometry(0.07, 14, 12), legMat);
-    const foot = mk(new RoundedBoxGeometry(0.1, 0.06, 0.27, 3, 0.02), shoe, s * 0.12, 0.04, 0.18);
-    const hip = new THREE.Vector3(s * 0.11, 0.57, 0.64);
-    const kneeP = new THREE.Vector3(s * 0.12, 0.6, 0.22);
-    const ankle = new THREE.Vector3(s * 0.12, 0.1, 0.27);
-    placeLimb(thigh, hip, kneeP);
-    placeLimb(shin, kneeP, ankle);
-    knee.position.copy(kneeP);
-    root.add(thigh, shin, knee, foot);
-  });
-  root.add(mk(new THREE.SphereGeometry(0.1, 16, 12), legMat, 0, 0.57, 0.63));
-
-  return { root, upper, head, torso, shoulderL, shoulderR, armL, armR, handL, handR };
 }
 
 /* --------------------------------- kursi --------------------------------- */
@@ -302,13 +207,14 @@ function buildMonitor(scene, screenTexture) {
 }
 
 /* ----------------------- keyboard, mouse, dekorasi ----------------------- */
+const ENTER_COL = 14, ENTER_ROW = 3;
 function buildKeyboard(scene) {
-  const base = mk(new RoundedBoxGeometry(0.46, 0.018, 0.16, 3, 0.006), std("#07090d", { roughness: 0.4, metalness: 0.5 }), 0, 0.759, 0.12);
+  const base = mk(new RoundedBoxGeometry(0.5, 0.018, 0.16, 3, 0.006), std("#07090d", { roughness: 0.4, metalness: 0.5 }), 0.015, 0.759, 0.12);
   scene.add(base);
   const rgbMat = new THREE.MeshBasicMaterial({ color: 0x22d3ee });
-  const rgb = new THREE.Mesh(new THREE.PlaneGeometry(0.43, 0.135), rgbMat);
+  const rgb = new THREE.Mesh(new THREE.PlaneGeometry(0.47, 0.135), rgbMat);
   rgb.rotation.x = -Math.PI / 2;
-  rgb.position.set(0, 0.7695, 0.12);
+  rgb.position.set(0.015, 0.7695, 0.12);
   scene.add(rgb);
 
   const rows = 5, cols = 15;
@@ -317,28 +223,37 @@ function buildKeyboard(scene) {
   keys.castShadow = true;
   const dummy = new THREE.Object3D();
   const rest = [];
+  const hidden = ENTER_ROW * cols + ENTER_COL; // digantikan tombol ENTER besar
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       const x = (c - (cols - 1) / 2) * 0.0275;
       const z = 0.12 + (r - (rows - 1) / 2) * 0.0265;
-      rest.push([x, 0.7755, z]);
-      dummy.position.set(x, 0.7755, z);
+      const idx = r * cols + c;
+      const y = idx === hidden ? -5 : 0.7755;
+      rest.push([x, y, z]);
+      dummy.position.set(x, y, z);
       dummy.updateMatrix();
-      keys.setMatrixAt(r * cols + c, dummy.matrix);
+      keys.setMatrixAt(idx, dummy.matrix);
     }
   }
   scene.add(keys);
 
-  // mouse + alas
-  const pad = mk(new THREE.BoxGeometry(0.26, 0.004, 0.2), std("#0b0f16", { roughness: 0.9 }), 0.47, 0.747, 0.12);
-  scene.add(pad);
+  // tombol ENTER (lebih lebar, menyala cyan saat didekati jari)
+  const enterMat = new THREE.MeshStandardMaterial({ color: "#10222b", roughness: 0.4, emissive: 0x22d3ee, emissiveIntensity: 0.15 });
+  const enterKey = mk(new RoundedBoxGeometry(0.037, 0.011, 0.0235, 2, 0.004), enterMat, 0.2125, 0.7755, 0.12 + (ENTER_ROW - (rows - 1) / 2) * 0.0265);
+  scene.add(enterKey);
+
+  // mouse + alas (satu grup agar ikut bergeser bersama tangan)
+  const mouseG = new THREE.Group();
+  scene.add(mouseG);
+  mouseG.add(mk(new THREE.BoxGeometry(0.26, 0.004, 0.2), std("#0b0f16", { roughness: 0.9 }), 0.47, 0.747, 0.12));
   const mouse = mk(new THREE.SphereGeometry(0.03, 16, 12), std("#0a0d13", { roughness: 0.35, metalness: 0.4 }), 0.47, 0.76, 0.13);
   mouse.scale.set(0.9, 0.55, 1.5);
-  scene.add(mouse);
+  mouseG.add(mouse);
   const strip = new THREE.Mesh(new THREE.BoxGeometry(0.003, 0.003, 0.035), new THREE.MeshBasicMaterial({ color: 0x22d3ee }));
   strip.position.set(0.47, 0.777, 0.115);
-  scene.add(strip);
-  return { keys, rest, dummy, rgbMat, cols, rows, pressed: new Float32Array(rows * cols) };
+  mouseG.add(strip);
+  return { keys, rest, dummy, rgbMat, cols, rows, hidden, enterKey, enterMat, enterY: 0.7755, enterZ: enterKey.position.z, mouseG, pressed: new Float32Array(rows * cols) };
 }
 
 function buildProps(scene, cyan) {
@@ -373,32 +288,13 @@ function buildProps(scene, cyan) {
 
 function buildRoom(scene, cyan, isMobile) {
   const gt = gridTexture();
-  const floorMat = new THREE.MeshStandardMaterial({ color: 0xffffff, map: gt, roughness: 0.3, metalness: 0.75 });
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(36, 36), floorMat);
+  gt.repeat.set(14, 11);
+  const floorMat = new THREE.MeshStandardMaterial({ color: 0xffffff, map: gt, roughness: 0.28, metalness: 0.75 });
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(14, 11), floorMat);
   floor.rotation.x = -Math.PI / 2;
+  floor.position.set(0, 0, 2.5);
   floor.receiveShadow = true;
   scene.add(floor);
-
-  const wallMat = std("#070c14", { roughness: 0.8 });
-  const back = new THREE.Mesh(new THREE.PlaneGeometry(30, 9), wallMat);
-  back.position.set(0, 4.5, -3.0);
-  back.receiveShadow = true;
-  scene.add(back);
-  const neon = new THREE.MeshBasicMaterial({ color: cyan });
-  for (let i = -6; i <= 6; i++) {
-    const h = i % 2 === 0 ? 3.2 : 2.2;
-    const s = new THREE.Mesh(new THREE.BoxGeometry(0.05, h, 0.03), neon);
-    s.position.set(i * 1.1, h / 2 + 0.2, -2.96);
-    scene.add(s);
-  }
-  const baseLine = new THREE.Mesh(new THREE.BoxGeometry(30, 0.03, 0.03), neon);
-  baseLine.position.set(0, 0.15, -2.96);
-  scene.add(baseLine);
-  for (let i = 0; i < 4; i++) {
-    const bar = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.04, 0.08), new THREE.MeshBasicMaterial({ color: 0xbfefff }));
-    bar.position.set(-4.5 + i * 3, 3.3, -1.4 + (i % 2) * 1.6);
-    scene.add(bar);
-  }
 
   // rak server dengan LED berkedip
   const rackMat = std("#0a1018", { roughness: 0.5, metalness: 0.5 });
@@ -440,7 +336,7 @@ function buildRoom(scene, cyan, isMobile) {
 
 /* ----------------------------- fungsi utama ------------------------------ */
 export function createDeveloperWorkspace(opts) {
-  const { container, content = {}, theme = {}, onReveal, onFade, onDone, onError } = opts;
+  const { container, content = {}, theme = {}, audio = null, onReveal, onFade, onDone, onError } = opts;
   const T = INTRO_CONFIG.t;
   const isMobile = window.matchMedia("(max-width: 768px)").matches;
   let disposed = false;
@@ -457,7 +353,7 @@ export function createDeveloperWorkspace(opts) {
   let pixelRatio = Math.min(window.devicePixelRatio || 1, pixelRatioMax);
   renderer.setPixelRatio(pixelRatio);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 0.9;
+  renderer.toneMappingExposure = 0.95;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.setClearColor(0x02050a, 1);
@@ -468,14 +364,26 @@ export function createDeveloperWorkspace(opts) {
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x02050a);
-  scene.fog = new THREE.FogExp2(0x03070d, 0.085);
+  scene.fog = new THREE.FogExp2(0x03070d, 0.045);
   const pmrem = new THREE.PMREMGenerator(renderer);
-  const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-  scene.environment = envTex;
-  scene.environmentIntensity = 0.28;
 
-  const camera = new THREE.PerspectiveCamera(40, 1, 0.03, 60);
+  const camera = new THREE.PerspectiveCamera(40, 1, 0.03, 160);
   const cyan = new THREE.Color("#22d3ee"); // ruangan selalu cyan (tema situs hanya dipakai di layar monitor)
+
+  /* ---- ruang angkasa di balik kaca (juga menjadi environment map untuk pantulan) ---- */
+  const space = buildSpaceRoom(scene, renderer, pmrem, { mobile: isMobile });
+  scene.environment = space.envTex;
+  scene.environmentIntensity = 0.85;
+
+  /* ---- petir ungu: SATU kanvas WebGL dipakai di layar monitor + overlay layar-penuh ---- */
+  const lx = getLightningSettings(content);
+  const lightning = new LightningBG({
+    hue: INTRO_CONFIG.lightningHue ?? lx.hue,
+    speed: lx.speed, intensity: lx.intensity, size: lx.size, compact: isMobile,
+  });
+  const boltEl = lightning.canvas;
+  boltEl.style.cssText = "position:absolute;inset:0;width:100%;height:100%;display:block;opacity:0;pointer-events:none;mix-blend-mode:screen;";
+  container.appendChild(boltEl);
 
   /* ---- layar ---- */
   const typing = (content?.typing_words || "").split("\n").map((s) => s.trim()).filter(Boolean);
@@ -490,6 +398,15 @@ export function createDeveloperWorkspace(opts) {
     accent: theme.accent || "#06b6d4",
     blue: theme.blue || "#2563eb",
     bg: theme.bg || "#050510",
+    lightning,
+    welcome: {
+      line1: content.welcome_line1 || "Welcome To My",
+      line2: content.welcome_line2 || "Portofolio Website",
+      font: content.welcome_font || "Arial",
+      color1: content.welcome_color1 || "#ffffff",
+      color2: content.welcome_color2 || "#2563eb",
+    },
+    scale: isMobile ? 0.5 : 0.75,
   });
   const prev = new Image();
   prev.onload = () => { if (prev.naturalWidth > 100) screen.preview = prev; };
@@ -502,15 +419,15 @@ export function createDeveloperWorkspace(opts) {
   const kb = buildKeyboard(scene);
   buildProps(scene, cyan);
   const chair = buildChair(scene);
-  const ch = buildCharacter(scene);
+  const ch = buildCharacter(scene, { mobile: isMobile });
 
   /* ---- cahaya ---- */
-  scene.add(new THREE.HemisphereLight(0x2a4d66, 0x04060a, 0.55));
+  scene.add(new THREE.HemisphereLight(0x2a4d66, 0x04060a, 0.6));
   const key = new THREE.SpotLight(0xa9d4ff, 45, 9, 0.62, 0.85, 2);
   key.position.set(1.9, 3.3, 2.4);
   key.target.position.set(0, 0.9, 0);
   key.castShadow = true;
-  key.shadow.mapSize.set(isMobile ? 1024 : 2048, isMobile ? 1024 : 2048);
+  key.shadow.mapSize.set(isMobile ? 768 : 1536, isMobile ? 768 : 1536);
   key.shadow.bias = -0.0004;
   key.shadow.radius = 4;
   scene.add(key, key.target);
@@ -538,12 +455,12 @@ export function createDeveloperWorkspace(opts) {
   /* ---- post-processing ringan ---- */
   composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
-  const bloomBase = isMobile ? 0.28 : 0.38;
-  bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), bloomBase, 0.55, 0.5);
+  const bloomBase = isMobile ? 0.3 : 0.42;
+  bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), bloomBase, 0.6, 0.5);
   composer.addPass(bloom);
   composer.addPass(new OutputPass());
 
-  /* ---- ukuran ---- */
+  /* ---- ukuran & kamera ---- */
   const size = { w: 1, h: 1 };
   const P0 = new THREE.Vector3(2.9, 2.0, 4.2);
   const T0 = new THREE.Vector3(0, 1.0, 0.1);
@@ -565,12 +482,11 @@ export function createDeveloperWorkspace(opts) {
     composer.setPixelRatio(pixelRatio);
     composer.setSize(w, h);
     camera.aspect = w / h;
-    // layar sempit (HP): tarik kamera sedikit mundur agar adegan muat
+    lightning.setSize(w * (isMobile ? 0.4 : 0.55), h * (isMobile ? 0.4 : 0.55));
     const k = camera.aspect < 0.9 ? 1.45 : camera.aspect < 1.4 ? 1.15 : 1;
     P0.copy(T0).addScaledVector(_d.subVectors(P0base, T0), k);
     P2.copy(T2).addScaledVector(_d.subVectors(P2base, T2), k);
     P2b.copy(T2).addScaledVector(_d.subVectors(P2bbase, T2), k);
-    // jarak akhir: layar memenuhi viewport (landscape) atau lebar layar ~50% (portrait)
     const portrait = camera.aspect < 1.2;
     fovEnd = portrait ? 72 : 52;
     const V = portrait ? 0.9 : 0.5;
@@ -586,7 +502,9 @@ export function createDeveloperWorkspace(opts) {
   const S = {
     u1: 0, d2: 0, u3: 0, u4: 0, fov: 40, sway: 1,
     power: 0, typed: 0, loading: 0, page: 0, full: 0,
-    typeAmt: 0.5, exposure: 0.9, bloom: bloomBase, enter: 0,
+    typeAmt: 0.5, exposure: 0.95, bloom: bloomBase,
+    mouse: 0, cursor: 0, click: 0, reach: 0, press: 0,
+    bolt: 0, spread: 0,
   };
   camera.fov = S.fov;
 
@@ -594,6 +512,10 @@ export function createDeveloperWorkspace(opts) {
   const tgt = new THREE.Vector3();
   const sh = new THREE.Vector3(), W = new THREE.Vector3();
   const pole = new THREE.Vector3();
+  const _p = new THREE.Vector3();
+  const MOUSE_P = new THREE.Vector3(0.45, 0.8, 0.2);
+  // kelingking tangan kanan (jari ke-4) tepat di atas tombol ENTER
+  const ENTER_P = new THREE.Vector3(0.2125 - 0.03, 0.8, kb.enterZ + 0.105);
 
   function updateCamera(t) {
     if (S.u4 > 0) pos.lerpVectors(Pend, Ppass, S.u4);
@@ -611,21 +533,45 @@ export function createDeveloperWorkspace(opts) {
   const rng = { next: 0 };
   function updateCharacter(t, dt) {
     const a = S.typeAmt;
-    ch.upper.rotation.x = 0.07 + Math.sin(t * 1.25) * 0.008;
+    const away = Math.max(S.mouse, S.reach);
+    ch.upper.rotation.x = 0.07 + Math.sin(t * 1.25) * 0.008 + S.reach * 0.03 + S.press * 0.012;
+    ch.upper.rotation.y = -0.03 * S.mouse + 0.02 * S.reach;
     ch.torso.scale.y = 1 + Math.sin(t * 1.25) * 0.012;
     ch.head.rotation.y = Math.sin(t * 0.55) * 0.05 + Math.sin(t * 1.7) * 0.01;
-    ch.head.rotation.x = -0.1 + Math.sin(t * 0.9) * 0.015 - (S.typed > 0 && S.typed < 1 ? 0.02 : 0);
+    ch.head.rotation.x = -0.1 + Math.sin(t * 0.9) * 0.015 - (S.typed > 0 && S.typed < 1 ? 0.02 : 0) - S.press * 0.03;
     chair.rotation.y = Math.sin(t * 0.4) * 0.025;
 
     const hl = ch.handL.group, hr = ch.handR.group;
+    // tangan kiri: selalu mengetik
     hl.position.set(-0.1 + Math.sin(t * 5.1) * 0.012 * a, 0.797 + Math.max(0, Math.sin(t * 9.3)) * 0.006 * a, 0.168 + Math.sin(t * 3.7) * 0.01 * a);
-    hr.position.set(0.1 + Math.sin(t * 4.3 + 1) * 0.012 * a, 0.797 + Math.max(0, Math.sin(t * 8.1 + 2)) * 0.006 * a, 0.168 + Math.sin(t * 3.1 + 2) * 0.01 * a);
     hl.rotation.set(0.08, 0.1, 0);
-    hr.rotation.set(0.08, -0.1, 0);
-    [ch.handL, ch.handR].forEach((hd) => hd.fingers.forEach((f) => {
+
+    // tangan kanan: keyboard -> mouse -> keyboard -> tombol ENTER
+    const typeR = a * (1 - away);
+    const mdx = -0.05 * S.cursor * S.mouse, mdz = -0.04 * S.cursor * S.mouse;
+    _p.set(0.1 + Math.sin(t * 4.3 + 1) * 0.012 * typeR, 0.797 + Math.max(0, Math.sin(t * 8.1 + 2)) * 0.006 * typeR, 0.168 + Math.sin(t * 3.1 + 2) * 0.01 * typeR);
+    _p.lerp(MOUSE_P, S.mouse);
+    _p.lerp(ENTER_P, S.reach);
+    _p.x += mdx; _p.z += mdz;
+    _p.y += Math.sin(Math.PI * S.mouse) * 0.03 + Math.sin(Math.PI * S.reach) * 0.03 - 0.009 * S.press;
+    hr.position.copy(_p);
+    hr.rotation.set(0.08 + 0.1 * S.press, -0.1 + 0.05 * S.mouse, 0);
+    kb.mouseG.position.set(mdx, 0, mdz);
+
+    ch.handL.fingers.forEach((f) => {
       const press = Math.pow(Math.max(0, Math.sin(t * f.speed + f.phase)), 2) * a;
-      f.pivot.rotation.x = -(0.2 + press * 0.42);
-    }));
+      f.pivot.rotation.x = -(0.2 + press * 0.4);
+      f.mid.rotation.x = -(0.25 + press * 0.55);
+    });
+    ch.handR.fingers.forEach((f, i) => {
+      let press = Math.pow(Math.max(0, Math.sin(t * f.speed + f.phase)), 2) * typeR;
+      let base = 0.2;
+      if (S.mouse > 0.05) { base = 0.1; press = i === 0 && S.click > 0 && S.click < 0.3 ? 0.9 : 0; } // klik mouse dengan telunjuk
+      if (S.reach > 0.05) { base = i === 3 ? 0.05 : 0.45; press = 0; }
+      if (i === 3) press += S.press; // kelingking menekan ENTER (sinkron dengan tombol)
+      f.pivot.rotation.x = -(base + press * 0.42);
+      f.mid.rotation.x = -(base * 1.2 + press * 0.6);
+    });
 
     ch.upper.updateMatrixWorld(true);
     [[ch.shoulderL, ch.armL, hl, -1], [ch.shoulderR, ch.armR, hr, 1]].forEach(([sp, arm, hand, side]) => {
@@ -637,17 +583,20 @@ export function createDeveloperWorkspace(opts) {
       placeLimb(arm.upper, sh, arm.elbowPos);
       placeLimb(arm.fore, arm.elbowPos, W);
       arm.elbow.position.copy(arm.elbowPos);
+      arm.cuff.position.lerpVectors(arm.elbowPos, W, 0.94);
+      arm.cuff.quaternion.copy(arm.fore.quaternion);
     });
 
-    // tombol menyala saat diketik
-    if (a > 0.05) {
+    // tombol menyala saat diketik (acak, di bawah jari)
+    if (a > 0.05 && S.reach < 0.05) {
       rng.next -= dt;
       if (rng.next <= 0) {
         rng.next = (0.07 + Math.random() * 0.09) / Math.max(0.3, a);
-        kb.pressed[Math.floor(Math.random() * kb.pressed.length)] = 1;
+        let idx = Math.floor(Math.random() * kb.pressed.length);
+        if (idx === kb.hidden) idx = kb.hidden - 1;
+        kb.pressed[idx] = 1;
       }
     }
-    if (S.enter > 0) { kb.pressed[44] = 1; S.enter = 0; }
     let dirty = false;
     for (let i = 0; i < kb.pressed.length; i++) {
       const p = kb.pressed[i];
@@ -668,23 +617,38 @@ export function createDeveloperWorkspace(opts) {
       }
     }
     if (dirty) kb.keys.instanceMatrix.needsUpdate = true;
+    // tombol ENTER: menyala saat didekati, turun tepat sinkron dengan jari (S.press)
+    kb.enterKey.position.y = kb.enterY - 0.005 * S.press;
+    kb.enterMat.emissiveIntensity = 0.15 + 1.1 * S.reach + 1.2 * S.press;
     kb.rgbMat.color.setHSL((t * 0.08) % 1, 0.95, 0.55);
   }
 
   let lastSig = "";
   let lastDraw = 0;
+  let prevChars = 0;
+  let lastBolt = 0;
   function updateScreen(t, nowMs) {
     const u = S.typed;
     const jitter = u > 0 && u < 1 ? clamp(u + 0.015 * Math.sin(u * 38), 0, 0.999) : u;
     const chars = Math.floor(INTRO_CONFIG.url.length * jitter);
+    if (chars > prevChars && u < 1) audio?.key();
+    prevChars = chars;
     const blink = Math.floor(t * 2.4) % 2;
     const spin = S.loading > 0 && S.loading < 1 ? Math.floor(t * 24) : 0;
-    const sig = [S.power.toFixed(2), chars, S.loading.toFixed(2), S.page.toFixed(2), S.full.toFixed(2), blink, spin, screen.preview ? 1 : 0].join("|");
-    if (sig !== lastSig && nowMs - lastDraw > 30) {
+    const live = S.page > 0.01 || S.bolt > 0.01; // petir bergerak: layar digambar ulang tiap beberapa frame
+    if (live && nowMs - lastBolt > (isMobile ? 50 : 33)) { lastBolt = nowMs; lightning.render(t, S.spread); }
+    const interval = isMobile ? 60 : 33;
+    const sig = [S.power.toFixed(2), chars, S.loading.toFixed(2), S.page.toFixed(2), S.full.toFixed(2), blink, spin,
+      screen.preview ? 1 : 0, S.cursor.toFixed(3), S.click.toFixed(2), S.mouse > 0.3 ? 1 : 0, live ? Math.floor(nowMs / interval) : 0].join("|");
+    if (sig !== lastSig && nowMs - lastDraw > interval - 3) {
       lastSig = sig;
       lastDraw = nowMs;
-      screen.draw({ time: t, power: S.power, typed: jitter, loading: S.loading, page: S.page, full: S.full });
+      screen.draw({
+        time: t, power: S.power, typed: jitter, loading: S.loading, page: S.page, full: S.full,
+        cursor: S.cursor, click: S.click, cursorVis: S.mouse > 0.3 || S.cursor > 0,
+      });
     }
+    boltEl.style.opacity = S.bolt.toFixed(3);
     const pw = S.power * (0.55 + 0.45 * (1 - S.full * 0.3));
     glow.intensity = 0.5 * pw;
     if (areaLight) areaLight.intensity = 2.5 * pw;
@@ -703,12 +667,15 @@ export function createDeveloperWorkspace(opts) {
     last = now;
     t += dt;
 
-    // kualitas adaptif: bila FPS rendah, turunkan resolusi
-    if (frames < 100) {
-      frames++; acc += dt;
-      if (frames === 100 && acc / 100 > 0.03 && pixelRatio > 1) {
-        pixelRatio = 1;
-        renderer.setPixelRatio(1);
+    // kualitas adaptif berkelanjutan: bila rata-rata frame lambat, turunkan resolusi bertahap
+    frames++; acc += dt;
+    if (frames >= 45) {
+      const avg = acc / frames;
+      frames = 0; acc = 0;
+      if (avg > 0.028 && pixelRatio > 0.7) {
+        pixelRatio = Math.max(0.7, pixelRatio > 1 ? 1 : pixelRatio - 0.15);
+        renderer.setPixelRatio(pixelRatio);
+        bloom.enabled = pixelRatio > 0.85;
         layout();
       }
     }
@@ -717,6 +684,7 @@ export function createDeveloperWorkspace(opts) {
     updateCharacter(t, dt);
     glbMixer?.update(dt);
     updateScreen(t, now);
+    space.update(t, dt);
     room.dust.rotation.y = t * 0.02;
     room.dust.position.y = Math.sin(t * 0.3) * 0.05;
     if (Math.floor(t * 8) !== Math.floor((t - dt) * 8)) {
@@ -742,30 +710,46 @@ export function createDeveloperWorkspace(opts) {
     tl = gsap.timeline({ defaults: { ease: "none" } });
     tl.to(canvas, { opacity: 1, duration: 1.4, ease: "power1.out" }, 0)
       .to(S, { power: 1, duration: 0.9, ease: "power2.out" }, T.powerOn)
-      // kamera mendekat perlahan (+ efek telephoto)
+      // Scene 1-2: kamera mendekat perlahan (+ efek telephoto)
       .to(S, { u1: 1, duration: T.camMoveEnd, ease: "power2.inOut" }, 0)
       .to(S, { fov: 32, duration: T.camMoveEnd, ease: "power2.inOut" }, 0)
       .to(S, { d2: 1, duration: T.dive - T.camMoveEnd, ease: "sine.inOut" }, T.camMoveEnd)
-      // mengetik
-      .to(S, { typeAmt: 1, duration: 0.9, ease: "sine.inOut" }, T.typeStart - 1.4)
+      // Scene 2: tangan ke mouse, kursor menuju address bar, klik
+      .to(S, { mouse: 1, duration: 0.7, ease: "power2.inOut" }, T.mouseIn)
+      .to(S, { cursor: 1, duration: T.cursorEnd - T.cursorStart, ease: "power2.inOut" }, T.cursorStart)
+      .call(() => audio?.key(1.4), null, T.click)
+      .to(S, { click: 1, duration: 0.45, ease: "none" }, T.click)
+      .to(S, { mouse: 0, duration: 0.6, ease: "power2.inOut" }, T.mouseOut)
+      // Scene 3: mengetik URL huruf demi huruf
+      .to(S, { typeAmt: 1, duration: 0.6, ease: "sine.inOut" }, T.typeStart - 0.4)
       .to(S, { typed: 1, duration: T.typeDur, ease: "none" }, T.typeStart)
-      .call(() => { S.enter = 1; }, null, T.enter)
-      .to(S, { typeAmt: 0.22, duration: 0.7, ease: "sine.inOut" }, T.enter)
-      // browser memuat, website muncul
+      // Scene 4: jari menuju ENTER, menekan (turun -> tahan -> naik), kembali
+      .to(S, { reach: 1, duration: T.reachDur, ease: "power2.inOut" }, T.reach)
+      .to(S, { press: 1, duration: 0.11, ease: "power2.in" }, T.enter)
+      .call(() => audio?.enter(), null, T.enter + 0.09)
+      .to(S, { press: 0, duration: 0.24, ease: "power2.out" }, T.enter + 0.17)
+      .to(S, { reach: 0, duration: 0.8, ease: "power2.inOut" }, T.enter + 0.45)
+      .to(S, { typeAmt: 0.22, duration: 0.7, ease: "sine.inOut" }, T.enter + 0.3)
+      // browser memuat (setelah ENTER benar-benar tertekan), lalu website tampil
+      .call(() => audio?.loading(T.loadDur), null, T.loadStart)
       .to(S, { loading: 1, duration: T.loadDur, ease: "power1.inOut" }, T.loadStart)
       .to(S, { page: 1, duration: 0.9, ease: "power1.out" }, T.pageStart)
-      // dolly zoom menuju monitor
+      // Scene 5: dolly menuju monitor, bezel hilang
+      .call(() => audio?.energy(T.through - T.dive + 0.6), null, T.dive + 0.1)
       .to(S, { u3: 1, duration: T.diveDur, ease: "power2.inOut" }, T.dive)
       .to(S, { fov: fovEnd, duration: T.diveDur, ease: "power2.inOut" }, T.dive)
       .to(S, { sway: 0, duration: 1.4, ease: "sine.out" }, T.dive)
       .to(S, { typeAmt: 0.1, duration: 1.2 }, T.dive)
       .to(S, { full: 1, duration: 1.0, ease: "power2.inOut" }, T.dive + 1.2)
-      // menembus permukaan layar
+      // petir ungu memenuhi layar saat kamera menembus layar
+      .to(S, { bolt: 1, duration: 0.9, ease: "power2.in" }, T.through - 0.15)
+      .to(S, { spread: 1, duration: 1.0, ease: "power2.in" }, T.through - 0.15)
       .to(S, { u4: 1, duration: T.throughDur, ease: "power3.in" }, T.through)
       .to(S, { fov: fovEnd + 12, duration: T.throughDur, ease: "power3.in" }, T.through)
-      .to(S, { exposure: 3.4, bloom: 2.8, duration: 0.7, ease: "power2.in" }, T.through + 0.25)
+      .call(() => audio?.thunder(), null, T.through + 0.25)
+      .to(S, { exposure: 2.6, bloom: 2.0, duration: 0.7, ease: "power2.in" }, T.through + 0.25)
       .call(() => onReveal?.(), null, T.reveal)
-      .call(() => onFade?.(), null, T.fade)
+      .call(() => { audio?.stopAmbient(1.5); onFade?.(); }, null, T.fade)
       .call(() => { if (!disposed) onDone?.(); }, null, T.done);
   }
 
@@ -776,6 +760,7 @@ export function createDeveloperWorkspace(opts) {
     skipped = true;
     tl?.kill();
     gsap.to(canvas, { opacity: 0, duration: 0.5, ease: "power1.in" });
+    gsap.to(boltEl, { opacity: 0, duration: 0.5, ease: "power1.in" });
     onReveal?.();
     onFade?.();
     setTimeout(() => { if (!disposed) onDone?.(); }, 650);
@@ -792,7 +777,7 @@ export function createDeveloperWorkspace(opts) {
       const { GLTFLoader } = await import("three/examples/jsm/loaders/GLTFLoader.js");
       const gltf = await new GLTFLoader().loadAsync(cfg.url);
       if (disposed) return;
-      ch.root.visible = false; // sembunyikan karakter prosedural (badan, lengan, tangan, kaki)
+      ch.root.visible = false;
       const model = gltf.scene;
       model.position.set(...cfg.position);
       model.rotation.y = cfg.rotationY;
@@ -812,14 +797,16 @@ export function createDeveloperWorkspace(opts) {
     cancelAnimationFrame(raf);
     tl?.kill();
     gsap.killTweensOf(canvas);
+    gsap.killTweensOf(boltEl);
     ro.disconnect();
     scene.traverse((o) => {
       if (o.geometry) o.geometry.dispose();
-      if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => { m.map?.dispose?.(); m.dispose(); });
+      if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => { m.map?.dispose?.(); m.bumpMap?.dispose?.(); m.dispose(); });
     });
     screen.dispose();
+    lightning.dispose();
+    space.dispose();
     room.gt.dispose();
-    envTex.dispose();
     pmrem.dispose();
     composer.dispose?.();
     renderer.dispose();

@@ -16,7 +16,10 @@ const rr = (ctx, x, y, w, h, r) => {
 };
 
 export class BrowserScreen {
-  constructor({ url, name, line1, line2, role, greeting, nav, accent = "#06b6d4", blue = "#2563eb", bg = "#050510", preview = null }) {
+  constructor({ url, name, line1, line2, role, greeting, nav, accent = "#06b6d4", blue = "#2563eb", bg = "#050510", preview = null, lightning = null, welcome = null, scale = 1 }) {
+    this.lightning = lightning; // LightningBG: petir yang sama dengan layar tujuan
+    this.welcome = welcome || { line1: "Welcome To My", line2: "Portofolio Website", font: "Arial", color1: "#ffffff", color2: "#2563eb" };
+    this.k = scale;
     this.url = url;
     this.name = name;
     this.line1 = line1;
@@ -30,8 +33,8 @@ export class BrowserScreen {
     this.preview = preview; // HTMLImageElement opsional (/intro/portfolio-preview.jpg)
 
     this.canvas = document.createElement("canvas");
-    this.canvas.width = W;
-    this.canvas.height = H;
+    this.canvas.width = Math.round(W * scale);
+    this.canvas.height = Math.round(H * scale);
     this.ctx = this.canvas.getContext("2d");
     this.texture = new THREE.CanvasTexture(this.canvas);
     this.texture.colorSpace = THREE.SRGBColorSpace;
@@ -47,6 +50,7 @@ export class BrowserScreen {
    */
   draw(s) {
     const ctx = this.ctx;
+    ctx.setTransform(this.k, 0, 0, this.k, 0, 0);
     ctx.clearRect(0, 0, W, H);
     ctx.fillStyle = "#04070d";
     ctx.fillRect(0, 0, W, H);
@@ -83,6 +87,8 @@ export class BrowserScreen {
     ctx.fillStyle = "#000";
     for (let y = 0; y < H; y += 4) ctx.fillRect(0, y, W, 1);
     ctx.globalAlpha = 1;
+
+    if (s.cursorVis && chromeH > 2 && s.loading <= 0 && s.typed <= 0.01) this._cursor(ctx, s);
 
     // kilau power-on
     if (s.power < 1) {
@@ -130,8 +136,9 @@ export class BrowserScreen {
     ctx.fillStyle = "#070d18";
     rr(ctx, 40, ay, W - 80, ah, 26);
     ctx.fill();
-    ctx.strokeStyle = s.typed > 0 && s.loading < 1 ? this.accent : "rgba(120,160,210,0.25)";
-    ctx.lineWidth = 2;
+    const focused = (s.typed > 0 || (s.cursor || 0) >= 1) && s.loading < 1;
+    ctx.strokeStyle = focused ? this.accent : "rgba(120,160,210,0.25)";
+    ctx.lineWidth = focused ? 3 : 2;
     ctx.stroke();
     ctx.fillStyle = "#6f86a8";
     ctx.font = "28px 'Plus Jakarta Sans', system-ui, sans-serif";
@@ -195,7 +202,7 @@ export class BrowserScreen {
       if (ir > pr) dw = h * ir; else dh = w / ir;
       ctx.drawImage(this.preview, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
     } else {
-      this._hero(ctx, x, y, w, h);
+      this._welcome(ctx, x, y, w, h, s);
     }
     ctx.restore();
     ctx.globalAlpha = 1;
@@ -259,6 +266,62 @@ export class BrowserScreen {
     ctx.font = "700 28px 'Plus Jakarta Sans', system-ui, sans-serif";
     ctx.fillText("Portofolio", cx - 135, cy + 236);
     ctx.fillText("Kontak", cx + 135, cy + 236);
+    ctx.textAlign = "left";
+  }
+
+  // Kursor mouse bergerak dari tengah halaman ke address bar, lalu klik (cincin).
+  _cursor(ctx, s) {
+    const u = Math.min(1, Math.max(0, s.cursor || 0));
+    const e = u * u * (3 - 2 * u);
+    const x0 = W * 0.62, y0 = H * 0.66, x1 = 520, y1 = 112;
+    const cx = x0 - 260, cy = y0 + 40; // titik kontrol: lengkung natural
+    const x = (1 - e) * (1 - e) * x0 + 2 * (1 - e) * e * cx + e * e * x1;
+    const y = (1 - e) * (1 - e) * y0 + 2 * (1 - e) * e * cy + e * e * y1;
+    if (s.click > 0 && s.click < 1) {
+      ctx.strokeStyle = `rgba(160,240,255,${1 - s.click})`;
+      ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.arc(x, y, 10 + s.click * 46, 0, Math.PI * 2); ctx.stroke();
+    }
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 8;
+    ctx.fillStyle = "#ffffff"; ctx.strokeStyle = "#0a0f18"; ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(0, 0); ctx.lineTo(0, 38); ctx.lineTo(10, 29); ctx.lineTo(18, 46); ctx.lineTo(26, 42); ctx.lineTo(18, 26); ctx.lineTo(31, 26);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.restore();
+  }
+
+  // Tampilan yang SAMA dengan layar tujuan (WelcomeScreen): petir + "Welcome To My / Portofolio Website".
+  _welcome(ctx, x, y, w, h) {
+    ctx.fillStyle = this.bg;
+    ctx.fillRect(x, y, w, h);
+    const lt = this.lightning;
+    if (lt?.ok) {
+      // crop "cover" agar petir tidak melar
+      const cw = lt.canvas.width, ch = lt.canvas.height;
+      const dr = w / h;
+      let sw = cw, sh = cw / dr, sx = 0, sy = (ch - sh) / 2;
+      if (sh > ch) { sh = ch; sw = ch * dr; sy = 0; sx = (cw - sw) / 2; }
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      ctx.drawImage(lt.canvas, sx, sy, sw, sh, x, y, w, h);
+      ctx.restore();
+    } else {
+      const g = ctx.createRadialGradient(x + w / 2, y + h / 2, 0, x + w / 2, y + h / 2, w * 0.4);
+      g.addColorStop(0, "rgba(124,58,237,0.45)"); g.addColorStop(1, "transparent");
+      ctx.fillStyle = g; ctx.fillRect(x, y, w, h);
+    }
+    const wc = this.welcome;
+    const cx = x + w / 2, cy = y + h / 2;
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.shadowColor = "rgba(0,0,0,0.55)"; ctx.shadowBlur = 24;
+    ctx.font = `800 150px ${wc.font}, 'Plus Jakarta Sans', system-ui, sans-serif`;
+    ctx.fillStyle = wc.color1;
+    ctx.fillText(wc.line1, cx, cy - 95);
+    ctx.fillStyle = wc.color2;
+    ctx.fillText(wc.line2, cx, cy + 75);
+    ctx.shadowBlur = 0;
     ctx.textAlign = "left";
   }
 

@@ -39,3 +39,18 @@ npm install
 npm run dev
 ```
 (`three` dan `gsap` ditambahkan ke package.json; package-lock akan diperbarui oleh `npm install`.)
+
+## Pembaruan (versi sinematik)
+Alur sekarang: programmer bekerja di markas luar angkasa -> kamera mendekat -> tangan ke mouse, kursor menuju address bar, klik ->
+URL `https://rizkydm.vercel.app/` diketik huruf demi huruf (suara keyboard) -> kelingking tangan kanan bergerak ke tombol ENTER,
+menekan (tombol turun sinkron dengan jari) -> loading browser -> monitor menampilkan layar tujuan yang SAMA (petir + "Welcome To My / Portofolio Website",
+dirender dengan shader petir situs) -> kamera masuk menembus layar, bezel hilang -> petir ungu memenuhi layar -> menyatu dengan WelcomeScreen -> homepage.
+
+File baru di `src/components/intro/`:
+- `spaceRoom.js` : kaca panorama, planet, bintang/nebula/galaksi, bulan, asteroid & stasiun melayang, berkas cahaya, pantulan (environment map dari angkasa).
+- `character.js` : karakter lebih detail (wajah, rambut berlapis, kacamata, headset, hoodie berlipat, tangan 2 ruas jari).
+- `lightningBG.js` : petir WebGL (shader sama dengan `ui/Lightning.jsx`), dipakai di layar monitor dan overlay layar-penuh.
+- `audio.js` : efek suara Web Audio (keyboard, ENTER, loading, energi, petir). MATI default; tombol "Suara" kiri bawah.
+
+Warna petir mengikuti pengaturan Dashboard Admin (`lightning_hue`). Untuk memaksa ungu di intro: `INTRO_CONFIG.lightningHue = 270` di `workspaceScene.js`.
+Semua waktu adegan ada di `INTRO_CONFIG.t`.

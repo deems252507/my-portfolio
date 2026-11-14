@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
+import { createIntroAudio } from "../components/intro/audio";
 
 // Urutan: intro 3D (programmer membuka website) -> kamera menembus layar ->
 // WelcomeScreen milikmu ("Welcome To My Portofolio" + animasi partikel 3D) -> portfolio.
@@ -28,6 +29,15 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
   const [welcome, setWelcome] = useState(!use3D); // welcome milikmu sedang tampil
   const [introGone, setIntroGone] = useState(!use3D); // overlay 3D sudah dilepas
   const [leaving, setLeaving] = useState(false);
+  // Suara intro (Web Audio, tanpa file). MATI secara default; pengunjung menyalakannya lewat tombol.
+  const audioRef = useRef(null);
+  if (!audioRef.current && typeof window !== "undefined") audioRef.current = createIntroAudio();
+  const [soundOn, setSoundOn] = useState(false);
+  const toggleSound = useCallback(async () => {
+    const on = await audioRef.current.setEnabled(!audioRef.current.isEnabled());
+    setSoundOn(on);
+  }, []);
+  useEffect(() => () => audioRef.current?.dispose(), []);
   const doneRef = useRef(false);
   const skippedRef = useRef(false);
   const revealedRef = useRef(false);
@@ -66,6 +76,7 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
   const onSkip = useCallback(() => {
     if (skippedRef.current) return;
     skippedRef.current = true;
+    audioRef.current?.setEnabled(false); // hentikan suara saat dilewati
     reveal(); // portfolio dipasang di bawah overlay
     setLeaving(true);
     setTimeout(finish, FADE_MS);
@@ -108,12 +119,29 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
         >
           <Suspense fallback={null}>
             <DeveloperIntro
+              audio={audioRef.current}
               onReveal={handleThrough}
               onFade={handleFade}
               onDone={handleDone}
               onError={handleError}
             />
           </Suspense>
+
+          <button
+            type="button"
+            onClick={toggleSound}
+            aria-pressed={soundOn}
+            aria-label={soundOn ? "Matikan suara intro" : "Nyalakan suara intro"}
+            className="absolute z-10 rounded-full border border-white/25 bg-black/40 px-5 text-sm font-semibold text-white/90 backdrop-blur transition hover:bg-white/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300"
+            style={{
+              left: "max(1rem, env(safe-area-inset-left))",
+              bottom: "max(1rem, env(safe-area-inset-bottom))",
+              minHeight: 44,
+              fontFamily: "var(--font-display)",
+            }}
+          >
+            {soundOn ? "Suara: Nyala" : "Suara: Mati"}
+          </button>
 
           <button
             type="button"
