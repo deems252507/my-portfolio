@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, ExternalLink } from "lucide-react";
 import { toSlug } from "../utils/slug";
 import ProjectCoverflow from "./ProjectCoverflow";
 
@@ -19,7 +19,10 @@ const PREVIEW_H = 180;
 const getImg = (p) => p.img || p.Img || p.image || "";
 const getTitle = (p) => p.title || p.Title || "";
 const getDesc = (p) => p.description || p.Description || "";
-const getLink = (p) => p.link || p.Link || "";
+const getLink = (p) => {
+  const v = String(p.link || p.Link || "").trim();
+  return v && !/^https?:\/\//i.test(v) ? `https://${v}` : v;
+};
 const getYear = (p) => {
   const d = p.created_at ? new Date(p.created_at) : null;
   return d && !Number.isNaN(d.getTime()) ? String(d.getFullYear()) : "";
@@ -144,12 +147,31 @@ function Row({ project, index, canHover, reduceMotion, onEnter }) {
   }
 
   const common = {
-    className: "border-t",
+    className: "relative border-t",
     style: { borderColor: "var(--col-border)" },
     onMouseEnter: canHover ? (e) => onEnter(index, e) : undefined,
   };
 
-  if (reduceMotion) return <li {...common}>{el}</li>;
+  // Link demo terpisah (bukan di dalam <Link> agar tidak ada <a> di dalam <a>)
+  const demo = link && to ? (
+    <a
+      href={link}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={(e) => e.stopPropagation()}
+      className="absolute right-0 bottom-2 md:bottom-3 z-10 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors hover:text-white"
+      style={{
+        color: "var(--col-blue-light)",
+        background: "color-mix(in srgb, var(--col-blue) 12%, transparent)",
+        border: "1px solid color-mix(in srgb, var(--col-blue) 25%, transparent)",
+      }}
+    >
+      <ExternalLink className="w-3 h-3" />
+      Live Demo
+    </a>
+  ) : null;
+
+  if (reduceMotion) return <li {...common}>{el}{demo}</li>;
 
   return (
     <motion.li
@@ -160,6 +182,7 @@ function Row({ project, index, canHover, reduceMotion, onEnter }) {
       transition={{ duration: 0.5, delay: Math.min(index, 6) * 0.07, ease: "easeOut" }}
     >
       {el}
+      {demo}
     </motion.li>
   );
 }
