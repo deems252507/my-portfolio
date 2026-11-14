@@ -6,7 +6,7 @@ import { createIntroAudio } from "../components/intro/audio";
 const LegacyWelcome = lazy(() => import("./WelcomeScreen"));
 const DeveloperIntro = lazy(() => import("../components/intro/DeveloperIntro"));
 
-const FADE_MS = 700;
+const FADE_MS = 900;
 const FAILSAFE_MS = 45000; // jaga-jaga: intro tidak boleh menahan akses ke portfolio
 
 function hasWebGL() {
@@ -58,17 +58,20 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
     cbs.current.onLoadingComplete?.();
   }, [reveal]);
 
-  // Dari scene 3D: kamera menembus layar -> mulai welcome milikmu di bawah overlay 3D
+  // Dari scene 3D: kamera menembus layar -> pasang homepage di BAWAH overlay.
+  // WelcomeScreen TIDAK diputar lagi (layar monitor sudah menampilkannya), jadi tidak ada animasi yang diulang.
   const handleThrough = useCallback(() => {
     if (skippedRef.current) return;
-    setWelcome(true);
-  }, []);
+    reveal();
+  }, [reveal]);
   const handleFade = useCallback(() => {
     if (!skippedRef.current) setLeaving(true);
   }, []);
   const handleDone = useCallback(() => {
-    if (!skippedRef.current) setIntroGone(true);
-  }, []);
+    if (skippedRef.current) return;
+    setIntroGone(true);
+    finish(); // overlay sudah memudar: langsung masuk homepage
+  }, [finish]);
   const handleError = useCallback(() => {
     // WebGL gagal di tengah jalan: langsung ke welcome milikmu
     setWelcome(true);

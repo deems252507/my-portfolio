@@ -51,9 +51,9 @@ export const INTRO_CONFIG = {
     diveDur: 2.4,
     through: 13.4,       // menembus permukaan layar
     throughDur: 1.0,
-    reveal: 14.0,
-    fade: 14.3,
-    done: 15.1,
+    reveal: 13.7,
+    fade: 14.1,
+    done: 15.2,
   },
 };
 /* ======================================================================== */
