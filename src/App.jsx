@@ -21,6 +21,7 @@ if (PLAY_INTRO && typeof window !== "undefined") {
   // unduh paralel sejak awal supaya tidak ada layar hitam menunggu
   importIntroScreen();
   import("./components/intro/DeveloperIntro");
+  import("./components/intro/workspaceScene");
 }
 
 const IntroFallback = () => (

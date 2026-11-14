@@ -732,11 +732,9 @@ export function createDeveloperWorkspace(opts) {
       .to(S, { reach: 0, duration: 0.8, ease: "power2.inOut" }, T.enter + 0.45)
       .to(S, { typeAmt: 0.22, duration: 0.7, ease: "sine.inOut" }, T.enter + 0.3)
       // browser memuat (setelah ENTER benar-benar tertekan), lalu website tampil
-      .call(() => audio?.loading(T.loadDur), null, T.loadStart)
       .to(S, { loading: 1, duration: T.loadDur, ease: "power1.inOut" }, T.loadStart)
       .to(S, { page: 1, duration: 0.9, ease: "power1.out" }, T.pageStart)
       // Scene 5: dolly menuju monitor, bezel hilang
-      .call(() => audio?.energy(T.through - T.dive + 0.6), null, T.dive + 0.1)
       .to(S, { u3: 1, duration: T.diveDur, ease: "power2.inOut" }, T.dive)
       .to(S, { fov: fovEnd, duration: T.diveDur, ease: "power2.inOut" }, T.dive)
       .to(S, { sway: 0, duration: 1.4, ease: "sine.out" }, T.dive)
@@ -747,10 +745,9 @@ export function createDeveloperWorkspace(opts) {
       .to(S, { spread: 1, duration: 1.0, ease: "power2.in" }, T.through - 0.15)
       .to(S, { u4: 1, duration: T.throughDur, ease: "power3.in" }, T.through)
       .to(S, { fov: fovEnd + 12, duration: T.throughDur, ease: "power3.in" }, T.through)
-      .call(() => audio?.thunder(), null, T.through + 0.25)
       .to(S, { exposure: 2.6, bloom: 2.0, duration: 0.7, ease: "power2.in" }, T.through + 0.25)
       .call(() => onReveal?.(), null, T.reveal)
-      .call(() => { audio?.stopAmbient(1.5); onFade?.(); }, null, T.fade)
+      .call(() => { audio?.setEnabled(false); onFade?.(); }, null, T.fade)
       .call(() => { if (!disposed) onDone?.(); }, null, T.done);
   }
 

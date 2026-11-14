@@ -9,13 +9,22 @@ const DeveloperIntro = lazy(() => import("../components/intro/DeveloperIntro"));
 const FADE_MS = 900;
 const FAILSAFE_MS = 45000; // jaga-jaga: intro tidak boleh menahan akses ke portfolio
 
+function hasWebGL() {
+  try {
+    const c = document.createElement("canvas");
+    return !!(window.WebGLRenderingContext && (c.getContext("webgl2") || c.getContext("webgl")));
+  } catch {
+    return false;
+  }
+}
+
 /** Props sama dengan WelcomeScreen lama: { onReveal, onLoadingComplete }. */
 export default function IntroScreen({ onReveal, onLoadingComplete }) {
   // "reduced": tanpa intro 3D, langsung ke welcome lama (animasi dikurangi oleh pengaturan sistem)
   const [use3D] = useState(() => {
     if (typeof window === "undefined") return false;
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return false;
-    return true;
+    return hasWebGL();
   });
   const [welcome, setWelcome] = useState(!use3D); // welcome milikmu sedang tampil
   const [introGone, setIntroGone] = useState(!use3D); // overlay 3D sudah dilepas
@@ -66,10 +75,10 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
     setIntroGone(true);
   }, []);
 
-  // jaga-jaga: bila scene 3D tak siap dalam 12 detik, langsung ke welcome (tanpa layar kosong)
+  // jaga-jaga: bila scene 3D tak siap dalam 6 detik, langsung ke welcome (tanpa layar kosong)
   useEffect(() => {
     if (!use3D || ready) return;
-    const id = setTimeout(handleError, 12000);
+    const id = setTimeout(handleError, 6000);
     return () => clearTimeout(id);
   }, [use3D, ready, handleError]);
 

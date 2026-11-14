@@ -1,5 +1,5 @@
-// Karakter programmer (prosedural, kualitas lebih tinggi): kulit soft-sheen, rambut berlapis,
-// wajah (mata, alis, hidung, telinga, kacamata), headset, hoodie dengan lipatan kain (bump), tangan 2 ruas jari.
+// Karakter programmer (prosedural): kulit soft-sheen, rambut, wajah (mata, alis, hidung, telinga, kacamata),
+// topi baseball, jaket (kerah, ribbed hem/cuff, jahitan), tangan 2 ruas jari.
 // Pose: duduk di kursi (z = 0.66), menghadap -Z (ke monitor). API sama dengan versi lama + field baru.
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
@@ -30,8 +30,8 @@ function foldTexture(seed = 7) {
 export function buildCharacter(scene, { mobile = false } = {}) {
   const bump = foldTexture(7);
   const skin = new THREE.MeshPhysicalMaterial({ color: "#c68e66", roughness: 0.52, sheen: 0.9, sheenRoughness: 0.45, sheenColor: new THREE.Color("#ff9d80"), clearcoat: 0.08, clearcoatRoughness: 0.6 });
-  const hoodie = new THREE.MeshPhysicalMaterial({ color: "#2a3345", roughness: 0.93, sheen: 1, sheenRoughness: 0.6, sheenColor: new THREE.Color("#6f86ad"), bumpMap: bump, bumpScale: 1.8 });
-  const hoodieDark = hoodie.clone(); hoodieDark.color = new THREE.Color("#1d2534");
+  const hoodie = new THREE.MeshPhysicalMaterial({ color: "#26405a", roughness: 0.72, sheen: 0.4, sheenRoughness: 0.5, sheenColor: new THREE.Color("#7fa0c4"), bumpMap: bump, bumpScale: 0.6 });
+  const hoodieDark = hoodie.clone(); hoodieDark.color = new THREE.Color("#16283a");
   const pants = new THREE.MeshStandardMaterial({ color: "#141923", roughness: 0.9, bumpMap: bump, bumpScale: 1.2 });
   const hairM = new THREE.MeshPhysicalMaterial({ color: "#17110f", roughness: 0.38, clearcoat: 0.35, clearcoatRoughness: 0.35, sheen: 0.5, sheenColor: new THREE.Color("#6a5648") });
   const shoe = std("#0b0d12", { roughness: 0.5, metalness: 0.2 });
@@ -59,14 +59,14 @@ export function buildCharacter(scene, { mobile = false } = {}) {
   const trap = mk(new THREE.CapsuleGeometry(0.06, 0.24, 6, 12), hoodie, 0, 0.5, 0.005);
   trap.rotation.z = Math.PI / 2;
   upper.add(trap);
-  // tudung hoodie menumpuk di belakang leher (terlihat jelas dari belakang)
-  const hood = mk(new THREE.SphereGeometry(0.11, 20, 14), hoodieDark, 0, 0.57, 0.07);
-  hood.scale.set(1.35, 0.85, 0.95);
-  upper.add(hood);
-  const hoodRim = mk(new THREE.TorusGeometry(0.082, 0.026, 10, 24), hoodieDark, 0, 0.585, -0.03);
-  hoodRim.rotation.x = Math.PI / 2;
-  upper.add(hoodRim);
-  [-1, 1].forEach((s) => { const cord = mk(new THREE.CylinderGeometry(0.004, 0.004, 0.16, 6), sole, s * 0.03, 0.49, -0.125, false); cord.rotation.x = 0.1; upper.add(cord); });
+  // kerah jaket + jahitan punggung
+  const collar = mk(new THREE.TorusGeometry(0.075, 0.03, 10, 28), hoodieDark, 0, 0.585, 0.0);
+  collar.rotation.x = Math.PI / 2; collar.scale.set(1.1, 1, 0.9);
+  upper.add(collar);
+  const seamV = mk(new THREE.BoxGeometry(0.006, 0.42, 0.004), hoodieDark, 0, 0.3, 0.127, false);
+  upper.add(seamV);
+  const yoke = mk(new THREE.BoxGeometry(0.34, 0.006, 0.004), hoodieDark, 0, 0.44, 0.123, false);
+  upper.add(yoke);
   const neck = mk(new THREE.CylinderGeometry(0.043, 0.05, 0.12, 14), skin, 0, 0.63, -0.015);
   upper.add(neck);
 
@@ -96,32 +96,10 @@ export function buildCharacter(scene, { mobile = false } = {}) {
   head.add(mk(new THREE.CapsuleGeometry(0.008, 0.03, 4, 8), skin, 0, 0.0, -0.1, false));
   const mouth = mk(new THREE.BoxGeometry(0.03, 0.0045, 0.006), std("#8a3f3a", { roughness: 0.5 }), 0, -0.064, -0.093, false); head.add(mouth);
 
-  // rambut: tutup kepala + helai
-  const cap = mk(new THREE.SphereGeometry(0.108, 28, 20, 0, Math.PI * 2, 0, Math.PI * 0.62), hairM, 0, 0.012, 0.01);
-  cap.scale.set(0.98, 1.15, 1.05); cap.rotation.x = 0.35;
-  head.add(cap);
-  const tuft = new THREE.SphereGeometry(1, 8, 6);
-  let seed = 3; const rr = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
-  const clumps = mobile ? 26 : 48;
-  const v = new THREE.Vector3();
-  for (let i = 0; i < clumps; i++) {
-    const phi = rr() * Math.PI * 2, th = rr() * Math.PI * 0.6;
-    v.set(Math.sin(th) * Math.cos(phi), Math.cos(th), Math.sin(th) * Math.sin(phi));
-    if (v.z < -0.25 && v.y < 0.75) v.z = -v.z; // jangan menutupi wajah
-    const m = mk(tuft, hairM, v.x * 0.107 * 0.98, v.y * 0.107 * 1.15 + 0.012, v.z * 0.107 * 1.05 + 0.01, false);
-    m.scale.set(0.03 + rr() * 0.012, 0.022 + rr() * 0.01, 0.05 + rr() * 0.02);
-    m.lookAt(m.position.x * 2, m.position.y * 2, m.position.z * 2);
-    m.rotateZ((rr() - 0.5) * 1.2);
-    head.add(m);
-  }
-  for (let i = 0; i < 6; i++) { // poni
-    const m = mk(tuft, hairM, -0.05 + i * 0.02, 0.088 - Math.abs(i - 2.5) * 0.004, -0.078, false);
-    m.scale.set(0.022, 0.016, 0.034); m.rotation.set(0.5, (i - 2.5) * 0.12, 0);
-    head.add(m);
-  }
-  const nape = mk(new THREE.SphereGeometry(0.1, 20, 14), hairM, 0, -0.025, 0.04, false);
-  nape.scale.set(0.9, 1.0, 0.8);
-  head.add(nape);
+  // rambut pendek rapi: hanya terlihat di bawah topi (sisi dan belakang), tanpa helai keluar
+  const hair = mk(new THREE.SphereGeometry(0.104, 28, 18, 0, Math.PI, Math.PI * 0.36, Math.PI * 0.42), hairM, 0, 0.0, 0.004);
+  hair.scale.set(0.99, 1.15, 1.04);
+  head.add(hair);
 
   // kacamata
   const lens = new THREE.MeshPhysicalMaterial({ color: 0x9fe8ff, transparent: true, opacity: 0.12, roughness: 0.05, clearcoat: 1, depthWrite: false });
@@ -133,14 +111,24 @@ export function buildCharacter(scene, { mobile = false } = {}) {
   });
   head.add(mk(new THREE.BoxGeometry(0.014, 0.003, 0.003), dark, 0, 0.018, -0.11, false));
 
-  // headset gaming
-  const band = mk(new THREE.TorusGeometry(0.117, 0.006, 8, 36, Math.PI), dark, 0, 0.0, 0.005, false);
-  band.scale.set(1, 1.1, 1);
-  head.add(band);
-  [-1, 1].forEach((s) => {
-    const cup = mk(new THREE.CylinderGeometry(0.032, 0.032, 0.024, 20), dark, s * 0.117, -0.006, 0.0); cup.rotation.z = Math.PI / 2; head.add(cup);
-    const ringG = new THREE.Mesh(new THREE.TorusGeometry(0.024, 0.002, 8, 24), cyanM); ringG.position.set(s * 0.13, -0.006, 0); ringG.rotation.y = Math.PI / 2; head.add(ringG);
+  // topi baseball navy: kubah menempel di kepala, brim melengkung di depan, strap di belakang
+  const capM = std("#1b2538", { roughness: 0.88 });
+  const capDark = std("#111a28", { roughness: 0.85 });
+  const dome = mk(new THREE.SphereGeometry(0.112, 32, 20, 0, Math.PI * 2, 0, Math.PI * 0.38), capM, 0, 0.012, 0.012);
+  dome.scale.set(1.0, 1.12, 1.08);
+  head.add(dome);
+  const seamCap = new THREE.TorusGeometry(0.112, 0.0018, 6, 40, Math.PI);
+  [0, Math.PI / 3, -Math.PI / 3].forEach((r) => {
+    const sm = mk(seamCap, capDark, 0, 0.012, 0.012, false);
+    sm.scale.set(1.0, 1.12, 1.08); sm.rotation.y = r; head.add(sm);
   });
+  head.add(mk(new THREE.SphereGeometry(0.009, 10, 8), capDark, 0, 0.012 + 0.112 * 1.12 + 0.001, 0.012, false));
+  const brim = mk(new THREE.CylinderGeometry(0.1, 0.1, 0.005, 28, 1, false, Math.PI * 0.5, Math.PI), capDark, 0, 0.056, -0.1);
+  brim.scale.set(1.0, 1, 0.8); brim.rotation.x = -0.2;
+  head.add(brim);
+  const strap = mk(new THREE.BoxGeometry(0.05, 0.014, 0.005), capDark, 0, 0.042, 0.118, false);
+  strap.rotation.x = -0.1;
+  head.add(strap);
 
   /* ---- lengan (IK dihitung tiap frame di scene) ---- */
   const mkArm = () => ({
