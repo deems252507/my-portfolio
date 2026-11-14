@@ -140,8 +140,8 @@ const ProjectDetails = () => {
               </div>
             </div>
 
-            <div className="grid lg:grid-cols-2 gap-8 md:gap-16">
-              <div className="space-y-6 md:space-y-10 min-w-0">
+            <div className="grid lg:grid-cols-2 gap-x-16 gap-y-6 md:gap-y-8 lg:gap-y-10">
+              <div className="min-w-0 lg:col-start-1 lg:row-start-1">
                 <div className="space-y-4 md:space-y-6">
                   <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold break-words bg-gradient-to-r from-blue-200 via-blue-200 to-pink-200 bg-clip-text text-transparent leading-tight">
                     {project.title}
@@ -151,7 +151,35 @@ const ProjectDetails = () => {
                     <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full blur-sm" />
                   </div>
                 </div>
+              </div>
 
+              {/* Gambar: di HP tampil tepat di bawah judul; di desktop di kolom kanan */}
+              <div className="min-w-0 lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:sticky lg:top-8 lg:self-start">
+                <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-2xl group bg-white/5">
+                  <img
+                    src={project.img}
+                    alt={project.title}
+                    className="w-full h-auto block transform transition-transform duration-700 will-change-transform group-hover:scale-105"
+                    onLoad={() => setIsImageLoaded(true)}
+                  />
+                  {liveUrl && (
+                    <a
+                      href={liveUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`Buka live demo ${project.title}`}
+                      className="absolute inset-0 hidden md:flex items-end justify-end p-4 bg-gradient-to-t from-black/50 via-transparent to-transparent"
+                    >
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium text-white bg-black/60 backdrop-blur border border-white/20 group-hover:bg-blue-500/80 transition-colors">
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        Live Demo
+                      </span>
+                    </a>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-6 md:space-y-10 min-w-0 lg:col-start-1 lg:row-start-2">
                 {(liveUrl || githubUrl) && (
                   <div className="space-y-3">
                     <div className="flex flex-col sm:flex-row gap-3">
@@ -228,30 +256,6 @@ const ProjectDetails = () => {
                 )}
               </div>
 
-              <div className="space-y-6 md:space-y-10 min-w-0">
-                <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-2xl group">
-                  <img
-                    src={project.img}
-                    alt={project.title}
-                    className="w-full object-cover transform transition-transform duration-700 will-change-transform group-hover:scale-105"
-                    onLoad={() => setIsImageLoaded(true)}
-                  />
-                  {liveUrl && (
-                    <a
-                      href={liveUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={`Buka live demo ${project.title}`}
-                      className="absolute inset-0 flex items-end justify-end p-3 md:p-4 bg-gradient-to-t from-black/50 via-transparent to-transparent"
-                    >
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs md:text-sm font-medium text-white bg-black/60 backdrop-blur border border-white/20 group-hover:bg-blue-500/80 transition-colors">
-                        <ExternalLink className="w-3.5 h-3.5" />
-                        Live Demo
-                      </span>
-                    </a>
-                  )}
-                </div>
-              </div>
             </div>
           </div>
         </div>
