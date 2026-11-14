@@ -24,7 +24,8 @@ const About = lazy(importAbout);
 const Portofolio = lazy(importPortofolio);
 const ContactPage = lazy(importContact);
 const ProjectDetails = lazy(() => import("./components/ProjectDetail"));
-const WelcomeScreen = lazy(() => import("./Pages/WelcomeScreen"));
+// Intro sinematik 3D (WelcomeScreen lama tetap ada sebagai cadangan di dalam IntroScreen)
+const WelcomeScreen = lazy(() => import("./Pages/IntroScreen"));
 const NotFoundPage = lazy(() => import("./Pages/404"));
 
 const LandingPage = ({ showWelcome, setShowWelcome }) => {
