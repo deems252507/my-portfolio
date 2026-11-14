@@ -14,24 +14,13 @@ import Dashboard from "./Pages/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import WhatsAppButton from "./components/WhatsAppButton";
 
-// Intro hanya diputar SEKALI per pengunjung (disimpan 12 jam). Buka dengan ?intro untuk memutar ulang (mis. saat presentasi).
-const INTRO_KEY = "intro_seen_v1";
-const INTRO_TTL_MS = 12 * 60 * 60 * 1000;
-const PLAY_INTRO = (() => {
-  try {
-    if (new URLSearchParams(window.location.search).has("intro")) return true;
-    const seen = Number(localStorage.getItem(INTRO_KEY));
-    return !(seen && Date.now() - seen < INTRO_TTL_MS);
-  } catch {
-    return true;
-  }
-})();
+// Intro selalu diputar setiap halaman dibuka / di-refresh.
+const PLAY_INTRO = true;
 const importIntroScreen = () => import("./Pages/IntroScreen");
 if (PLAY_INTRO && typeof window !== "undefined") {
   // unduh paralel sejak awal supaya tidak ada layar hitam menunggu
   importIntroScreen();
   import("./components/intro/DeveloperIntro");
-  import("./components/intro/workspaceScene");
 }
 
 const IntroFallback = () => (
@@ -114,11 +103,6 @@ const ProjectPageLayout = () => (
 
 function App() {
   const [showWelcome, setShowWelcome] = useState(PLAY_INTRO);
-  useEffect(() => {
-    // tandai sudah ditonton begitu intro mulai (reload di tengah intro tidak mengulang)
-    if (PLAY_INTRO) { try { localStorage.setItem(INTRO_KEY, String(Date.now())); } catch { /* abaikan */ } }
-  }, []);
-
   // Inisialisasi AOS sekali di sini
   useEffect(() => {
     AOS.init({ once: true, mirror: false, offset: 40, duration: 900, easing: 'ease-out-cubic' });

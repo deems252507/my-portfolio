@@ -9,22 +9,13 @@ const DeveloperIntro = lazy(() => import("../components/intro/DeveloperIntro"));
 const FADE_MS = 900;
 const FAILSAFE_MS = 45000; // jaga-jaga: intro tidak boleh menahan akses ke portfolio
 
-function hasWebGL() {
-  try {
-    const c = document.createElement("canvas");
-    return !!(window.WebGLRenderingContext && (c.getContext("webgl2") || c.getContext("webgl")));
-  } catch {
-    return false;
-  }
-}
-
 /** Props sama dengan WelcomeScreen lama: { onReveal, onLoadingComplete }. */
 export default function IntroScreen({ onReveal, onLoadingComplete }) {
   // "reduced": tanpa intro 3D, langsung ke welcome lama (animasi dikurangi oleh pengaturan sistem)
   const [use3D] = useState(() => {
     if (typeof window === "undefined") return false;
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return false;
-    return hasWebGL();
+    return true;
   });
   const [welcome, setWelcome] = useState(!use3D); // welcome milikmu sedang tampil
   const [introGone, setIntroGone] = useState(!use3D); // overlay 3D sudah dilepas
@@ -41,7 +32,6 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
   }, []);
   useEffect(() => () => audioRef.current?.dispose(), []);
   const doneRef = useRef(false);
-  const skippedRef = useRef(false);
   const revealedRef = useRef(false);
   const cbs = useRef({ onReveal, onLoadingComplete });
   cbs.current = { onReveal, onLoadingComplete };
@@ -61,14 +51,12 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
   // Dari scene 3D: kamera menembus layar -> pasang homepage di BAWAH overlay.
   // WelcomeScreen TIDAK diputar lagi (layar monitor sudah menampilkannya), jadi tidak ada animasi yang diulang.
   const handleThrough = useCallback(() => {
-    if (skippedRef.current) return;
     reveal();
   }, [reveal]);
   const handleFade = useCallback(() => {
-    if (!skippedRef.current) setLeaving(true);
+    setLeaving(true);
   }, []);
   const handleDone = useCallback(() => {
-    if (skippedRef.current) return;
     setIntroGone(true);
     finish(); // overlay sudah memudar: langsung masuk homepage
   }, [finish]);
@@ -78,40 +66,28 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
     setIntroGone(true);
   }, []);
 
-  const onSkip = useCallback(() => {
-    if (skippedRef.current) return;
-    skippedRef.current = true;
-    audioRef.current?.setEnabled(false); // hentikan suara saat dilewati
-    reveal(); // portfolio dipasang di bawah overlay
-    setLeaving(true);
-    setTimeout(finish, FADE_MS);
-  }, [reveal, finish]);
-
-  // jaga-jaga: bila scene 3D tak siap dalam 6 detik, langsung ke welcome (tanpa layar kosong)
+  // jaga-jaga: bila scene 3D tak siap dalam 12 detik, langsung ke welcome (tanpa layar kosong)
   useEffect(() => {
     if (!use3D || ready) return;
-    const id = setTimeout(handleError, 6000);
+    const id = setTimeout(handleError, 12000);
     return () => clearTimeout(id);
   }, [use3D, ready, handleError]);
 
-  // kunci scroll selama intro, ESC = skip, dan pengaman waktu
+  // kunci scroll selama intro dan pengaman waktu
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    const onKey = (e) => { if (e.key === "Escape" && use3D && !introGone) onSkip(); };
-    window.addEventListener("keydown", onKey);
     const failsafe = setTimeout(finish, FAILSAFE_MS);
     return () => {
       document.body.style.overflow = prev;
-      window.removeEventListener("keydown", onKey);
       clearTimeout(failsafe);
     };
-  }, [use3D, introGone, onSkip, finish]);
+  }, [finish]);
 
   return (
     <>
       {/* Welcome milikmu (tidak diubah). Saat tampil bersama overlay 3D, overlay 3D memudar di atasnya. */}
-      {welcome && !skippedRef.current && (
+      {welcome && (
         <Suspense fallback={null}>
           <LegacyWelcome onReveal={reveal} onLoadingComplete={finish} />
         </Suspense>
@@ -164,21 +140,6 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
             }}
           >
             {soundOn ? "Suara: Nyala" : "Suara: Mati"}
-          </button>
-
-          <button
-            type="button"
-            onClick={onSkip}
-            aria-label="Lewati intro"
-            className="absolute z-10 rounded-full border border-white/25 bg-black/40 px-5 text-sm font-semibold text-white/90 backdrop-blur transition hover:bg-white/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300"
-            style={{
-              right: "max(1rem, env(safe-area-inset-right))",
-              bottom: "max(1rem, env(safe-area-inset-bottom))",
-              minHeight: 44,
-              fontFamily: "var(--font-display)",
-            }}
-          >
-            Skip Intro
           </button>
         </div>
       )}
