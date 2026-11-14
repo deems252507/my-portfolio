@@ -457,7 +457,7 @@ export function createDeveloperWorkspace(opts) {
   let pixelRatio = Math.min(window.devicePixelRatio || 1, pixelRatioMax);
   renderer.setPixelRatio(pixelRatio);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1;
+  renderer.toneMappingExposure = 0.9;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.setClearColor(0x02050a, 1);
@@ -475,7 +475,7 @@ export function createDeveloperWorkspace(opts) {
   scene.environmentIntensity = 0.28;
 
   const camera = new THREE.PerspectiveCamera(40, 1, 0.03, 60);
-  const cyan = new THREE.Color(theme.accent || "#22d3ee");
+  const cyan = new THREE.Color("#22d3ee"); // ruangan selalu cyan (tema situs hanya dipakai di layar monitor)
 
   /* ---- layar ---- */
   const typing = (content?.typing_words || "").split("\n").map((s) => s.trim()).filter(Boolean);
@@ -514,19 +514,19 @@ export function createDeveloperWorkspace(opts) {
   key.shadow.bias = -0.0004;
   key.shadow.radius = 4;
   scene.add(key, key.target);
-  const rim = new THREE.PointLight(0x22d3ee, 9, 5, 2);
+  const rim = new THREE.PointLight(0x22d3ee, 4, 5, 2);
   rim.position.set(-1.1, 1.7, 1.6);
   scene.add(rim);
-  const violet = new THREE.PointLight(0x6d4aff, 5, 5, 2);
+  const violet = new THREE.PointLight(0x6d4aff, 2.5, 5, 2);
   violet.position.set(1.8, 0.7, 1.4);
   scene.add(violet);
-  const glow = new THREE.PointLight(0x5fe7ff, 1.6, 3.5, 2);
+  const glow = new THREE.PointLight(0x5fe7ff, 0.5, 3.5, 2);
   glow.position.set(0, 1.15, 0.35);
   scene.add(glow);
   let areaLight = null;
   if (!isMobile) {
     RectAreaLightUniformsLib.init();
-    areaLight = new THREE.RectAreaLight(0x7fe9ff, 4, SCREEN.w, SCREEN.h);
+    areaLight = new THREE.RectAreaLight(0x7fe9ff, 2.5, SCREEN.w, SCREEN.h);
     areaLight.position.set(0, SCREEN.cy, SCREEN.cz + 0.03);
     areaLight.lookAt(0, SCREEN.cy, 2);
     scene.add(areaLight);
@@ -538,7 +538,7 @@ export function createDeveloperWorkspace(opts) {
   /* ---- post-processing ringan ---- */
   composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
-  const bloomBase = isMobile ? 0.4 : 0.55;
+  const bloomBase = isMobile ? 0.28 : 0.38;
   bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), bloomBase, 0.55, 0.5);
   composer.addPass(bloom);
   composer.addPass(new OutputPass());
@@ -550,7 +550,7 @@ export function createDeveloperWorkspace(opts) {
   const T2 = new THREE.Vector3(0, 1.18, -0.2);
   const P2 = new THREE.Vector3(0.7, 1.42, 1.15);
   const P2b = new THREE.Vector3(0.74, 1.4, 1.02);
-  const P3 = new THREE.Vector3(0.3, 1.36, 0.66);
+  const P3 = new THREE.Vector3(0.5, 1.42, 0.82);
   const Pend = new THREE.Vector3(0, SCREEN.cy, 0.3);
   const Ppass = new THREE.Vector3(0, SCREEN.cy, SCREEN.cz - 0.14);
   const curve = new THREE.CatmullRomCurve3([P2b, P3, Pend], false, "centripetal");
@@ -586,7 +586,7 @@ export function createDeveloperWorkspace(opts) {
   const S = {
     u1: 0, d2: 0, u3: 0, u4: 0, fov: 40, sway: 1,
     power: 0, typed: 0, loading: 0, page: 0, full: 0,
-    typeAmt: 0.5, exposure: 1, bloom: bloomBase, enter: 0,
+    typeAmt: 0.5, exposure: 0.9, bloom: bloomBase, enter: 0,
   };
   camera.fov = S.fov;
 
@@ -686,8 +686,8 @@ export function createDeveloperWorkspace(opts) {
       screen.draw({ time: t, power: S.power, typed: jitter, loading: S.loading, page: S.page, full: S.full });
     }
     const pw = S.power * (0.55 + 0.45 * (1 - S.full * 0.3));
-    glow.intensity = 1.6 * pw;
-    if (areaLight) areaLight.intensity = 4 * pw;
+    glow.intensity = 0.5 * pw;
+    if (areaLight) areaLight.intensity = 2.5 * pw;
   }
 
   /* ---- loop render ---- */

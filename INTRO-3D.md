@@ -7,7 +7,8 @@ Overlay sinematik di atas portfolio asli. Portfolio, routing, Supabase, dan semu
 2. Kamera mendekat perlahan (efek telephoto), URL `https://rizkydm.vercel.app/` terketik di address bar.
 3. Enter -> loading browser -> website tampil di monitor.
 4. Dolly zoom, browser jadi layar penuh, kamera menembus layar.
-5. Overlay memudar, **website asli** (sudah dipasang di bawah overlay) langsung terlihat. Animasi tidak diulang saat scroll.
+5. Overlay 3D memudar dan **layar "Welcome To My Portofolio" milikmu** (WelcomeScreen, tidak diubah) tampil dengan animasi partikel 3D-nya.
+6. Setelah welcome selesai, website asli langsung terlihat. Animasi tidak diulang saat scroll.
 
 ## File
 - `src/Pages/IntroScreen.jsx` : pengatur overlay, tombol Skip Intro, ESC, reduced-motion, fallback.
@@ -17,9 +18,8 @@ Overlay sinematik di atas portfolio asli. Portfolio, routing, Supabase, dan semu
 - `src/App.jsx` : hanya 1 baris diubah (import `IntroScreen`). `WelcomeScreen.jsx` lama tetap ada.
 
 ## Perilaku
-- `prefers-reduced-motion`: intro dilewati, langsung ke portfolio.
-- WebGL tidak ada / error: otomatis memakai WelcomeScreen lama (partikel).
-- Skip Intro (tombol kanan bawah) atau tombol Esc. Pengaman waktu 22 detik.
+- WebGL tidak ada / error / reduced-motion: langsung ke WelcomeScreen milikmu tanpa intro 3D.
+- Skip Intro (tombol kanan bawah) atau Esc: lewati semuanya langsung ke portfolio. Pengaman waktu 45 detik.
 - Mobile: resolusi dibatasi, bayangan lebih ringan, kamera ditarik mundur untuk layar portrait.
 - FPS rendah: resolusi otomatis diturunkan.
 

@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { useSiteContent } from "../../context/SiteContentContext";
 
 // Mount scene 3D. three.js + gsap dimuat lazy (code-split) agar halaman utama tetap ringan.
-export default function DeveloperIntro({ onReveal, onFade, onDone, onError, registerSkip }) {
+export default function DeveloperIntro({ onReveal, onFade, onDone, onError }) {
   const hostRef = useRef(null);
   const { content } = useSiteContent();
   const contentRef = useRef(content);
@@ -38,7 +38,6 @@ export default function DeveloperIntro({ onReveal, onFade, onDone, onError, regi
           onDone: () => cb.current.onDone?.(),
           onError: (e) => cb.current.onError?.(e),
         });
-        registerSkip?.(() => engine?.skip());
       } catch (e) {
         if (!cancelled) cb.current.onError?.(e);
       }
@@ -47,7 +46,6 @@ export default function DeveloperIntro({ onReveal, onFade, onDone, onError, regi
 
     return () => {
       cancelled = true;
-      registerSkip?.(null);
       engine?.dispose();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
