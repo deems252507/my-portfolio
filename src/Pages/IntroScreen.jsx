@@ -33,6 +33,8 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
   const audioRef = useRef(null);
   if (!audioRef.current && typeof window !== "undefined") audioRef.current = createIntroAudio();
   const [soundOn, setSoundOn] = useState(false);
+  const [ready, setReady] = useState(false); // frame 3D pertama sudah tampil
+  const handleReady = useCallback(() => setReady(true), []);
   const toggleSound = useCallback(async () => {
     const on = await audioRef.current.setEnabled(!audioRef.current.isEnabled());
     setSoundOn(on);
@@ -82,6 +84,13 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
     setTimeout(finish, FADE_MS);
   }, [reveal, finish]);
 
+  // jaga-jaga: bila scene 3D tak siap dalam 6 detik, langsung ke welcome (tanpa layar kosong)
+  useEffect(() => {
+    if (!use3D || ready) return;
+    const id = setTimeout(handleError, 6000);
+    return () => clearTimeout(id);
+  }, [use3D, ready, handleError]);
+
   // kunci scroll selama intro, ESC = skip, dan pengaman waktu
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -120,12 +129,23 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
           <Suspense fallback={null}>
             <DeveloperIntro
               audio={audioRef.current}
+              onReady={handleReady}
               onReveal={handleThrough}
               onFade={handleFade}
               onDone={handleDone}
               onError={handleError}
             />
           </Suspense>
+
+          {/* indikator memuat: tampil langsung, memudar saat 3D siap */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-4"
+            style={{ background: "#02050a", opacity: ready ? 0 : 1, transition: "opacity 600ms ease", zIndex: 5 }}
+          >
+            <div className="h-10 w-10 animate-spin rounded-full border-2 border-cyan-400/25 border-t-cyan-300" />
+            <span className="text-xs tracking-[0.3em] text-cyan-100/60">MEMUAT</span>
+          </div>
 
           <button
             type="button"

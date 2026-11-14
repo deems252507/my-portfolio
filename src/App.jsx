@@ -14,6 +14,33 @@ import Dashboard from "./Pages/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import WhatsAppButton from "./components/WhatsAppButton";
 
+// Intro hanya diputar SEKALI per pengunjung (disimpan 12 jam). Buka dengan ?intro untuk memutar ulang (mis. saat presentasi).
+const INTRO_KEY = "intro_seen_v1";
+const INTRO_TTL_MS = 12 * 60 * 60 * 1000;
+const PLAY_INTRO = (() => {
+  try {
+    if (new URLSearchParams(window.location.search).has("intro")) return true;
+    const seen = Number(localStorage.getItem(INTRO_KEY));
+    return !(seen && Date.now() - seen < INTRO_TTL_MS);
+  } catch {
+    return true;
+  }
+})();
+const importIntroScreen = () => import("./Pages/IntroScreen");
+if (PLAY_INTRO && typeof window !== "undefined") {
+  // unduh paralel sejak awal supaya tidak ada layar hitam menunggu
+  importIntroScreen();
+  import("./components/intro/DeveloperIntro");
+  import("./components/intro/workspaceScene");
+}
+
+const IntroFallback = () => (
+  <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4" style={{ background: "#02050a" }}>
+    <div className="h-10 w-10 animate-spin rounded-full border-2 border-cyan-400/25 border-t-cyan-300" />
+    <span className="text-xs tracking-[0.3em] text-cyan-100/60">MEMUAT</span>
+  </div>
+);
+
 const importHome = () => import("./Pages/Home");
 const importAbout = () => import("./Pages/About");
 const importPortofolio = () => import("./Pages/Portofolio");
@@ -25,7 +52,7 @@ const Portofolio = lazy(importPortofolio);
 const ContactPage = lazy(importContact);
 const ProjectDetails = lazy(() => import("./components/ProjectDetail"));
 // Intro sinematik 3D (WelcomeScreen lama tetap ada sebagai cadangan di dalam IntroScreen)
-const WelcomeScreen = lazy(() => import("./Pages/IntroScreen"));
+const WelcomeScreen = lazy(importIntroScreen);
 const NotFoundPage = lazy(() => import("./Pages/404"));
 
 const LandingPage = ({ showWelcome, setShowWelcome }) => {
@@ -44,7 +71,7 @@ const LandingPage = ({ showWelcome, setShowWelcome }) => {
     <>
       <AnimatePresence mode="wait">
         {showWelcome && (
-          <Suspense fallback={null}>
+          <Suspense fallback={<IntroFallback />}>
             <WelcomeScreen
               onReveal={() => setRevealed(true)}
               onLoadingComplete={() => setShowWelcome(false)}
@@ -86,7 +113,11 @@ const ProjectPageLayout = () => (
 );
 
 function App() {
-  const [showWelcome, setShowWelcome] = useState(true);
+  const [showWelcome, setShowWelcome] = useState(PLAY_INTRO);
+  useEffect(() => {
+    // tandai sudah ditonton begitu intro mulai (reload di tengah intro tidak mengulang)
+    if (PLAY_INTRO) { try { localStorage.setItem(INTRO_KEY, String(Date.now())); } catch { /* abaikan */ } }
+  }, []);
 
   // Inisialisasi AOS sekali di sini
   useEffect(() => {

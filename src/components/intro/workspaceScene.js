@@ -336,7 +336,7 @@ function buildRoom(scene, cyan, isMobile) {
 
 /* ----------------------------- fungsi utama ------------------------------ */
 export function createDeveloperWorkspace(opts) {
-  const { container, content = {}, theme = {}, audio = null, onReveal, onFade, onDone, onError } = opts;
+  const { container, content = {}, theme = {}, audio = null, onReady, onReveal, onFade, onDone, onError } = opts;
   const T = INTRO_CONFIG.t;
   const isMobile = window.matchMedia("(max-width: 768px)").matches;
   let disposed = false;
@@ -700,6 +700,7 @@ export function createDeveloperWorkspace(opts) {
 
     if (!running) {
       running = true;
+      onReady?.();
       startTimeline();
     }
   }
@@ -708,7 +709,7 @@ export function createDeveloperWorkspace(opts) {
   let tl = null;
   function startTimeline() {
     tl = gsap.timeline({ defaults: { ease: "none" } });
-    tl.to(canvas, { opacity: 1, duration: 1.4, ease: "power1.out" }, 0)
+    tl.to(canvas, { opacity: 1, duration: 0.7, ease: "power1.out" }, 0)
       .to(S, { power: 1, duration: 0.9, ease: "power2.out" }, T.powerOn)
       // Scene 1-2: kamera mendekat perlahan (+ efek telephoto)
       .to(S, { u1: 1, duration: T.camMoveEnd, ease: "power2.inOut" }, 0)
