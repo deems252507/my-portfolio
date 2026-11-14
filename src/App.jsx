@@ -7,7 +7,7 @@ import 'aos/dist/aos.css';
 import "./index.css";
 import Navbar from "./components/Navbar";
 import AnimatedBackground from "./components/Background";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import Footer from "./components/Footer";
 import Login from "./Pages/Login";
 import Dashboard from "./Pages/Dashboard";
@@ -28,18 +28,37 @@ const WelcomeScreen = lazy(() => import("./Pages/WelcomeScreen"));
 const NotFoundPage = lazy(() => import("./Pages/404"));
 
 const LandingPage = ({ showWelcome, setShowWelcome }) => {
+  // Halaman utama dipasang saat intro mulai keluar (di BAWAH overlay), lalu di-crossfade.
+  // Tidak ada layar kosong / kedip: overlay memudar sambil halaman utama muncul.
+  const [revealed, setRevealed] = useState(false);
+  const showMain = !showWelcome || revealed;
+
+  useEffect(() => {
+    if (!revealed) return;
+    const id = setTimeout(() => AOS.refresh(), 80);
+    return () => clearTimeout(id);
+  }, [revealed]);
+
   return (
     <>
       <AnimatePresence mode="wait">
         {showWelcome && (
           <Suspense fallback={null}>
-            <WelcomeScreen onLoadingComplete={() => setShowWelcome(false)} />
+            <WelcomeScreen
+              onReveal={() => setRevealed(true)}
+              onLoadingComplete={() => setShowWelcome(false)}
+            />
           </Suspense>
         )}
       </AnimatePresence>
 
-      {!showWelcome && (
-        <>
+      {showMain && (
+        // hanya opacity (bukan transform) supaya elemen position:fixed di dalamnya (Navbar, WhatsApp) tidak terpengaruh
+        <motion.div
+          initial={{ opacity: showWelcome ? 0 : 1 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1, ease: [0.4, 0, 0.2, 1] }}
+        >
           <Navbar />
           <Suspense fallback={<div className="h-20" />}>
             <Home />
@@ -49,7 +68,7 @@ const LandingPage = ({ showWelcome, setShowWelcome }) => {
           </Suspense>
           <Footer />
           <WhatsAppButton />
-        </>
+        </motion.div>
       )}
     </>
   );
