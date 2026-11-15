@@ -14,23 +14,6 @@ import Dashboard from "./Pages/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import WhatsAppButton from "./components/WhatsAppButton";
 
-// Intro selalu diputar setiap halaman dibuka / di-refresh.
-const PLAY_INTRO = true;
-const importIntroScreen = () => import("./Pages/IntroScreen");
-if (PLAY_INTRO && typeof window !== "undefined") {
-  // unduh paralel sejak awal supaya tidak ada layar hitam menunggu
-  importIntroScreen();
-  import("./components/intro/DeveloperIntro");
-  import("./components/intro/workspaceScene");
-}
-
-const IntroFallback = () => (
-  <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4" style={{ background: "#02050a" }}>
-    <div className="h-10 w-10 animate-spin rounded-full border-2 border-cyan-400/25 border-t-cyan-300" />
-    <span className="text-xs tracking-[0.3em] text-cyan-100/60">MEMUAT</span>
-  </div>
-);
-
 const importHome = () => import("./Pages/Home");
 const importAbout = () => import("./Pages/About");
 const importPortofolio = () => import("./Pages/Portofolio");
@@ -42,7 +25,7 @@ const Portofolio = lazy(importPortofolio);
 const ContactPage = lazy(importContact);
 const ProjectDetails = lazy(() => import("./components/ProjectDetail"));
 // Intro sinematik 3D (WelcomeScreen lama tetap ada sebagai cadangan di dalam IntroScreen)
-const WelcomeScreen = lazy(importIntroScreen);
+const WelcomeScreen = lazy(() => import("./Pages/IntroScreen"));
 const NotFoundPage = lazy(() => import("./Pages/404"));
 
 const LandingPage = ({ showWelcome, setShowWelcome }) => {
@@ -61,7 +44,7 @@ const LandingPage = ({ showWelcome, setShowWelcome }) => {
     <>
       <AnimatePresence mode="wait">
         {showWelcome && (
-          <Suspense fallback={<IntroFallback />}>
+          <Suspense fallback={null}>
             <WelcomeScreen
               onReveal={() => setRevealed(true)}
               onLoadingComplete={() => setShowWelcome(false)}
@@ -103,7 +86,8 @@ const ProjectPageLayout = () => (
 );
 
 function App() {
-  const [showWelcome, setShowWelcome] = useState(PLAY_INTRO);
+  const [showWelcome, setShowWelcome] = useState(true);
+
   // Inisialisasi AOS sekali di sini
   useEffect(() => {
     AOS.init({ once: true, mirror: false, offset: 40, duration: 900, easing: 'ease-out-cubic' });

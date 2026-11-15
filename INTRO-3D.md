@@ -1,56 +1,40 @@
-# Intro 3D "Developer Workspace"
+# Intro 3D sinematik — "Programmer di markas luar angkasa"
 
-Overlay sinematik di atas portfolio asli. Portfolio, routing, Supabase, dan semua fitur lama tidak diubah.
+Overlay di atas portfolio asli. Portfolio, routing, Supabase, dashboard admin, dan semua fitur lama tidak diubah
+(`App.jsx`, `WelcomeScreen.jsx`, halaman, dan database tidak disentuh).
 
-## Alur
-1. Ruangan futuristik 3D, programmer mengetik (jari bergerak, tombol keyboard menyala).
-2. Kamera mendekat perlahan (efek telephoto), URL `https://rizkydm.vercel.app/` terketik di address bar.
-3. Enter -> loading browser -> website tampil di monitor.
-4. Dolly zoom, browser jadi layar penuh, kamera menembus layar.
-5. Overlay 3D memudar dan **layar "Welcome To My Portofolio" milikmu** (WelcomeScreen, tidak diubah) tampil dengan animasi partikel 3D-nya.
-6. Setelah welcome selesai, website asli langsung terlihat. Animasi tidak diulang saat scroll.
+## Alur (± 18,5 detik, bisa di-Skip)
+1. Programmer bekerja di ruangan berkaca menghadap planet; kamera dari belakang, tangan mengetik.
+2. Dolly-in ke monitor; tangan memegang mouse, kursor bergerak ke address bar dan klik.
+3. `https://rizkydm.vercel.app/` diketik huruf demi huruf (tiap huruf = ketukan jari + tombol turun + suara).
+4. Kamera ke keyboard: tangan kanan bergerak ke ENTER, jari menekan, tombol turun, baru loading browser.
+5. Halaman sambutan tampil di monitor (petir dari shader yang SAMA dengan WelcomeBackground, hue dari admin),
+   bezel/browser menghilang, kamera masuk ke layar, petir memenuhi layar, lalu crossfade ke WelcomeScreen asli -> homepage.
 
 ## File
-- `src/Pages/IntroScreen.jsx` : pengatur overlay, tombol Skip Intro, ESC, reduced-motion, fallback.
-- `src/components/intro/DeveloperIntro.jsx` : mount scene (lazy / code-split).
-- `src/components/intro/workspaceScene.js` : scene Three.js + timeline GSAP. Semua durasi ada di `INTRO_CONFIG.t` (bagian atas file).
-- `src/components/intro/browserScreen.js` : tampilan browser di monitor (tekstur kanvas).
-- `src/App.jsx` : hanya 1 baris diubah (import `IntroScreen`). `WelcomeScreen.jsx` lama tetap ada.
+- `src/Pages/IntroScreen.jsx` : overlay, Skip Intro, Esc, tombol suara, reduced-motion, fallback perangkat lemah.
+- `intro/DeveloperIntro.jsx` : mount scene (lazy) + meneruskan pengaturan petir & audio.
+- `intro/workspaceScene.js` : scene, jalur kamera (Hermite, ada momentum), timeline. Semua waktu di `INTRO_CONFIG.t`.
+- `intro/character.js` : karakter (hoodie berlipatan, rambut gerombol, headphone, tangan & jari dua ruas).
+- `intro/furniture.js` : meja, monitor lengkung + kaca, keyboard dengan tombol ENTER nyata, kursi.
+- `intro/spaceEnvironment.js` : langit (bintang, nebula, galaksi), planet, bulan, asteroid, satelit, pesawat, bintang jatuh, kaca panorama, lantai.
+- `intro/browserScreen.js` : tekstur layar monitor (browser, kursor, halaman sambutan).
+- `intro/lightningSource.js` : shader petir (disalin dari `components/ui/Lightning.jsx`).
+- `intro/introAudio.js` : efek suara sintetis Web Audio (tanpa file audio).
+- `intro/helpers.js` : fungsi bantu.
 
 ## Perilaku
-- WebGL tidak ada / error / reduced-motion: langsung ke WelcomeScreen milikmu tanpa intro 3D.
-- Skip Intro (tombol kanan bawah) atau Esc: lewati semuanya langsung ke portfolio. Pengaman waktu 45 detik.
-- Mobile: resolusi dibatasi, bayangan lebih ringan, kamera ditarik mundur untuk layar portrait.
-- FPS rendah: resolusi otomatis diturunkan.
+- Suara default MATI (aturan autoplay browser); tombol "Suara" kiri bawah. Skip Intro kanan bawah, Esc juga.
+- Tanpa WebGL / reduced-motion / RAM atau CPU sangat rendah: langsung ke WelcomeScreen/website utama.
+- Mobile: resolusi dibatasi, tanpa DOF & RectAreaLight, bintang/asteroid lebih sedikit. FPS rendah -> resolusi turun, lalu DOF dimatikan.
+- Pengaman waktu 45 detik.
 
-## Upgrade ke karakter realistis (opsional)
-Taruh model di `public/models/developer.glb`. Jika file ada, otomatis dipakai menggantikan karakter bawaan.
-- Origin di lantai, menghadap -Z (ke monitor), pose duduk di kursi (kursi ada di z = 0.66).
-- Atur `position`, `rotationY`, `scale` di `INTRO_CONFIG.characterGLB`.
-- Jika model punya animasi (mengetik), klip pertama diputar berulang.
+## Opsional
+- `public/models/developer.glb` : model karakter sungguhan (menggantikan karakter prosedural; animasi tangan/ENTER tidak ikut karena tidak ada rig).
+- `public/intro/portfolio-preview.jpg` : tangkapan layar asli, dipakai di monitor menggantikan halaman sambutan buatan.
 
-## Pratinjau layar (opsional)
-Taruh screenshot hero asli di `public/intro/portfolio-preview.jpg`. Dipakai di layar monitor
-menggantikan pratinjau gambar-kanvas bawaan, sehingga transisi ke website asli lebih mirip.
-
-## Instal
+## Jalankan
 ```
 npm install
 npm run dev
 ```
-(`three` dan `gsap` ditambahkan ke package.json; package-lock akan diperbarui oleh `npm install`.)
-
-## Pembaruan (versi sinematik)
-Alur sekarang: programmer bekerja di markas luar angkasa -> kamera mendekat -> tangan ke mouse, kursor menuju address bar, klik ->
-URL `https://rizkydm.vercel.app/` diketik huruf demi huruf (suara keyboard) -> kelingking tangan kanan bergerak ke tombol ENTER,
-menekan (tombol turun sinkron dengan jari) -> loading browser -> monitor menampilkan layar tujuan yang SAMA (petir + "Welcome To My / Portofolio Website",
-dirender dengan shader petir situs) -> kamera masuk menembus layar, bezel hilang -> petir ungu memenuhi layar -> menyatu dengan WelcomeScreen -> homepage.
-
-File baru di `src/components/intro/`:
-- `spaceRoom.js` : kaca panorama, planet, bintang/nebula/galaksi, bulan, asteroid & stasiun melayang, berkas cahaya, pantulan (environment map dari angkasa).
-- `character.js` : karakter lebih detail (wajah, rambut berlapis, kacamata, headset, hoodie berlipat, tangan 2 ruas jari).
-- `lightningBG.js` : petir WebGL (shader sama dengan `ui/Lightning.jsx`), dipakai di layar monitor dan overlay layar-penuh.
-- `audio.js` : efek suara Web Audio (keyboard, ENTER, loading, energi, petir). MATI default; tombol "Suara" kiri bawah.
-
-Warna petir mengikuti pengaturan Dashboard Admin (`lightning_hue`). Untuk memaksa ungu di intro: `INTRO_CONFIG.lightningHue = 270` di `workspaceScene.js`.
-Semua waktu adegan ada di `INTRO_CONFIG.t`.
