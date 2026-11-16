@@ -105,6 +105,7 @@ const SECTIONS = [
 const PHOTOS = [
   ["profile_photo", "Foto profil"],
   ["idcard_photo", "Foto ID card (kosong = foto profil)"],
+  ["coin_photo", "Foto koin tombol Hidupkan Suara (kosong = foto profil)"],
   ["edu1_logo", "Logo pendidikan 1"],
   ["edu2_logo", "Logo pendidikan 2"],
 ];

@@ -1,11 +1,28 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { SquaresLoader } from "../ui/animated-loader-1";
+import FlipCoinButton from "../ui/flip-coin-button";
+import { useSiteContent } from "../../context/SiteContentContext";
 
 // Layar loading sebelum intro 3D siap (memuat modul 3D, tekstur Bumi, menyusun ruangan, kompilasi shader).
 // Animasi kotak-kotak murni CSS (transform) sehingga tetap bergerak walau thread utama sibuk.
 // Tampilannya harus sama dengan #boot-loader di index.html supaya tidak ada lompatan saat React mengambil alih.
-export default function IntroLoader({ visible = true, ready = false, onEnter = null }) {
-  const [sound, setSound] = useState(true); // pilihan suara pengunjung (default hidup)
+//
+// Setelah semua siap muncul tombol koin "Hidupkan Suara": klik = suara menyala (gestur pengguna) + koin melambung;
+// begitu koin mendarat intro dimulai. "Masuk tanpa suara" untuk pengunjung yang tidak ingin suara.
+// Foto di koin: admin "Foto koin suara" (kosong = foto profil).
+export default function IntroLoader({ visible = true, ready = false, onEnter = null, onSoundOn = null }) {
+  const { content } = useSiteContent();
+  const [flipping, setFlipping] = useState(false);
+  const photo = content?.coin_photo || content?.profile_photo || "";
+
+  // unduh foto koin lebih awal supaya sudah ada saat koin berputar
+  useEffect(() => {
+    if (!photo) return;
+    const i = new Image();
+    i.src = photo;
+  }, [photo]);
+
+  const showEnter = ready && !!onEnter;
   return (
     <div
       role="status"
@@ -30,49 +47,31 @@ export default function IntroLoader({ visible = true, ready = false, onEnter = n
       <div style={{ margin: "24px 0 30px" }}>
         <SquaresLoader dark />
       </div>
-      {!ready || !onEnter ? (
+      {!showEnter ? (
         <div style={{ position: "relative", zIndex: 10, color: "rgba(220,240,255,0.85)", fontSize: 14, fontWeight: 600, letterSpacing: "0.06em" }}>
           Menyiapkan ruang kerja…
         </div>
       ) : (
-        <div style={{ position: "relative", zIndex: 10, display: "flex", flexDirection: "column", alignItems: "center", gap: 10, animation: "intro-enter-in 600ms ease-out both" }}>
+        <div style={{ position: "relative", zIndex: 10, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, animation: "intro-enter-in 600ms ease-out both" }}>
           <style>{"@keyframes intro-enter-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}"}</style>
-          <div
-            role="radiogroup"
-            aria-label="Pilihan suara"
-            style={{ display: "flex", padding: 4, gap: 4, borderRadius: 999, border: "1px solid rgba(255,255,255,0.18)", background: "rgba(255,255,255,0.05)" }}
+          <FlipCoinButton
+            photo={photo}
+            thanks="Suara hidup ✓"
+            onFlip={() => { setFlipping(true); onSoundOn?.(); }}
+            onLanded={() => setTimeout(() => onEnter(true), 800)}
           >
-            {[[true, "Suara Hidup"], [false, "Suara Mati"]].map(([val, label]) => (
-              <button
-                key={label}
-                type="button"
-                role="radio"
-                aria-checked={sound === val}
-                onClick={() => setSound(val)}
-                style={{
-                  minHeight: 40, padding: "0 18px", borderRadius: 999, cursor: "pointer", border: "none", fontFamily: "inherit",
-                  fontSize: 13, fontWeight: 600, letterSpacing: "0.04em", transition: "all 200ms",
-                  background: sound === val ? "rgba(34,211,238,0.22)" : "transparent",
-                  color: sound === val ? "#e8f8ff" : "rgba(220,240,255,0.5)",
-                  boxShadow: sound === val ? "inset 0 0 0 1px rgba(120,220,255,0.55)" : "none",
-                }}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+            Hidupkan Suara
+          </FlipCoinButton>
           <button
             type="button"
-            autoFocus
-            onClick={() => onEnter(sound)}
+            onClick={() => onEnter(false)}
             style={{
-              marginTop: 6, minHeight: 48, padding: "0 38px", borderRadius: 999, cursor: "pointer",
-              border: "1px solid rgba(120,220,255,0.6)", background: "rgba(34,211,238,0.14)",
-              color: "#e8f8ff", fontSize: 15, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase",
-              boxShadow: "0 0 28px rgba(34,211,238,0.35)", fontFamily: "inherit",
+              marginTop: 34, minHeight: 40, background: "none", border: "none", cursor: "pointer",
+              color: "rgba(220,240,255,0.55)", fontSize: 12, fontFamily: "inherit",
+              opacity: flipping ? 0 : 1, pointerEvents: flipping ? "none" : "auto", transition: "opacity 200ms",
             }}
           >
-            Masuk
+            Masuk tanpa suara
           </button>
         </div>
       )}

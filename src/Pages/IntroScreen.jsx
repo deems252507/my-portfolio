@@ -107,9 +107,12 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
   }, []);
 
   // Tombol "Masuk" = gestur pengguna: browser mengizinkan suara langsung hidup tanpa klik tambahan
+  const handleSoundOn = useCallback(() => {
+    audioRef.current.setEnabled(true).then((ok) => setSoundOn(!!ok)); // dipanggil sinkron di dalam klik koin
+  }, []);
   const handleEnter = useCallback((withSound) => {
-    if (withSound) {
-      audioRef.current.setEnabled(true).then((ok) => setSoundOn(!!ok)); // dipanggil sinkron di dalam klik
+    if (withSound && !audioRef.current.enabled) {
+      audioRef.current.setEnabled(true).then((ok) => setSoundOn(!!ok));
     }
     setEntered(true);
   }, []);
@@ -189,7 +192,7 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
           </Suspense>
           </IntroBoundary>
 
-          <IntroLoader visible={!entered} ready={ready} onEnter={handleEnter} />
+          <IntroLoader visible={!entered} ready={ready} onEnter={handleEnter} onSoundOn={handleSoundOn} />
 
           {/* vignette sinematik halus (tidak menangkap klik) */}
           <div

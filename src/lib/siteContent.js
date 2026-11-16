@@ -180,6 +180,7 @@ export const DEFAULT_CONTENT = {
   // ID Card 3D di hero (Home)
   idcard_enabled: "true",
   idcard_photo: "", // kosong = pakai foto profil
+  coin_photo: "", // foto di koin tombol "Hidupkan Suara" (kosong = foto profil)
   idcard_brand: "NAMA KAMU",
   idcard_tagline: "Your Tagline",
   idcard_number: "ID-0000",
