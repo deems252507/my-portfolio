@@ -8,8 +8,9 @@ Overlay di atas portfolio asli. Portfolio, routing, Supabase, dashboard admin, d
 2. Dolly-in ke monitor; tangan memegang mouse, kursor bergerak ke address bar dan klik.
 3. `https://rizkydm.vercel.app/` diketik huruf demi huruf (tiap huruf = ketukan jari di tombol QWERTY yang benar + tombol turun + suara).
 4. Kamera mundur pelan ke bidikan medium, tangan kanan meluncur ke ENTER, JARI MANIS menekan, tombol turun, baru loading browser.
-5. Saat halaman muncul di monitor, layar sambutan ASLI situs mulai berjalan (tersembunyi) di bawah overlay. Monitor menampilkan
-   petir (shader yang sama), teks, dan bar loading yang berjalan sama. Begitu kamera memenuhi layar, overlay 3D di-crossfade dan yang
+5. Saat halaman muncul di monitor, layar sambutan ASLI situs mulai berjalan (tersembunyi) di bawah overlay. Monitor menggambar langsung
+   kanvas partikel asli itu (`canvas[data-welcome-particles]`) + petir + bar loading, jadi teks/font/warna otomatis sama dengan admin.
+   Kamera berhenti tepat saat layar memenuhi pandangan lalu diam selama crossfade (tidak ada loncatan skala/pengulangan). Begitu kamera memenuhi layar, overlay 3D di-crossfade dan yang
    terlihat adalah layar asli yang sudah berjalan: loading lanjut sampai selesai -> zoom ke teks -> homepage (tidak mengulang dari awal).
 
 ## File
@@ -41,3 +42,8 @@ Overlay di atas portfolio asli. Portfolio, routing, Supabase, dashboard admin, d
 npm install
 npm run dev
 ```
+
+## Mengikuti pengaturan admin
+`DeveloperIntro.jsx` memanggil `engine.update()` setiap `content` berubah (juga saat data Supabase baru selesai dimuat):
+teks Welcome, font, warna, petir (hue/kecepatan/intensitas/ukuran/aktif), teks & warna loading, durasi loading, gaya latar.
+Catatan: bila `public/intro/portfolio-preview.jpg` ada, gambar itu dipakai di monitor menggantikan tampilan langsung.

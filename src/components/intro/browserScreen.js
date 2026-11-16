@@ -19,24 +19,18 @@ const rr = (ctx, x, y, w, h, r) => {
 };
 
 export class BrowserScreen {
-  constructor({ url, name, nav, accent = "#06b6d4", blue = "#2563eb", bg = "#050510", welcome = {}, lightning = null, quality = 0.85 }) {
+  constructor({ url, name, nav, accent = "#06b6d4", blue = "#2563eb", bg = "#050510", welcome = {}, backdrop = {}, lightning = null, live = null, quality = 0.85 }) {
     this.url = url;
     this.name = name;
     this.nav = nav;
     this.accent = accent;
     this.blue = blue;
     this.bg = bg;
-    this.welcome = {
-      line1: welcome.line1 || "Welcome To My",
-      line2: welcome.line2 || "Portofolio Website",
-      color1: welcome.color1 || "#ffffff",
-      color2: welcome.color2 || "#2563eb",
-      font: welcome.font || "Arial",
-      loadLabel: welcome.loadLabel,
-      loadColor: welcome.loadColor,
-      showPct: welcome.showPct,
-    };
+    this.rev = 0;               // naik setiap pengaturan berubah -> paksa gambar ulang
+    this.setWelcome(welcome);
+    this.setBackdrop(backdrop);
     this.lightning = lightning; // LightningSource | null
+    this.live = live;           // () => kanvas partikel layar sambutan ASLI (atau null)
     this.view = null;           // { visH, visW }: bagian layar yang terlihat saat kamera memenuhi layar
     this.preview = null;        // HTMLImageElement opsional (/intro/portfolio-preview.jpg)
     this.q = quality;
@@ -50,6 +44,37 @@ export class BrowserScreen {
     this.texture.anisotropy = 4;
     this.texture.generateMipmaps = false;
     this.texture.minFilter = THREE.LinearFilter;
+  }
+
+  /** Teks, font, warna, dan loading dari pengaturan admin (bisa dipanggil kapan saja). */
+  setWelcome(w = {}) {
+    this.welcome = {
+      line1: w.line1 || "Welcome To My",
+      line2: w.line2 || "Portofolio Website",
+      color1: w.color1 || "#ffffff",
+      color2: w.color2 || "#2563eb",
+      font: w.font || "Arial",
+      loadLabel: w.loadLabel,
+      loadColor: w.loadColor,
+      loadTrack: w.loadTrack,
+      showPct: w.showPct,
+    };
+    this.rev++;
+  }
+
+  /** Gaya latar layar sambutan: "lightning" | "none" | gaya lain (didekati dengan cahaya warna FX). */
+  setBackdrop({ style = "lightning", color = "#3b82f6" } = {}) {
+    this.bgStyle = style || "lightning";
+    this.fxColor = color || "#3b82f6";
+    this.rev++;
+  }
+
+  setMeta({ name, accent, blue, bg } = {}) {
+    if (name) this.name = name;
+    if (accent) this.accent = accent;
+    if (blue) this.blue = blue;
+    if (bg) this.bg = bg;
+    this.rev++;
   }
 
   /**
@@ -215,7 +240,16 @@ export class BrowserScreen {
     ctx.fillStyle = g;
     ctx.fillRect(x, y, w, h);
 
-    if (this.lightning?.ok) {
+    // gaya latar lain (aurora, matrix, dst.): didekati dengan dasar gelap + cahaya warna FX dari admin
+    if (this.bgStyle !== "lightning" && this.bgStyle !== "none") {
+      ctx.fillStyle = "#030014";
+      ctx.fillRect(x, y, w, h);
+      const fg = ctx.createRadialGradient(x + w * 0.5, y + h * 0.5, 0, x + w * 0.5, y + h * 0.5, w * 0.45);
+      fg.addColorStop(0, this.fxColor + "55");
+      fg.addColorStop(1, "transparent");
+      ctx.fillStyle = fg;
+      ctx.fillRect(x, y, w, h);
+    } else if (this.bgStyle === "lightning" && this.lightning?.ok) {
       this.lightning.render(s.time, s.bolt || 1);
       ctx.drawImage(this.lightning.canvas, x, y, w, h);
     }
@@ -226,27 +260,38 @@ export class BrowserScreen {
     const yAt = (vp) => y + (0.5 + (vp - 0.5) * v.visH) * h; // posisi vertikal layar asli (fraksi viewport)
     const cx = x + w / 2;
     const wt = Math.max(0, s.wt || 0);
-    const textA = Math.min(1, wt / 1.6); // teks "berkumpul" pelan, seperti partikel di layar asli
-    ctx.save();
-    ctx.globalAlpha *= textA;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    const fit = (txt, frac, weight) => {
-      ctx.font = `${weight} 100px ${wl.font}, ${FONT}`;
-      const m = ctx.measureText(txt).width || 1;
-      return Math.max(20, (100 * frac * U) / m);
-    };
-    ctx.shadowColor = "rgba(0,0,0,0.55)";
-    ctx.shadowBlur = 24;
-    const f1 = fit(wl.line1, 0.297, 800);
-    ctx.fillStyle = wl.color1;
-    ctx.font = `800 ${f1}px ${wl.font}, ${FONT}`;
-    ctx.fillText(wl.line1, cx, yAt(0.327));
-    const f2 = fit(wl.line2, 0.512, 800);
-    ctx.fillStyle = wl.color2;
-    ctx.font = `800 ${f2}px ${wl.font}, ${FONT}`;
-    ctx.fillText(wl.line2, cx, yAt(0.492));
-    ctx.restore();
+
+    // TEKS: gambar langsung kanvas partikel layar sambutan ASLI yang sedang berjalan di bawah overlay.
+    // Jadi yang terlihat di monitor adalah partikel/teks yang SAMA (teks, font, warna dari admin), dan saat
+    // overlay memudar tidak ada yang mengulang dari awal. Jika kanvas asli tidak tersedia, pakai teks datar.
+    const liveCv = this.live ? this.live() : undefined;
+    if (liveCv && liveCv.width > 8 && liveCv.height > 8) {
+      const rw = U;
+      const rh = U * (liveCv.height / liveCv.width);
+      ctx.drawImage(liveCv, 0, 0, liveCv.width, liveCv.height, x + (w - rw) / 2, y + (h - rh) / 2, rw, rh);
+    } else if (liveCv === undefined) {
+      const textA = Math.min(1, wt / 1.6);
+      ctx.save();
+      ctx.globalAlpha *= textA;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      const fit = (txt, frac, weight) => {
+        ctx.font = `${weight} 100px ${wl.font}, ${FONT}`;
+        const m = ctx.measureText(txt).width || 1;
+        return Math.max(20, (100 * frac * U) / m);
+      };
+      ctx.shadowColor = "rgba(0,0,0,0.55)";
+      ctx.shadowBlur = 24;
+      const f1 = fit(wl.line1, 0.297, 800);
+      ctx.fillStyle = wl.color1;
+      ctx.font = `800 ${f1}px ${wl.font}, ${FONT}`;
+      ctx.fillText(wl.line1, cx, yAt(0.327));
+      const f2 = fit(wl.line2, 0.512, 800);
+      ctx.fillStyle = wl.color2;
+      ctx.font = `800 ${f2}px ${wl.font}, ${FONT}`;
+      ctx.fillText(wl.line2, cx, yAt(0.492));
+      ctx.restore();
+    }
 
     // bar loading: berjalan dari awal halaman, sama dengan yang berjalan di layar asli
     const barA = Math.min(1, Math.max(0, (wt - 1.2) / 0.5));
@@ -264,7 +309,7 @@ export class BrowserScreen {
         ctx.textAlign = "right";
         ctx.fillText(`${Math.round((s.prog || 0) * 100)}%`, cx + bw / 2, yAt(0.71));
       }
-      ctx.fillStyle = "rgba(255,255,255,0.1)";
+      ctx.fillStyle = wl.loadTrack || "rgba(255,255,255,0.1)";
       ctx.fillRect(cx - bw / 2, by, bw, bh);
       ctx.fillStyle = wl.loadColor || "#ffffff";
       ctx.fillRect(cx - bw / 2, by, bw * (s.prog || 0), bh);

@@ -52,7 +52,7 @@ function prepTrack(keys) {
     k.mg = first ? new THREE.Vector3() : new THREE.Vector3().subVectors(b.g, a.g).divideScalar(dt);
     k.mf = first ? 0 : (b.f - a.f) / dt;
     if (k.still) { k.mp.set(0, 0, 0); k.mg.set(0, 0, 0); k.mf = 0; }
-    if (last) { // akhir: tetap melaju (menembus layar), bukan melambat
+    if (last && !k.still) { // akhir: tetap melaju kecuali key ditandai still
       const pr = keys[n - 2], d2 = k.t - pr.t || 1;
       k.mp.subVectors(k.p, pr.p).divideScalar(d2);
       k.mg.subVectors(k.g, pr.g).divideScalar(d2);
@@ -91,9 +91,18 @@ function typingSchedule(url, dur) {
   return w.map((x) => (acc += (x / sum) * dur));
 }
 
+/* pengaturan layar sambutan dari admin -> bentuk yang dipakai layar monitor */
+function welcomeFrom(c = {}) {
+  return {
+    line1: c.welcome_line1, line2: c.welcome_line2, color1: c.welcome_color1, color2: c.welcome_color2,
+    font: c.welcome_font, loadLabel: c.loading_text, loadColor: c.loading_color, loadTrack: c.loading_track,
+    showPct: c.loading_show_pct !== "false",
+  };
+}
+
 /* ----------------------------- fungsi utama ------------------------------ */
 export function createDeveloperWorkspace(opts) {
-  const { container, content = {}, theme = {}, lightning = {}, audio = null, onReady, onWelcome, onReveal, onFade, onDone, onError } = opts;
+  const { container, content = {}, theme = {}, lightning = {}, liveWelcome = null, audio = null, onReady, onWelcome, onReveal, onFade, onDone, onError } = opts;
   const T = INTRO_CONFIG.t;
   T.end = T.through + T.throughDur;
   const isMobile = window.matchMedia("(max-width: 768px)").matches;
@@ -105,7 +114,7 @@ export function createDeveloperWorkspace(opts) {
     renderer = new THREE.WebGLRenderer({ antialias: !isMobile, alpha: false, powerPreference: "high-performance" });
   } catch (e) {
     onError?.(e);
-    return { dispose() {}, skip() {} };
+    return { dispose() {}, skip() {}, update() {} };
   }
   const pixelRatioMax = isMobile ? 1.5 : 1.75;
   let pixelRatio = Math.min(window.devicePixelRatio || 1, pixelRatioMax);
@@ -137,9 +146,10 @@ export function createDeveloperWorkspace(opts) {
 
   /* ---- layar monitor ---- */
   const lx = { hue: lightning.hue ?? 220, speed: lightning.speed ?? 1.6, intensity: lightning.intensity ?? 1.2, size: lightning.size ?? 2 };
-  const boltSrc = (lightning.enabled === false) ? null : new LightningSource({
+  const makeBolt = () => new LightningSource({
     width: isMobile ? 512 : 1024, height: isMobile ? 235 : 470, octaves: isMobile ? 4 : 6, fps: isMobile ? 24 : 30, ...lx,
   });
+  let boltSrc = (lightning.enabled === false) ? null : makeBolt();
   const screen = new BrowserScreen({
     url: INTRO_CONFIG.url,
     name: content.full_name || "Portfolio",
@@ -147,15 +157,20 @@ export function createDeveloperWorkspace(opts) {
     accent: theme.accent || "#06b6d4",
     blue: theme.blue || "#2563eb",
     bg: theme.bg || "#050510",
-    welcome: { line1: content.welcome_line1, line2: content.welcome_line2, color1: content.welcome_color1, color2: content.welcome_color2, font: content.welcome_font, loadLabel: content.loading_text, loadColor: content.loading_color, showPct: content.loading_show_pct !== "false" },
+    welcome: welcomeFrom(content),
+    backdrop: { style: content.welcome_bg_style, color: content.welcome_fx_color },
     lightning: boltSrc,
+    live: liveWelcome,
     quality: isMobile ? 0.5 : 0.85,
   });
   const prev = new Image();
   prev.onload = () => { if (prev.naturalWidth > 100) screen.preview = prev; };
   prev.src = INTRO_CONFIG.previewImage;
-  const welcomeTotal = Math.max(6000, Math.max(1500, (parseFloat(content.loading_duration) || 4.5) * 1000));
-  const progDur = Math.max(1.5, (welcomeTotal - 1250) / 1000); // detik, sama dengan LoadingProgress asli
+  const progDurOf = (c) => {
+    const total = Math.max(6000, Math.max(1500, (parseFloat(c.loading_duration) || 4.5) * 1000));
+    return Math.max(1.5, (total - 1250) / 1000); // detik, sama dengan LoadingProgress asli
+  };
+  let progDur = progDurOf(content);
   const boltCol = new THREE.Color().setHSL(((lx.hue % 360) / 360), 0.8, 0.6);
 
   /* ---- objek ---- */
@@ -257,8 +272,10 @@ export function createDeveloperWorkspace(opts) {
       // masuk ke monitor lewat samping kanan karakter (di atas lengan, jauh dari kepala), baru ke tengah layar
       K(T.dive, pull([0.42, 1.3, 0.85], [0, 1.2, -0.2]), [0, 1.2, -0.2], 31),
       K(T.dive + T.diveDur * 0.55, [0.3, 1.27, 0.5], [0, 1.2, -0.2], 36),
-      K(T.dive + T.diveDur, [0, SCREEN.cy, SCREEN.cz + dEnd], [0, 1.2, -0.2], fovEnd),
-      K(T.end, [0, SCREEN.cy, SCREEN.cz + 0.04], [0, 1.2, -1.5], fovEnd + 10),
+      // tiba tepat saat layar memenuhi pandangan, melambat halus sampai berhenti, lalu DIAM selama crossfade
+      // (tidak lagi melaju menembus layar: itu yang membuat teks seolah mengulang saat layar asli muncul)
+      K(T.dive + T.diveDur, [0, SCREEN.cy, SCREEN.cz + dEnd], [0, 1.2, -0.2], fovEnd, true),
+      K(T.end, [0, SCREEN.cy, SCREEN.cz + dEnd], [0, 1.2, -0.2], fovEnd, true),
     ]);
     screen.view = { visH: V / SCREEN.h, visW: (V * camera.aspect) / SCREEN.w };
     camera.updateProjectionMatrix();
@@ -415,8 +432,9 @@ export function createDeveloperWorkspace(opts) {
     const blink = Math.floor(t * 2.4) % 2;
     const spin = S.loading > 0 && S.loading < 1 ? Math.floor(t * 24) : 0;
     const boltOn = S.page > 0 ? Math.floor(t * 30) : 0;
-    const sig = [S.power.toFixed(2), typedCount, S.loading.toFixed(2), S.page.toFixed(2), S.full.toFixed(2), S.cursor.toFixed(3), S.click.toFixed(2), S.focus, blink, spin, boltOn, S.bolt.toFixed(2), screen.preview ? 1 : 0].join("|");
-    if (sig !== lastSig && nowMs - lastDraw > 28) {
+    const liveTick = S.page > 0 ? Math.floor(nowMs / (isMobile ? 33 : 16)) : 0;
+    const sig = [S.power.toFixed(2), typedCount, S.loading.toFixed(2), S.page.toFixed(2), S.full.toFixed(2), S.cursor.toFixed(3), S.click.toFixed(2), S.focus, blink, spin, boltOn, S.bolt.toFixed(2), screen.preview ? 1 : 0, screen.rev, liveTick].join("|");
+    if (sig !== lastSig && nowMs - lastDraw > (isMobile ? 28 : 12)) {
       lastSig = sig;
       lastDraw = nowMs;
       screen.draw({
@@ -572,5 +590,28 @@ export function createDeveloperWorkspace(opts) {
     canvas.remove();
   }
 
-  return { dispose, skip };
+  /** Dipanggil saat pengaturan admin berubah / baru selesai dimuat dari database. */
+  function update(next = {}) {
+    if (disposed) return;
+    const c = next.content || {};
+    const l = next.lightning || {};
+    const th = next.theme || {};
+    screen.setWelcome(welcomeFrom(c));
+    screen.setBackdrop({ style: c.welcome_bg_style, color: c.welcome_fx_color });
+    screen.setMeta({ name: c.full_name || undefined, accent: th.accent, blue: th.blue, bg: th.bg });
+    progDur = progDurOf(c);
+    if (l.enabled === false) {
+      if (boltSrc) { screen.lightning = null; boltSrc.dispose(); boltSrc = null; }
+    } else {
+      if (!boltSrc) { boltSrc = makeBolt(); screen.lightning = boltSrc; }
+      if (l.hue !== undefined) boltSrc.hue = l.hue;
+      if (l.speed !== undefined) boltSrc.speed = l.speed;
+      if (l.intensity !== undefined) boltSrc.intensity = l.intensity;
+      if (l.size !== undefined) boltSrc.size = l.size;
+      boltSrc.last = -1; // paksa render ulang dengan parameter baru
+    }
+    if (l.hue !== undefined) boltCol.setHSL(((l.hue % 360) / 360), 0.8, 0.6);
+  }
+
+  return { dispose, skip, update };
 }

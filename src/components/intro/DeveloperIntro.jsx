@@ -5,6 +5,7 @@ import { getLightningSettings } from "../../lib/siteContent";
 // Mount scene 3D. three.js + gsap dimuat lazy (code-split) agar halaman utama tetap ringan.
 export default function DeveloperIntro({ audio, onReady, onWelcome, onReveal, onFade, onDone, onError }) {
   const hostRef = useRef(null);
+  const engineRef = useRef(null);
   const { content } = useSiteContent();
   const contentRef = useRef(content);
   contentRef.current = content;
@@ -17,6 +18,12 @@ export default function DeveloperIntro({ audio, onReady, onWelcome, onReveal, on
 
     const cssVar = (n, fb) =>
       getComputedStyle(document.documentElement).getPropertyValue(n).trim() || fb;
+
+    const readTheme = () => ({
+      bg: cssVar("--col-bg", "#050510"),
+      blue: cssVar("--col-blue", "#2563eb"),
+      accent: cssVar("--col-accent", "#06b6d4"),
+    });
 
     const start = async () => {
       try {
@@ -37,6 +44,9 @@ export default function DeveloperIntro({ audio, onReady, onWelcome, onReveal, on
           // petir di monitor memakai pengaturan yang sama dengan layar sambutan asli (hue dll. dari admin)
           lightning: getLightningSettings(contentRef.current),
           audio,
+          // kanvas partikel layar sambutan ASLI (dibuat tepat saat monitor menampilkan halamannya).
+          // null = belum ada; monitor menggambar apa yang sedang berjalan di sana.
+          liveWelcome: () => document.querySelector('canvas[data-welcome-particles]'),
           onReady: () => cb.current.onReady?.(),
           onWelcome: () => cb.current.onWelcome?.(),
           onReveal: () => cb.current.onReveal?.(),
@@ -44,6 +54,9 @@ export default function DeveloperIntro({ audio, onReady, onWelcome, onReveal, on
           onDone: () => cb.current.onDone?.(),
           onError: (e) => cb.current.onError?.(e),
         });
+        engineRef.current = engine;
+        // data admin bisa baru selesai dimuat setelah scene dibuat: samakan lagi
+        engine.update?.({ content: contentRef.current, lightning: getLightningSettings(contentRef.current), theme: readTheme() });
       } catch (e) {
         if (!cancelled) cb.current.onError?.(e);
       }
@@ -52,10 +65,24 @@ export default function DeveloperIntro({ audio, onReady, onWelcome, onReveal, on
 
     return () => {
       cancelled = true;
+      engineRef.current = null;
       engine?.dispose();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Admin mengganti teks Welcome / warna / petir / loading -> monitor ikut (tanpa membuat ulang scene)
+  useEffect(() => {
+    const id = requestAnimationFrame(() => { // tunggu tema CSS diterapkan provider
+      const cssVar = (n, fb) => getComputedStyle(document.documentElement).getPropertyValue(n).trim() || fb;
+      engineRef.current?.update({
+        content,
+        lightning: getLightningSettings(content),
+        theme: { bg: cssVar("--col-bg", "#050510"), blue: cssVar("--col-blue", "#2563eb"), accent: cssVar("--col-accent", "#06b6d4") },
+      });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [content]);
 
   return <div ref={hostRef} className="absolute inset-0" />;
 }

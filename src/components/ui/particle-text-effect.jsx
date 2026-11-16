@@ -54,7 +54,7 @@ export function ParticleTextEffect({
   return (
     <div className="absolute inset-0 pointer-events-none z-10" aria-hidden>
       <span className="sr-only">{`${line1} ${line2}`}</span>
-      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full block" />
+      <canvas ref={canvasRef} data-welcome-particles="true" className="absolute inset-0 w-full h-full block" />
     </div>
   );
 }
