@@ -17,7 +17,8 @@ Overlay di atas portfolio asli. Portfolio, routing, Supabase, dashboard admin, d
 - `src/Pages/IntroScreen.jsx` : overlay, Skip Intro, Esc, tombol suara, reduced-motion, fallback perangkat lemah.
 - `intro/DeveloperIntro.jsx` : mount scene (lazy) + meneruskan pengaturan petir & audio.
 - `intro/workspaceScene.js` : scene, jalur kamera (Hermite, ada momentum), timeline. Semua waktu di `INTRO_CONFIG.t`.
-- `intro/character.js` : karakter (hoodie berlipatan, rambut gerombol, headphone, tangan & jari dua ruas).
+- `intro/character.js` : karakter prosedural lama (sekarang jadi cadangan + "proxy" gerakan: tangan, kepala, punggung).
+- `intro/mutantCharacter.js` : karakter FBX Mixamo (`public/models/mutant.fbx`). Duduk di kursi, lengan IK ke keyboard/mouse/ENTER, jari mengetuk, kepala bergoyang. Animasi bawaan FBX ("Right Turn 45") tidak dipakai.
 - `intro/furniture.js` : meja, monitor lengkung + kaca, keyboard dengan tombol ENTER nyata, kursi.
 - `intro/spaceEnvironment.js` : langit (bintang, nebula, galaksi), planet, bulan, asteroid, satelit, pesawat, bintang jatuh, kaca panorama, lantai.
 - `intro/browserScreen.js` : tekstur layar monitor (browser, kursor, halaman sambutan).
@@ -33,8 +34,14 @@ Overlay di atas portfolio asli. Portfolio, routing, Supabase, dashboard admin, d
 - Mobile: resolusi dibatasi, tanpa DOF & RectAreaLight, bintang/asteroid lebih sedikit. FPS rendah -> resolusi turun, lalu DOF dimatikan.
 - Pengaman waktu 45 detik.
 
+## Karakter FBX
+- File: `public/models/mutant.fbx` (5 MB; versi asli 87 MB dengan tekstur 4K sudah diperkecil: diffuse 2048, normal 1024).
+- Pengaturan di `INTRO_CONFIG.characterFBX` (workspaceScene.js): `height` (tinggi), `hips` (posisi duduk x,y,z), `lean` (condong ke depan). Isi `null` untuk kembali ke karakter prosedural.
+- Adegan baru mulai setelah FBX selesai dimuat. Gagal / lebih dari 25 detik -> otomatis memakai karakter prosedural.
+- Mengganti karakter: unduh dari Mixamo (With Skin, FBX Binary, rig Mixamo standar), taruh sebagai `public/models/mutant.fbx`. Nama tulang harus `mixamorig*:Hips`, dst.
+
 ## Opsional
-- `public/models/developer.glb` : model karakter sungguhan (menggantikan karakter prosedural; animasi tangan/ENTER tidak ikut karena tidak ada rig).
+- `public/models/developer.glb` : dinonaktifkan selama `characterFBX` aktif.
 - `public/intro/portfolio-preview.jpg` : tangkapan layar asli, dipakai di monitor menggantikan halaman sambutan buatan.
 
 ## Jalankan

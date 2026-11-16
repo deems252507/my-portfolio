@@ -13,6 +13,7 @@ import { BrowserScreen } from "./browserScreen";
 import { LightningSource } from "./lightningSource";
 import { solveArm, placeLimb } from "./helpers";
 import { buildCharacter } from "./character";
+import { loadMutantCharacter } from "./mutantCharacter";
 import { SCREEN, buildChair, buildDesk, buildMonitor, buildKeyboard, buildProps } from "./furniture";
 import { PLANET_POS, buildSpaceBackdrop, buildEnvScene, buildStationShell } from "./spaceEnvironment";
 
@@ -21,6 +22,8 @@ export const INTRO_CONFIG = {
   url: "https://rizkydm.vercel.app/",
   // Model karakter realistis (opsional). Taruh file .glb di public/models/developer.glb.
   characterGLB: { url: "/models/developer.glb", position: [0, 0, 0.62], rotationY: 0, scale: 1 },
+  // Karakter FBX Mixamo (aktif). Duduk di kursi, lengan IK, jari mengetik. Isi null untuk kembali ke karakter prosedural.
+  characterFBX: { url: "/models/mutant.fbx", height: 1.88, hips: [0, 0.65, 0.65], lean: -0.09 },
   // Tangkapan layar halaman sambutan (opsional) untuk layar monitor: public/intro/portfolio-preview.jpg
   previewImage: "/intro/portfolio-preview.jpg",
   // Waktu (detik) tiap adegan
@@ -182,6 +185,16 @@ export function createDeveloperWorkspace(opts) {
   buildProps(scene, cyan);
   const chair = buildChair(scene);
   const ch = buildCharacter(scene, { isMobile });
+
+  // Muat karakter FBX; adegan baru dimulai setelah selesai (atau gagal / lewat 25 dtk -> karakter bawaan)
+  let charReady = !INTRO_CONFIG.characterFBX;
+  let charAbort = false;
+  if (INTRO_CONFIG.characterFBX) {
+    const charTimer = setTimeout(() => { charAbort = true; charReady = true; }, 25000);
+    loadMutantCharacter(scene, ch, INTRO_CONFIG.characterFBX, () => disposed || charAbort)
+      .catch((e) => console.warn("[intro] Karakter FBX gagal dimuat, memakai karakter bawaan:", e))
+      .finally(() => { clearTimeout(charTimer); charReady = true; });
+  }
 
   /* ---- cahaya ---- */
   scene.add(new THREE.HemisphereLight(0x2a4d66, 0x04060a, 0.5));
@@ -400,6 +413,7 @@ export function createDeveloperWorkspace(opts) {
       arm.cuff.position.copy(W).addScaledVector(dir, -0.02);
       arm.cuff.quaternion.copy(arm.fore.quaternion);
     });
+    ch.sync?.(); // karakter FBX: terjemahkan proxy (kepala, punggung, tangan, jari) ke tulang
 
     // mouse mengikuti kursor di layar
     kb.mouse.position.x = 0.47 - 0.05 * S.cursor;
@@ -493,7 +507,7 @@ export function createDeveloperWorkspace(opts) {
     bloom.strength = S.bloom;
     composer.render(dt);
 
-    if (!running) {
+    if (!running && charReady) {
       running = true;
       startTimeline();
       onReady?.();
@@ -556,6 +570,7 @@ export function createDeveloperWorkspace(opts) {
   let glbMixer = null;
   (async () => {
     try {
+      if (INTRO_CONFIG.characterFBX) return; // karakter FBX sudah dipakai
       const cfg = INTRO_CONFIG.characterGLB;
       const head = await fetch(cfg.url, { method: "HEAD" });
       const ct = head.headers.get("content-type") || "";
