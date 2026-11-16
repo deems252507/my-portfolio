@@ -102,7 +102,7 @@ function welcomeFrom(c = {}) {
 
 /* ----------------------------- fungsi utama ------------------------------ */
 export function createDeveloperWorkspace(opts) {
-  const { container, content = {}, theme = {}, lightning = {}, liveWelcome = null, audio = null, onReady, onWelcome, onReveal, onFade, onDone, onError } = opts;
+  const { container, content = {}, theme = {}, lightning = {}, liveWelcome = null, audio = null, onZoom = null, onReady, onWelcome, onReveal, onFade, onDone, onError } = opts;
   const T = INTRO_CONFIG.t;
   T.end = T.through + T.throughDur;
   const isMobile = window.matchMedia("(max-width: 768px)").matches;
@@ -235,6 +235,7 @@ export function createDeveloperWorkspace(opts) {
   const size = { w: 1, h: 1 };
   let camKeys = [];
   let fovEnd = 50;
+  let dEndV = 0.45; // jarak kamera saat layar tepat memenuhi pandangan
   const K = (t, p, g, f, still = false) => ({ t, p: new THREE.Vector3(...p), g: new THREE.Vector3(...g), f, still });
 
   const layout = () => {
@@ -250,6 +251,7 @@ export function createDeveloperWorkspace(opts) {
     fovEnd = portrait ? 72 : 50;
     const V = portrait ? 0.8 : 0.42; // tinggi layar yang terlihat di akhir: bezel keluar dari pandangan
     const dEnd = (V / 2) / Math.tan(THREE.MathUtils.degToRad(fovEnd / 2));
+    dEndV = dEnd;
     const narrow = camera.aspect < 0.9;
     const pull = (p, g) => { // tarik mundur terhadap target
       const gv = new THREE.Vector3(...g), pv = new THREE.Vector3(...p);
@@ -272,10 +274,10 @@ export function createDeveloperWorkspace(opts) {
       // masuk ke monitor lewat samping kanan karakter (di atas lengan, jauh dari kepala), baru ke tengah layar
       K(T.dive, pull([0.42, 1.3, 0.85], [0, 1.2, -0.2]), [0, 1.2, -0.2], 31),
       K(T.dive + T.diveDur * 0.55, [0.3, 1.27, 0.5], [0, 1.2, -0.2], 36),
-      // tiba tepat saat layar memenuhi pandangan, melambat halus sampai berhenti, lalu DIAM selama crossfade
-      // (tidak lagi melaju menembus layar: itu yang membuat teks seolah mengulang saat layar asli muncul)
-      K(T.dive + T.diveDur, [0, SCREEN.cy, SCREEN.cz + dEnd], [0, 1.2, -0.2], fovEnd, true),
-      K(T.end, [0, SCREEN.cy, SCREEN.cz + dEnd], [0, 1.2, -0.2], fovEnd, true),
+      // layar tepat memenuhi pandangan, kamera TERUS melaju menembus layar (pembesaran 2x), lalu melambat.
+      // Layar asli di bawah overlay diskala sama persis (onZoom) sehingga crossfade tetap menyatu.
+      K(T.dive + T.diveDur, [0, SCREEN.cy, SCREEN.cz + dEnd], [0, 1.2, -0.2], fovEnd),
+      K(T.end, [0, SCREEN.cy, SCREEN.cz + dEnd * 0.5], [0, 1.2, -0.2], fovEnd, true),
     ]);
     screen.view = { visH: V / SCREEN.h, visW: (V * camera.aspect) / SCREEN.w };
     camera.updateProjectionMatrix();
@@ -303,6 +305,10 @@ export function createDeveloperWorkspace(opts) {
     pos.y += Math.sin(t * 0.9 + 1.0) * 0.005 * S.sway;
     camera.position.copy(pos);
     camera.lookAt(tgt);
+    if (onZoom && S.ct >= T.dive + T.diveDur - 0.02) {
+      const d = Math.max(0.02, camera.position.z - SCREEN.cz);
+      onZoom(Math.max(1, dEndV / d));
+    }
     if (Math.abs(camera.fov - fovNow) > 0.001) { camera.fov = fovNow; camera.updateProjectionMatrix(); }
     if (bokeh) {
       const d = camera.position.distanceTo(tgt);

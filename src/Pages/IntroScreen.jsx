@@ -43,6 +43,7 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
   const skippedRef = useRef(false);
   const revealedRef = useRef(false);
   const audioRef = useRef(null);
+  const zoomRef = useRef(null);
   if (!audioRef.current) audioRef.current = new IntroAudio();
   const [soundOn, setSoundOn] = useState(false);
   const [ready, setReady] = useState(false); // scene 3D sudah merender frame pertama
@@ -69,8 +70,22 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
   const handleFade = useCallback(() => {
     if (!skippedRef.current) setLeaving(true);
   }, []);
+  // kamera menembus layar: layar sambutan asli diskala sama dengan pembesaran monitor, jadi saat overlay
+  // memudar keduanya identik. Setelah overlay lepas, skala mengendap halus ke 1 (tiba di halaman).
+  const handleZoom = useCallback((m) => {
+    const el = zoomRef.current;
+    if (!el || skippedRef.current) return;
+    el.style.transition = "none";
+    el.style.transform = `scale(${m.toFixed(4)})`;
+  }, []);
   const handleDone = useCallback(() => {
-    if (!skippedRef.current) setIntroGone(true);
+    if (skippedRef.current) return;
+    const el = zoomRef.current;
+    if (el) {
+      el.style.transition = "transform 1100ms cubic-bezier(0.16, 1, 0.3, 1)";
+      el.style.transform = "scale(1)";
+    }
+    setIntroGone(true);
   }, []);
   const handleReady = useCallback(() => setReady(true), []);
   // layar sambutan ASLI mulai berjalan (tersembunyi di bawah overlay) saat monitor menampilkan halamannya,
@@ -125,9 +140,11 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
     <>
       {/* Welcome milikmu (tidak diubah). Saat tampil bersama overlay 3D, overlay 3D memudar di atasnya. */}
       {welcome && !skippedRef.current && (
-        <Suspense fallback={null}>
-          <LegacyWelcome onReveal={reveal} onLoadingComplete={finish} />
-        </Suspense>
+        <div ref={zoomRef} className="fixed inset-0 z-50" style={{ transformOrigin: "50% 50%", willChange: "transform" }}>
+          <Suspense fallback={null}>
+            <LegacyWelcome onReveal={reveal} onLoadingComplete={finish} />
+          </Suspense>
+        </div>
       )}
 
       {use3D && !introGone && (
@@ -147,6 +164,7 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
             <DeveloperIntro
               audio={audioRef.current}
               onReady={handleReady}
+              onZoom={handleZoom}
               onWelcome={handleWelcomeStart}
               onReveal={handleThrough}
               onFade={handleFade}

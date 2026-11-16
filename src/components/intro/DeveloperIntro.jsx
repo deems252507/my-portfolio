@@ -3,14 +3,14 @@ import { useSiteContent } from "../../context/SiteContentContext";
 import { getLightningSettings } from "../../lib/siteContent";
 
 // Mount scene 3D. three.js + gsap dimuat lazy (code-split) agar halaman utama tetap ringan.
-export default function DeveloperIntro({ audio, onReady, onWelcome, onReveal, onFade, onDone, onError }) {
+export default function DeveloperIntro({ audio, onZoom, onReady, onWelcome, onReveal, onFade, onDone, onError }) {
   const hostRef = useRef(null);
   const engineRef = useRef(null);
   const { content } = useSiteContent();
   const contentRef = useRef(content);
   contentRef.current = content;
-  const cb = useRef({ onReady, onWelcome, onReveal, onFade, onDone, onError });
-  cb.current = { onReady, onWelcome, onReveal, onFade, onDone, onError };
+  const cb = useRef({ onZoom, onReady, onWelcome, onReveal, onFade, onDone, onError });
+  cb.current = { onZoom, onReady, onWelcome, onReveal, onFade, onDone, onError };
 
   useEffect(() => {
     let engine = null;
@@ -47,6 +47,7 @@ export default function DeveloperIntro({ audio, onReady, onWelcome, onReveal, on
           // kanvas partikel layar sambutan ASLI (dibuat tepat saat monitor menampilkan halamannya).
           // null = belum ada; monitor menggambar apa yang sedang berjalan di sana.
           liveWelcome: () => document.querySelector('canvas[data-welcome-particles]'),
+          onZoom: (m) => cb.current.onZoom?.(m),
           onReady: () => cb.current.onReady?.(),
           onWelcome: () => cb.current.onWelcome?.(),
           onReveal: () => cb.current.onReveal?.(),
