@@ -50,6 +50,7 @@ function prepTrack(keys) {
     k.mp = first ? new THREE.Vector3() : new THREE.Vector3().subVectors(b.p, a.p).divideScalar(dt);
     k.mg = first ? new THREE.Vector3() : new THREE.Vector3().subVectors(b.g, a.g).divideScalar(dt);
     k.mf = first ? 0 : (b.f - a.f) / dt;
+    if (k.still) { k.mp.set(0, 0, 0); k.mg.set(0, 0, 0); k.mf = 0; }
     if (last) { // akhir: tetap melaju (menembus layar), bukan melambat
       const pr = keys[n - 2], d2 = k.t - pr.t || 1;
       k.mp.subVectors(k.p, pr.p).divideScalar(d2);
@@ -216,7 +217,7 @@ export function createDeveloperWorkspace(opts) {
   const size = { w: 1, h: 1 };
   let camKeys = [];
   let fovEnd = 50;
-  const K = (t, p, g, f) => ({ t, p: new THREE.Vector3(...p), g: new THREE.Vector3(...g), f });
+  const K = (t, p, g, f, still = false) => ({ t, p: new THREE.Vector3(...p), g: new THREE.Vector3(...g), f, still });
 
   const layout = () => {
     const w = container.clientWidth || window.innerWidth;
@@ -242,9 +243,9 @@ export function createDeveloperWorkspace(opts) {
       K(2.8, pull([2.3, 1.8, 3.2], [-0.15, 1.12, -0.3]), [-0.15, 1.12, -0.3], 36),
       K(5.2, pull([1.0, 1.5, 1.75], [0, 1.22, -0.2]), [0, 1.22, -0.2], 33),
       // bidikan address bar dari ATAS bahu/kepala (tidak menembus kepala karakter), bertahan sampai alamat selesai & terbaca
-      K(T.cursorEnd, narrow ? [0.1, 1.58, 0.95] : [0.15, 1.6, 0.9], barG, narrow ? 52 : 29),
-      K(9.6, narrow ? [0.08, 1.58, 0.95] : [0.12, 1.59, 0.88], barG, narrow ? 52 : 28.5),
-      K(T.enterReach, narrow ? [0.08, 1.58, 0.95] : [0.12, 1.58, 0.86], barG, narrow ? 52 : 28),
+      // kamera DIAM total dari kursor sampai alamat selesai & terbaca (dua kunci identik, kecepatan nol)
+      K(T.cursorEnd, narrow ? [0.1, 1.58, 0.95] : [0.15, 1.6, 0.9], barG, narrow ? 52 : 29, true),
+      K(T.enterReach, narrow ? [0.1, 1.58, 0.95] : [0.15, 1.6, 0.9], barG, narrow ? 52 : 29, true),
       // baru setelah itu: mundur ke bidikan medium, lalu mendekat ke keyboard untuk menekan ENTER
       K(T.enterReach + 0.8, pull([0.6, 1.28, 1.3], [0.05, 1.05, 0.0]), [0.05, 1.05, 0.0], 38),
       K(T.enterPress - 0.2, pull([0.85, 1.12, 1.0], [0.17, 0.86, 0.12]), [0.17, 0.86, 0.12], 33),
@@ -477,6 +478,8 @@ export function createDeveloperWorkspace(opts) {
     tl.to(canvas, { opacity: 1, duration: 1.6, ease: "power1.out" }, 0)
       .to(S, { ct: T.end, duration: T.end }, 0)                                   // jam kamera
       .to(S, { power: 1, duration: 0.9, ease: "power2.out" }, T.powerOn)
+      .to(S, { sway: 0, duration: 0.6, ease: "sine.out" }, T.cursorEnd - 0.6)   // goyangan halus berhenti saat mengetik
+      .to(S, { sway: 1, duration: 0.8, ease: "sine.inOut" }, T.enterReach)
       .to(S, { sway: 0, duration: 1.2, ease: "sine.out" }, T.dive)
       // Scene 2: tangan ke mouse, kursor menuju address bar, klik
       .to(S, { rMouse: 1, duration: 0.7, ease: "sine.inOut" }, T.cursorStart - 0.6)
