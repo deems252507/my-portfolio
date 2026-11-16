@@ -36,6 +36,7 @@ export default function FlipCoinButton({
   onLanded,
   className,
 }) {
+  const B = Math.max(1.4, bigScale); // koin digambar sebesar ukuran maksimum supaya foto tetap tajam
   const [clicked, setClicked] = useState(false);
   const [shrinkLanding, setShrinkLanding] = useState(false);
   const [coinLanded, setCoinLanded] = useState(false);
@@ -56,7 +57,7 @@ export default function FlipCoinButton({
     const coin = coinRef.current;
     if (!coin) return;
     const reduce = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    const big = reduce ? 1.3 : Math.max(1.4, bigScale);
+    const big = reduce ? 1.3 : B;
     const spin = reduce ? 0 : 1;
     const dur = reduce ? 900 : FLIP_MS;
     const set = (k, v) => coin.style.setProperty(k, `${v}`);
@@ -91,7 +92,7 @@ export default function FlipCoinButton({
       const half = (angle + Math.PI / 2) % Math.PI;
       set("--cx", cx);
       set("--cy", cy);
-      set("--cs", cs);
+      set("--cs", cs / B);
       set("--rx", `${(angle * 180) / Math.PI}deg`);
       set("--rz", `${wobble}deg`);
       set("--shade", Math.abs(Math.sin(angle)).toFixed(3));
@@ -127,7 +128,7 @@ export default function FlipCoinButton({
     const coin = coinRef.current;
     if (!coin) return;
     const set = (k, v) => coin.style.setProperty(k, v);
-    set("--cx", `${START_X}`); set("--cy", "0"); set("--cs", "0.5");
+    set("--cx", `${START_X}`); set("--cy", "0"); set("--cs", `${0.5 / B}`);
     set("--rx", "0deg"); set("--rz", "0deg"); set("--shade", "0");
     set("--shine-o", "0.4"); set("--shine-bg", "50%");
     set("opacity", "1");
@@ -150,16 +151,16 @@ export default function FlipCoinButton({
       <span className="fcb-text">{children}</span>
       <div className="fcb-wrap" aria-hidden="true">
         <div className="fcb-shadow" ref={shadowRef} />
-        <div className="fcb-coin" ref={coinRef}>
+        <div className="fcb-coin" ref={coinRef} style={{ "--u": B }}>
           {Array.from({ length: SLICES }).map((_, i) => (
             <div
               key={i}
               className="fcb-edge"
-              style={{ transform: `translateZ(${((i - (SLICES - 1) / 2) * (THICK / (SLICES - 1))).toFixed(4)}rem)` }}
+              style={{ transform: `translateZ(calc(${((i - (SLICES - 1) / 2) * (THICK / (SLICES - 1))).toFixed(4)}rem * var(--u)))` }}
             />
           ))}
-          <div className="fcb-face fcb-back" style={{ transform: `rotateX(180deg) translateZ(${THICK / 2}rem)` }} />
-          <div className="fcb-face fcb-front" style={{ transform: `translateZ(${THICK / 2}rem)` }}>
+          <div className="fcb-face fcb-back" style={{ transform: `rotateX(180deg) translateZ(calc(${THICK / 2}rem * var(--u)))` }} />
+          <div className="fcb-face fcb-front" style={{ transform: `translateZ(calc(${THICK / 2}rem * var(--u)))` }}>
             <div className="fcb-clip">
               {photo && (
                 <img
@@ -194,10 +195,10 @@ const CSS = `
 .fcb::after{bottom:-1.6rem;color:#9fe9ff;content:attr(data-thanks);height:110%;left:0;opacity:0;position:absolute;pointer-events:none;text-align:center;transform:scale(0);transform-origin:50% 20%;transition:transform 200ms cubic-bezier(0,0,.35,1.43);width:100%;z-index:1;font-size:.85rem;white-space:nowrap}
 .fcb-wrap{background:none;bottom:0;height:18rem;left:0;opacity:1;overflow:visible;pointer-events:none;position:absolute;transform:none;transform-origin:50% 100%;transition:opacity 200ms linear 100ms,transform 300ms ease-out;width:100%}
 .fcb-shadow{--sx:${START_X};--ss:.5;--so:0;position:absolute;left:50%;bottom:-1.25rem;width:3.5rem;height:.9rem;margin-left:-1.75rem;border-radius:50%;background:radial-gradient(ellipse at center,rgba(0,0,0,.75),transparent 70%);filter:blur(2px);opacity:var(--so);transform:translateX(calc(var(--sx)*1rem)) scale(var(--ss));z-index:1}
-.fcb-coin{--cx:${START_X};--cy:0;--cs:.5;--rx:0deg;--rz:0deg;--shade:0;--shine-o:.4;--shine-bg:50%;position:absolute;left:50%;bottom:-.45rem;width:3.5rem;height:3.5rem;margin-left:-1.75rem;transform-style:preserve-3d;transform:translate(calc(var(--cx)*1rem),calc(var(--cy)*-1rem)) scale(var(--cs)) perspective(480px) rotateZ(var(--rz)) rotateX(var(--rx));transition:opacity 100ms linear 200ms;z-index:3;will-change:transform}
+.fcb-coin{--cx:${START_X};--cy:0;--rx:0deg;--rz:0deg;--shade:0;--shine-o:.4;--shine-bg:50%;--u:1;--cs:calc(.5 / var(--u));position:absolute;left:50%;bottom:calc(1.3rem - 1.75rem*var(--u));width:calc(3.5rem*var(--u));height:calc(3.5rem*var(--u));margin-left:calc(-1.75rem*var(--u));transform-style:preserve-3d;transform:translate(calc(var(--cx)*1rem),calc(var(--cy)*-1rem)) scale(var(--cs)) perspective(calc(480px*var(--u))) rotateZ(var(--rz)) rotateX(var(--rx));transition:opacity 100ms linear 200ms;z-index:3}
 .fcb-edge{position:absolute;inset:0;border-radius:50%;background:linear-gradient(180deg,#98a1be,#5b647f 55%,#444c66)}
-.fcb-face{position:absolute;inset:0;border-radius:50%;box-sizing:border-box;padding:.2rem;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:#c2cadf;box-shadow:inset 0 0 0 .06rem rgba(115,124,153,.65)}
-.fcb-clip{position:absolute;inset:.2rem;border-radius:50%;overflow:hidden;background:linear-gradient(150deg,#22d3ee,#2563eb)}
+.fcb-face{position:absolute;inset:0;border-radius:50%;box-sizing:border-box;padding:calc(.2rem*var(--u));backface-visibility:hidden;-webkit-backface-visibility:hidden;background:#c2cadf;box-shadow:inset 0 0 0 calc(.06rem*var(--u)) rgba(115,124,153,.65)}
+.fcb-clip{position:absolute;inset:calc(.2rem*var(--u));border-radius:50%;overflow:hidden;background:linear-gradient(150deg,#22d3ee,#2563eb)}
 .fcb-clip img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;-webkit-user-drag:none}
 .fcb-back{background:${SPEAKER} center/52% no-repeat,radial-gradient(circle at 50% 50%,#2563eb 0 50%,rgba(115,124,153,.4) 54%,#c2cadf 54%)}
 .fcb-front::before{content:"";position:absolute;inset:0;border-radius:50%;z-index:3;pointer-events:none;background:radial-gradient(circle at 25% 65%,transparent 50%,rgba(255,255,255,.9) 90%),linear-gradient(55deg,transparent calc(var(--shine-bg) + 0%),#e9f4ff calc(var(--shine-bg) + 0%),transparent calc(var(--shine-bg) + 50%));opacity:var(--shine-o)}
