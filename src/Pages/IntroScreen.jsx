@@ -73,6 +73,11 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
     if (!skippedRef.current) setIntroGone(true);
   }, []);
   const handleReady = useCallback(() => setReady(true), []);
+  // layar sambutan ASLI mulai berjalan (tersembunyi di bawah overlay) saat monitor menampilkan halamannya,
+  // sehingga saat kamera sampai di layar yang tampil adalah punyamu yang sudah berjalan, bukan mengulang dari awal
+  const handleWelcomeStart = useCallback(() => {
+    if (!skippedRef.current) setWelcome(true);
+  }, []);
   const handleError = useCallback(() => {
     // WebGL gagal di tengah jalan: langsung ke welcome milikmu
     setWelcome(true);
@@ -93,6 +98,9 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
     setLeaving(true);
     setTimeout(finish, FADE_MS);
   }, [reveal, finish]);
+
+  // muat modul layar sambutan lebih awal supaya start-nya tepat waktu
+  useEffect(() => { if (use3D) import("./WelcomeScreen"); }, [use3D]);
 
   // bersihkan audio saat komponen dilepas
   useEffect(() => () => audioRef.current?.dispose(), []);
@@ -139,6 +147,7 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
             <DeveloperIntro
               audio={audioRef.current}
               onReady={handleReady}
+              onWelcome={handleWelcomeStart}
               onReveal={handleThrough}
               onFade={handleFade}
               onDone={handleDone}

@@ -32,7 +32,8 @@ export const INTRO_CONFIG = {
     loadStart: 14.0, loadDur: 1.5, pageStart: 15.3,       // loading browser, halaman tampil
     dive: 16.2, diveDur: 2.3, chromeOut: 16.5,            // Scene 5: kamera masuk, bezel hilang
     through: 18.5, throughDur: 0.9,
-    reveal: 18.6, fade: 18.8, done: 19.7,
+    welcome: 15.3,                                        // layar sambutan ASLI mulai berjalan di bawah (sama dengan halaman di monitor)
+    reveal: 18.5, fade: 18.5, done: 19.4,                 // crossfade tepat saat layar memenuhi pandangan
   },
 };
 /* ======================================================================== */
@@ -92,7 +93,7 @@ function typingSchedule(url, dur) {
 
 /* ----------------------------- fungsi utama ------------------------------ */
 export function createDeveloperWorkspace(opts) {
-  const { container, content = {}, theme = {}, lightning = {}, audio = null, onReady, onReveal, onFade, onDone, onError } = opts;
+  const { container, content = {}, theme = {}, lightning = {}, audio = null, onReady, onWelcome, onReveal, onFade, onDone, onError } = opts;
   const T = INTRO_CONFIG.t;
   T.end = T.through + T.throughDur;
   const isMobile = window.matchMedia("(max-width: 768px)").matches;
@@ -146,13 +147,15 @@ export function createDeveloperWorkspace(opts) {
     accent: theme.accent || "#06b6d4",
     blue: theme.blue || "#2563eb",
     bg: theme.bg || "#050510",
-    welcome: { line1: content.welcome_line1, line2: content.welcome_line2, color1: content.welcome_color1, color2: content.welcome_color2, font: content.welcome_font },
+    welcome: { line1: content.welcome_line1, line2: content.welcome_line2, color1: content.welcome_color1, color2: content.welcome_color2, font: content.welcome_font, loadLabel: content.loading_text, loadColor: content.loading_color, showPct: content.loading_show_pct !== "false" },
     lightning: boltSrc,
     quality: isMobile ? 0.5 : 0.85,
   });
   const prev = new Image();
   prev.onload = () => { if (prev.naturalWidth > 100) screen.preview = prev; };
   prev.src = INTRO_CONFIG.previewImage;
+  const welcomeTotal = Math.max(6000, Math.max(1500, (parseFloat(content.loading_duration) || 4.5) * 1000));
+  const progDur = Math.max(1.5, (welcomeTotal - 1250) / 1000); // detik, sama dengan LoadingProgress asli
   const boltCol = new THREE.Color().setHSL(((lx.hue % 360) / 360), 0.8, 0.6);
 
   /* ---- objek ---- */
@@ -257,6 +260,7 @@ export function createDeveloperWorkspace(opts) {
       K(T.dive + T.diveDur, [0, SCREEN.cy, SCREEN.cz + dEnd], [0, 1.2, -0.2], fovEnd),
       K(T.end, [0, SCREEN.cy, SCREEN.cz + 0.04], [0, 1.2, -1.5], fovEnd + 10),
     ]);
+    screen.view = { visH: V / SCREEN.h, visW: (V * camera.aspect) / SCREEN.w };
     camera.updateProjectionMatrix();
   };
   layout();
@@ -418,6 +422,7 @@ export function createDeveloperWorkspace(opts) {
       screen.draw({
         time: t, power: S.power, chars: typedCount, loading: S.loading, page: S.page, full: S.full,
         cursor: S.cursor, click: S.click, focus: S.focus, bolt: S.bolt,
+        wt: Math.max(0, S.ct - T.welcome), prog: Math.min(1, Math.max(0, (S.ct - T.welcome) / progDur)),
         cursorAlpha: typedCount > 0 || S.page > 0 ? 0 : 1,
       });
     }
@@ -502,8 +507,7 @@ export function createDeveloperWorkspace(opts) {
       .to(S, { page: 1, duration: 0.9, ease: "power1.out" }, T.pageStart)
       // Scene 5: kamera masuk, bezel & browser menghilang, petir memenuhi layar
       .to(S, { full: 1, duration: 1.0, ease: "power2.inOut" }, T.chromeOut)
-      .to(S, { bolt: 1.5, duration: T.diveDur, ease: "power2.in" }, T.dive)
-      .to(S, { bolt: 2.2, exposure: 1.5, bloom: 1.5, duration: T.throughDur, ease: "power2.in" }, T.through)
+      .call(() => onWelcome?.(), null, T.welcome)
       .call(() => onReveal?.(), null, T.reveal)
       .call(() => onFade?.(), null, T.fade)
       .call(() => { if (!disposed) onDone?.(); }, null, T.done);

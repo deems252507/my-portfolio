@@ -8,8 +8,9 @@ Overlay di atas portfolio asli. Portfolio, routing, Supabase, dashboard admin, d
 2. Dolly-in ke monitor; tangan memegang mouse, kursor bergerak ke address bar dan klik.
 3. `https://rizkydm.vercel.app/` diketik huruf demi huruf (tiap huruf = ketukan jari di tombol QWERTY yang benar + tombol turun + suara).
 4. Kamera mundur pelan ke bidikan medium, tangan kanan meluncur ke ENTER, JARI MANIS menekan, tombol turun, baru loading browser.
-5. Halaman sambutan tampil di monitor (petir dari shader yang SAMA dengan WelcomeBackground, hue dari admin),
-   bezel/browser menghilang, kamera masuk ke layar, petir memenuhi layar, lalu crossfade ke WelcomeScreen asli -> homepage.
+5. Saat halaman muncul di monitor, layar sambutan ASLI situs mulai berjalan (tersembunyi) di bawah overlay. Monitor menampilkan
+   petir (shader yang sama), teks, dan bar loading yang berjalan sama. Begitu kamera memenuhi layar, overlay 3D di-crossfade dan yang
+   terlihat adalah layar asli yang sudah berjalan: loading lanjut sampai selesai -> zoom ke teks -> homepage (tidak mengulang dari awal).
 
 ## File
 - `src/Pages/IntroScreen.jsx` : overlay, Skip Intro, Esc, tombol suara, reduced-motion, fallback perangkat lemah.

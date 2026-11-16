@@ -3,13 +3,13 @@ import { useSiteContent } from "../../context/SiteContentContext";
 import { getLightningSettings } from "../../lib/siteContent";
 
 // Mount scene 3D. three.js + gsap dimuat lazy (code-split) agar halaman utama tetap ringan.
-export default function DeveloperIntro({ audio, onReady, onReveal, onFade, onDone, onError }) {
+export default function DeveloperIntro({ audio, onReady, onWelcome, onReveal, onFade, onDone, onError }) {
   const hostRef = useRef(null);
   const { content } = useSiteContent();
   const contentRef = useRef(content);
   contentRef.current = content;
-  const cb = useRef({ onReady, onReveal, onFade, onDone, onError });
-  cb.current = { onReady, onReveal, onFade, onDone, onError };
+  const cb = useRef({ onReady, onWelcome, onReveal, onFade, onDone, onError });
+  cb.current = { onReady, onWelcome, onReveal, onFade, onDone, onError };
 
   useEffect(() => {
     let engine = null;
@@ -38,6 +38,7 @@ export default function DeveloperIntro({ audio, onReady, onReveal, onFade, onDon
           lightning: getLightningSettings(contentRef.current),
           audio,
           onReady: () => cb.current.onReady?.(),
+          onWelcome: () => cb.current.onWelcome?.(),
           onReveal: () => cb.current.onReveal?.(),
           onFade: () => cb.current.onFade?.(),
           onDone: () => cb.current.onDone?.(),

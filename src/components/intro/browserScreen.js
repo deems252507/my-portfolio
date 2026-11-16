@@ -32,8 +32,12 @@ export class BrowserScreen {
       color1: welcome.color1 || "#ffffff",
       color2: welcome.color2 || "#2563eb",
       font: welcome.font || "Arial",
+      loadLabel: welcome.loadLabel,
+      loadColor: welcome.loadColor,
+      showPct: welcome.showPct,
     };
     this.lightning = lightning; // LightningSource | null
+    this.view = null;           // { visH, visW }: bagian layar yang terlihat saat kamera memenuhi layar
     this.preview = null;        // HTMLImageElement opsional (/intro/portfolio-preview.jpg)
     this.q = quality;
 
@@ -200,7 +204,8 @@ export class BrowserScreen {
     ctx.globalAlpha = 1;
   }
 
-  // Salinan tampilan layar sambutan situs: latar gelap + petir (shader yang sama) + teks Welcome.
+  // Salinan tampilan layar sambutan situs. Ukuran & posisi teks/loading DISESUAIKAN dengan layar asli
+  // pada saat kamera memenuhi layar, supaya hasil crossfade ke WelcomeScreen asli tidak melompat.
   _welcome(ctx, x, y, w, h, s) {
     ctx.fillStyle = this.bg;
     ctx.fillRect(x, y, w, h);
@@ -216,18 +221,55 @@ export class BrowserScreen {
     }
 
     const wl = this.welcome;
+    const v = this.view || { visH: 0.764, visW: 0.62 };
+    const U = v.visW * W; // lebar viewport (px tekstur) saat kamera memenuhi layar
+    const yAt = (vp) => y + (0.5 + (vp - 0.5) * v.visH) * h; // posisi vertikal layar asli (fraksi viewport)
+    const cx = x + w / 2;
+    const wt = Math.max(0, s.wt || 0);
+    const textA = Math.min(1, wt / 1.6); // teks "berkumpul" pelan, seperti partikel di layar asli
+    ctx.save();
+    ctx.globalAlpha *= textA;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    const cx = x + w / 2, cy = y + h / 2;
+    const fit = (txt, frac, weight) => {
+      ctx.font = `${weight} 100px ${wl.font}, ${FONT}`;
+      const m = ctx.measureText(txt).width || 1;
+      return Math.max(20, (100 * frac * U) / m);
+    };
     ctx.shadowColor = "rgba(0,0,0,0.55)";
     ctx.shadowBlur = 24;
+    const f1 = fit(wl.line1, 0.297, 800);
     ctx.fillStyle = wl.color1;
-    ctx.font = `800 128px ${wl.font}, ${FONT}`;
-    ctx.fillText(wl.line1, cx, cy - 90);
+    ctx.font = `800 ${f1}px ${wl.font}, ${FONT}`;
+    ctx.fillText(wl.line1, cx, yAt(0.327));
+    const f2 = fit(wl.line2, 0.512, 800);
     ctx.fillStyle = wl.color2;
-    ctx.font = `800 138px ${wl.font}, ${FONT}`;
-    ctx.fillText(wl.line2, cx, cy + 62);
-    ctx.shadowBlur = 0;
+    ctx.font = `800 ${f2}px ${wl.font}, ${FONT}`;
+    ctx.fillText(wl.line2, cx, yAt(0.492));
+    ctx.restore();
+
+    // bar loading: berjalan dari awal halaman, sama dengan yang berjalan di layar asli
+    const barA = Math.min(1, Math.max(0, (wt - 1.2) / 0.5));
+    if (barA > 0.01) {
+      const bw = 0.188 * U, bh = Math.max(3, 0.0045 * U), by = yAt(0.74);
+      const lf = Math.max(10, 0.0095 * U);
+      ctx.save();
+      ctx.globalAlpha *= barA;
+      ctx.font = `700 ${lf}px ui-monospace, Menlo, Consolas, monospace`;
+      ctx.fillStyle = wl.loadColor || "#ffffff";
+      ctx.textBaseline = "middle";
+      ctx.textAlign = "left";
+      ctx.fillText(wl.loadLabel || "Loading", cx - bw / 2, yAt(0.71));
+      if (wl.showPct !== false) {
+        ctx.textAlign = "right";
+        ctx.fillText(`${Math.round((s.prog || 0) * 100)}%`, cx + bw / 2, yAt(0.71));
+      }
+      ctx.fillStyle = "rgba(255,255,255,0.1)";
+      ctx.fillRect(cx - bw / 2, by, bw, bh);
+      ctx.fillStyle = wl.loadColor || "#ffffff";
+      ctx.fillRect(cx - bw / 2, by, bw * (s.prog || 0), bh);
+      ctx.restore();
+    }
     ctx.textAlign = "left";
   }
 
