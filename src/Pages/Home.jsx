@@ -214,10 +214,11 @@ const Home = () => {
         `}</script>
       </Helmet>
 
-      <div
-        className="min-h-screen overflow-x-clip px-[5%] sm:px-[6%] lg:px-[8%] xl:px-[10%] relative"
-        id="Home"
-      >
+      <div className="overflow-x-clip relative" id="Home">
+      {/* Pembungkus hero: kartu ID & tali dipasang di sini (bukan di seluruh section) supaya posisinya
+          — termasuk teks "Drag to swing · Click to flip" — tetap relatif terhadap hero, bukan ikut turun
+          saat ada konten di bawahnya (Spotify). */}
+      <div className="relative min-h-screen px-[5%] sm:px-[6%] lg:px-[8%] xl:px-[10%]">
         {idEnabled && isDesktop && (
           <IDCardLanyard
             mode="section"
@@ -294,19 +295,21 @@ const Home = () => {
             </div>
           </div>
 
-          {/* Spotify — laptop/desktop: di tengah halaman, lebih besar & rapi */}
-          {idEnabled && isDesktop && (
-            <div className="flex flex-col items-center pb-24 -mt-6" data-aos="fade-up" data-aos-duration="1000">
-              <p
-                className="mb-4 text-xs font-semibold uppercase tracking-[0.3em]"
-                style={{ color: "var(--col-muted)", fontFamily: "var(--font-display)" }}
-              >
-                Sedang Kudengarkan
-              </p>
-              <SpotifyCard compact height="352" maxWidth="760px" className="w-full" />
-            </div>
-          )}
         </div>
+      </div>
+
+      {/* Spotify — laptop/desktop: di tengah halaman, lebih besar & rapi */}
+    {idEnabled && isDesktop && (
+      <div className="flex flex-col items-center pt-4 pb-24" data-aos="fade-up" data-aos-duration="1000">
+        <p
+          className="mb-4 text-xs font-semibold uppercase tracking-[0.3em]"
+          style={{ color: "var(--col-muted)", fontFamily: "var(--font-display)" }}
+        >
+          Sedang Kudengarkan
+        </p>
+        <SpotifyCard compact height="352" maxWidth="760px" className="w-full" />
+      </div>
+    )}
       </div>
     </>
   )
