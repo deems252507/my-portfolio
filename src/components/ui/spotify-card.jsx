@@ -2,7 +2,7 @@ import { ExternalLink } from "lucide-react";
 import { useSiteContent } from "../../context/SiteContentContext";
 import { toSpotifyEmbed } from "../../lib/siteContent";
 
-export default function SpotifyCard({ className = "", compact = false }) {
+export default function SpotifyCard({ className = "", compact = false, height, maxWidth }) {
   const { content } = useSiteContent();
   const embed = toSpotifyEmbed(content.spotify_url);
   const openUrl = content.spotify_url;
@@ -10,7 +10,7 @@ export default function SpotifyCard({ className = "", compact = false }) {
   return (
     <section
       className={`group relative w-full max-w-[470px] overflow-hidden rounded-xl border border-[rgba(255,255,255,0.07)] shadow-2xl backdrop-blur-md transition-all duration-300 hover:border-[rgba(37,99,235,0.35)] hover:shadow-[0_0_30px_rgba(37,99,235,0.12)] ${className}`}
-      style={{ background: "rgba(255,255,255,0.03)" }}
+      style={{ background: "rgba(255,255,255,0.03)", ...(maxWidth ? { maxWidth } : {}) }}
       aria-label="Spotify player"
     >
       <div
@@ -37,7 +37,7 @@ export default function SpotifyCard({ className = "", compact = false }) {
           title="Spotify Playlist"
           src={embed}
           width="100%"
-          height={compact ? "152" : "352"}
+          height={height ?? (compact ? "152" : "352")}
           allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
           className="relative block overflow-hidden rounded-xl border-0"
         />

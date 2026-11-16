@@ -97,7 +97,7 @@ function App() {
 
   // Inisialisasi AOS sekali di sini
   useEffect(() => {
-    AOS.init({ once: true, mirror: false, offset: 40, duration: 900, easing: 'ease-out-cubic' });
+    AOS.init({ once: false, mirror: true, offset: 40, duration: 900, easing: 'ease-out-cubic' });
     
     // Preload halaman di background selagi WelcomeScreen berjalan
     // Ini mencegah lag/patah-patah saat animasi WelcomeScreen selesai

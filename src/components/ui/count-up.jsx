@@ -5,14 +5,15 @@ import { animate, useInView, useReducedMotion } from "framer-motion";
 export default function CountUp({ value = 0, duration = 1.8, suffix = "" }) {
   const ref = useRef(null);
   const shown = useRef(0);
-  const inView = useInView(ref, { once: true, amount: 0.4 });
+  const inView = useInView(ref, { once: false, amount: 0.4 }); // main ulang tiap kembali ke layar
   const reduce = useReducedMotion();
   const target = Number(value) || 0;
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    if (reduce || !inView) { if (reduce) { el.textContent = target + suffix; shown.current = target; } return; }
+    if (reduce) { el.textContent = target + suffix; shown.current = target; return; }
+    if (!inView) { shown.current = 0; el.textContent = 0 + suffix; return; }
     const ctl = animate(shown.current, target, {
       duration, ease: [0.16, 1, 0.3, 1],
       onUpdate: (v) => { shown.current = v; el.textContent = Math.round(v) + suffix; },

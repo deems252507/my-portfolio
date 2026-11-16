@@ -104,11 +104,12 @@ export function TextEffect({
   delay = 0,
   trigger = true,
   inView = false,
+  once = false, // false: animasi main ulang tiap teks kembali masuk layar
   onAnimationComplete,
   segmentWrapperClassName,
 }) {
   const ref = useRef(null);
-  const seen = useInView(ref, { once: true, amount: 0.15 });
+  const seen = useInView(ref, { once, amount: 0.15 });
   const reduce = useReducedMotion();
   const text = typeof children === "string" ? children : String(children ?? "");
 

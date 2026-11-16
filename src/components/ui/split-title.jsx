@@ -15,7 +15,7 @@ export default function SplitTitle({ text, delay = 0, stagger = 0.035 }) {
       style={{ display: "inline-block" }}
       initial="hidden"
       whileInView="visible"
-      viewport={{ once: true, amount: 0.6 }}
+      viewport={{ once: false, amount: 0.6 }}
       transition={{ staggerChildren: stagger, delayChildren: delay }}
     >
       {words.map((w, wi) => (

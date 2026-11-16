@@ -55,7 +55,8 @@ const heroLine = (delay) => {
   const light = typeof window !== "undefined" && window.matchMedia?.("(max-width: 1023px)").matches
   return {
     initial: { opacity: 0, y: 34, ...(light ? {} : { filter: "blur(16px)" }), letterSpacing: "0.06em" },
-    animate: { opacity: 1, y: 0, ...(light ? {} : { filter: "blur(0px)" }), letterSpacing: "-0.025em" },
+    whileInView: { opacity: 1, y: 0, ...(light ? {} : { filter: "blur(0px)" }), letterSpacing: "-0.025em" },
+    viewport: { once: false, amount: 0.4 }, // main ulang tiap kali hero kembali terlihat
     transition: { duration: 1.1, delay, ease: [0.16, 1, 0.3, 1] },
   }
 }
@@ -273,8 +274,8 @@ const Home = () => {
                 )}
 
                 {/* Spotify ringkas — selalu di bawah, lebar menyesuaikan perangkat */}
-                {idEnabled && (
-                  <div data-aos="fade-up" data-aos-delay="1100" className="w-full max-w-[420px] mx-auto lg:mx-0">
+                {idEnabled && !isDesktop && (
+                  <div data-aos="fade-up" data-aos-delay="1100" className="w-full max-w-[420px] mx-auto">
                     <SpotifyCard compact className="w-full" />
                   </div>
                 )}
@@ -292,6 +293,19 @@ const Home = () => {
 
             </div>
           </div>
+
+          {/* Spotify — laptop/desktop: di tengah halaman, lebih besar & rapi */}
+          {idEnabled && isDesktop && (
+            <div className="flex flex-col items-center pb-24 -mt-6" data-aos="fade-up" data-aos-duration="1000">
+              <p
+                className="mb-4 text-xs font-semibold uppercase tracking-[0.3em]"
+                style={{ color: "var(--col-muted)", fontFamily: "var(--font-display)" }}
+              >
+                Sedang Kudengarkan
+              </p>
+              <SpotifyCard compact height="352" maxWidth="760px" className="w-full" />
+            </div>
+          )}
         </div>
       </div>
     </>
