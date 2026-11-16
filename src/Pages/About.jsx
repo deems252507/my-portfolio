@@ -1,7 +1,8 @@
 import { useSiteContent } from "../context/SiteContentContext"
 import SplitTitle from "../components/ui/split-title"
+import CountUp from "../components/ui/count-up"
 import React, { useEffect, memo, useMemo, useState, useCallback, useRef } from "react"
-import { motion, useMotionValue, useSpring, useMotionTemplate, useReducedMotion } from "framer-motion"
+import { motion, useMotionValue, useSpring, useMotionTemplate, useReducedMotion, useScroll, useTransform } from "framer-motion"
 import { FileText, Code, Award, Trophy, ArrowUpRight, GraduationCap, Briefcase } from "lucide-react"
 import { BorderBeamPanel } from "../components/ui/border-beam-panel"
 import { TextEffect } from "../components/ui/text-effect"
@@ -72,9 +73,13 @@ const MaskLine = ({ children, delay = 0, className = "", style }) => {
  *  lalu foto melayang pelan. Main ulang setiap kali bagian About masuk layar. */
 const PhotoStage = ({ children }) => {
   const reduce = useReducedMotion()
+  const stageRef = useRef(null)
+  // parallax: foto bergeser lebih cepat dari glow di belakangnya -> kesan kedalaman saat scroll
+  const { scrollYProgress } = useScroll({ target: stageRef, offset: ["start end", "end start"] })
+  const photoY = useTransform(scrollYProgress, [0, 1], [26, -26])
   const viewport = { once: false, amount: 0.25 }
   return (
-    <div className="relative w-full">
+    <div ref={stageRef} className="relative w-full">
       <motion.div
         aria-hidden
         className="absolute left-1/2 top-[40%] -translate-x-1/2 -translate-y-1/2 pointer-events-none"
@@ -97,11 +102,13 @@ const PhotoStage = ({ children }) => {
         viewport={viewport}
         transition={{ duration: 1.5, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
       >
-        <motion.div
-          animate={reduce ? undefined : { y: [0, -7, 0] }}
-          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1.8 }}
-        >
-          {children}
+        <motion.div style={{ y: reduce ? 0 : photoY }}>
+          <motion.div
+            animate={reduce ? undefined : { y: [0, -7, 0] }}
+            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1.8 }}
+          >
+            {children}
+          </motion.div>
         </motion.div>
       </motion.div>
     </div>
@@ -252,7 +259,7 @@ const StatCard = memo(({ icon: Icon, value, label, description, animation, accen
           className="text-5xl font-bold"
           style={{ fontFamily: "var(--font-display)", color: "var(--col-white)" }}
         >
-          {value}
+          <CountUp value={value} />
         </span>
       </div>
 

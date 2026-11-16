@@ -182,13 +182,13 @@ export function buildKeyboard(scene) {
   enter.add(label);
 
   // mouse + alas
-  const pad = mk(new THREE.BoxGeometry(0.26, 0.004, 0.2), std("#0b0f16", { roughness: 0.9 }), 0.47, 0.747, 0.12);
+  const pad = mk(new THREE.BoxGeometry(0.26, 0.004, 0.2), std("#0b0f16", { roughness: 0.9 }), 0.47, 0.747, 0.14);
   scene.add(pad);
-  const mouse = mk(new THREE.SphereGeometry(0.03, 16, 12), std("#0a0d13", { roughness: 0.35, metalness: 0.4 }), 0.47, 0.7685, 0.13);
+  const mouse = mk(new THREE.SphereGeometry(0.03, 16, 12), std("#0a0d13", { roughness: 0.35, metalness: 0.4 }), 0.47, 0.7685, 0.15);
   mouse.scale.set(1.15, 0.65, 1.85); // ukuran mouse asli (~6.5 x 4 x 11 cm), sepadan dengan telapak tangan
   scene.add(mouse);
   const strip = new THREE.Mesh(new THREE.BoxGeometry(0.003, 0.003, 0.05), new THREE.MeshBasicMaterial({ color: 0x22d3ee }));
-  strip.position.set(0.47, 0.7875, 0.108);
+  strip.position.set(0.47, 0.7875, 0.128);
   scene.add(strip);
   const live = list.map((_, i) => i);
   return { keys, rest, rgbMat, live, charIdx, setKey, enter, enterMat, enterPos: [ENTER_X, ENTER_Y, ENTER_Z], mouse, strip, pressed: new Float32Array(n), dispose: () => atlas.dispose() };

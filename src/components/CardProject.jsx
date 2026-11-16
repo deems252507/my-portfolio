@@ -2,6 +2,8 @@ import React, { memo } from "react";
 import { Link } from "react-router-dom";
 import { ExternalLink, ArrowRight } from "lucide-react";
 import { toSlug } from "../utils/slug";
+import TiltCard from "./ui/tilt-card";
+import ParallaxImage from "./ui/parallax-image";
 
 const CardProject = ({ Img, Title, Description, Link: ProjectLink, id }) => {
   const handleLiveDemo = (e) => {
@@ -19,7 +21,7 @@ const CardProject = ({ Img, Title, Description, Link: ProjectLink, id }) => {
   };
 
   return (
-    <div className="group relative w-full">
+    <TiltCard className="group w-full">
       <div
         className="relative overflow-hidden rounded-xl backdrop-blur-md shadow-2xl transition-all duration-300"
         style={{
@@ -38,13 +40,16 @@ const CardProject = ({ Img, Title, Description, Link: ProjectLink, id }) => {
 
         <div className="relative p-5 z-10">
           <div className="relative overflow-hidden rounded-lg">
-            <img
-              src={Img}
-              alt={Title}
-              loading="lazy"
-              decoding="async"
-              className="w-full h-full object-cover aspect-[16/8] transform group-hover:scale-105 transition-transform duration-500"
-            />
+            <div className="aspect-[16/8] w-full">
+              <ParallaxImage
+                src={Img}
+                alt={Title}
+                loading="lazy"
+                decoding="async"
+                strength={6}
+                className="w-full h-full object-cover"
+              />
+            </div>
           </div>
 
           <div className="mt-4 space-y-3">
@@ -102,7 +107,7 @@ const CardProject = ({ Img, Title, Description, Link: ProjectLink, id }) => {
           />
         </div>
       </div>
-    </div>
+    </TiltCard>
   );
 };
 

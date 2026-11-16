@@ -15,6 +15,8 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import WhatsAppButton from "./components/WhatsAppButton";
 import IntroLoader from "./components/intro/IntroLoader";
 import SmoothScroll from "./components/SmoothScroll";
+import CursorGlow from "./components/CursorGlow";
+import FilmOverlay from "./components/FilmOverlay";
 
 const importHome = () => import("./Pages/Home");
 const importAbout = () => import("./Pages/About");
@@ -45,6 +47,8 @@ const LandingPage = ({ showWelcome, setShowWelcome }) => {
   return (
     <>
       <SmoothScroll enabled={!showWelcome} />
+      {!showWelcome && <CursorGlow />}
+      {!showWelcome && <FilmOverlay />}
       <AnimatePresence mode="wait">
         {showWelcome && (
           <Suspense fallback={<div className="fixed inset-0 z-50"><IntroLoader /></div>}>

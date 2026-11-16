@@ -408,7 +408,7 @@ export function createDeveloperWorkspace(opts) {
     hl.position.set(HOME.L + hx.L, 0.812 + idleY(0, 9.3), 0.245 + hx.Lz);
     // tangan kanan: keyboard -> mouse -> ENTER (berurutan, dicampur halus)
     hr.position.set(HOME.R + hx.R, 0.812 + idleY(2, 8.1), 0.245 + hx.Rz);
-    hr.position.lerp(_mouseP.set(kb.mouse.position.x, 0.835, kb.mouse.position.z + 0.105), S.rMouse);
+    hr.position.lerp(_mouseP.set(kb.mouse.position.x, 0.826, kb.mouse.position.z + 0.055), S.rMouse);
     // jari manis (kanan, indeks 2) tepat di atas ENTER
     hr.position.lerp(_enterP.set(kb.enterPos[0] - FOFF[2], 0.812, 0.245), S.rEnter);
     hr.position.y += 0.075 * S.lift - 0.003 * S.enterPress; // tangan DIANGKAT dulu saat berpindah ke ENTER, baru turun menekan
@@ -417,7 +417,7 @@ export function createDeveloperWorkspace(opts) {
     const mg = S.rMouse * (1 - S.rEnter);
     const mDrift = Math.sin(t * 2.3) * 0.012 + Math.sin(t * 5.1 + 1.3) * 0.006;
     hr.rotation.set(
-      0.05 - 0.22 * S.lift + 0.14 * mg,
+      0.05 - 0.22 * S.lift - 0.1 * mg, // jari sedikit menurun mengikuti lengkung mouse
       -0.1 + S.rEnter * 0.1 + mg * (0.12 - 0.34 * S.cursor + mDrift),
       -0.1 * S.rEnter + mg * 0.06
     );
@@ -458,7 +458,7 @@ export function createDeveloperWorkspace(opts) {
     // mouse mengikuti kursor di layar
     const msw = S.rMouse * (0.004 * Math.sin(t * 3.3) + 0.002 * Math.sin(t * 7.7));
     kb.mouse.position.x = 0.47 - 0.025 * S.ptr - 0.025 * S.cursor + msw;
-    kb.mouse.position.z = 0.13 - 0.03 * S.ptr - 0.02 * S.cursor + msw * 0.6 + 0.004 * S.click;
+    kb.mouse.position.z = 0.15 - 0.03 * S.ptr - 0.02 * S.cursor + msw * 0.6 + 0.004 * S.click;
     kb.strip.position.set(kb.mouse.position.x, 0.7875, kb.mouse.position.z - 0.022);
 
     // tombol: turun saat ditekan, kembali naik
