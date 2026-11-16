@@ -165,7 +165,7 @@ export function createDeveloperWorkspace(opts) {
     backdrop: { style: content.welcome_bg_style, color: content.welcome_fx_color },
     lightning: boltSrc,
     live: liveWelcome,
-    quality: isMobile ? 0.65 : 0.85, // HP: tekstur layar sedikit lebih tajam karena di akhir hanya bagian tengah layar yang terlihat
+    quality: isMobile ? 0.75 : 0.85, // HP: tekstur layar sedikit lebih tajam karena di akhir hanya bagian tengah layar yang terlihat
   });
   // gambar pratinjau halaman untuk layar monitor: ikut ditunggu saat loading (maks 4 dtk)
   let previewReady = false;
@@ -274,8 +274,8 @@ export function createDeveloperWorkspace(opts) {
     camera.aspect = w / h;
     const k = camera.aspect < 0.9 ? 1.45 : camera.aspect < 1.4 ? 1.15 : 1; // layar sempit: kamera lebih mundur
     const portrait = camera.aspect < 1.2;
-    fovEnd = portrait ? 72 : 50;
-    const V = portrait ? 0.55 : 0.42; // tinggi layar yang terlihat di akhir: bezel keluar dari pandangan (HP: tepat setinggi layar monitor 0.55, sebelumnya 0.8 sehingga bezel/meja terlihat di atas-bawah dan tidak menyatu dengan halaman asli)
+    fovEnd = 50; // HP juga 50 (sebelumnya 72): lensa yang melebar saat mendekat membuat layar terasa mundur/miring, bukan masuk
+    const V = 0.42; // tinggi layar yang terlihat di akhir (HP & laptop sama): layar memenuhi pandangan, bezel/keyboard/meja sudah keluar sebelum halaman asli bertukar
     const dEnd = (V / 2) / Math.tan(THREE.MathUtils.degToRad(fovEnd / 2));
     dEndV = dEnd;
     const narrow = camera.aspect < 0.9;
