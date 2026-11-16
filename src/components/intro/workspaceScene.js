@@ -29,7 +29,8 @@ export const INTRO_CONFIG = {
   // Waktu (detik) tiap adegan
   t: {
     powerOn: 0.5,
-    cursorStart: 5.4, cursorEnd: 7.0, click: 7.1,        // Scene 2: kursor ke address bar
+    codeEnd: 3.6, iconMove: 4.0, iconClick: 4.85, winOpen: 4.95, // Scene 1b: berhenti ngoding, kursor ke ikon browser di taskbar, klik, jendela terbuka
+    cursorStart: 5.7, cursorEnd: 7.0, click: 7.1,        // Scene 2: kursor ke address bar
     typeStart: 7.7, typeDur: 3.4,                         // Scene 3: mengetik alamat
     enterReach: 12.0, enterPress: 13.5,                   // Scene 4: jeda baca alamat, LALU tangan ke ENTER (jari manis)
     loadStart: 14.0, loadDur: 1.5, pageStart: 15.3,       // loading browser, halaman tampil
@@ -302,7 +303,7 @@ export function createDeveloperWorkspace(opts) {
   /* ---- state animasi (digerakkan GSAP) ---- */
   const S = {
     ct: 0, sway: 1, power: 0, typeT: 0, typeAmt: 1, loading: 0, page: 0, full: 0,
-    cursor: 0, click: 0, focus: 0, rMouse: 0, rEnter: 0, enterPress: 0, lift: 0, win: 0,
+    cursor: 0, click: 0, focus: 0, rMouse: 0, rEnter: 0, enterPress: 0, lift: 0, win: 0, ptr: 0,
     exposure: 0.95, bloom: bloomBase, bolt: 1,
   };
   const sched = typingSchedule(INTRO_CONFIG.url, T.typeDur);
@@ -419,12 +420,12 @@ export function createDeveloperWorkspace(opts) {
     ch.sync?.(); // karakter FBX: terjemahkan proxy (kepala, punggung, tangan, jari) ke tulang
 
     // mouse mengikuti kursor di layar
-    kb.mouse.position.x = 0.47 - 0.05 * S.cursor;
-    kb.mouse.position.z = 0.13 - 0.05 * S.cursor;
+    kb.mouse.position.x = 0.47 - 0.025 * S.ptr - 0.025 * S.cursor;
+    kb.mouse.position.z = 0.13 - 0.03 * S.ptr - 0.02 * S.cursor;
     kb.strip.position.set(kb.mouse.position.x, 0.777, kb.mouse.position.z - 0.015);
 
     // tombol: turun saat ditekan, kembali naik
-    if (S.ct > T.powerOn + 0.3 && S.ct < T.cursorStart - 0.7 && S.typeT <= 0) {
+    if (S.ct > T.powerOn + 0.3 && S.ct < T.codeEnd && S.typeT <= 0) {
       // NGODING: kedua tangan terus mengetik (jari sesuai tombol, telapak bergeser, tombol turun) sampai ia beralih ke mouse
       rng.next -= dt;
       if (rng.next <= 0) {
@@ -465,12 +466,12 @@ export function createDeveloperWorkspace(opts) {
     const boltOn = S.page > 0 ? Math.floor(t * 30) : 0;
     const liveTick = S.page > 0 ? Math.floor(nowMs / (isMobile ? 33 : 16)) : 0;
     const codeN = S.win >= 1 ? 999 : Math.floor(codeKeys * 2.6); // teks kode bertambah sesuai ketukan jari
-    const sig = [S.win.toFixed(2), codeN, S.power.toFixed(2), typedCount, S.loading.toFixed(2), S.page.toFixed(2), S.full.toFixed(2), S.cursor.toFixed(3), S.click.toFixed(2), S.focus, blink, spin, boltOn, S.bolt.toFixed(2), screen.preview ? 1 : 0, screen.rev, liveTick].join("|");
+    const sig = [S.ptr.toFixed(3), S.win.toFixed(2), codeN, S.power.toFixed(2), typedCount, S.loading.toFixed(2), S.page.toFixed(2), S.full.toFixed(2), S.cursor.toFixed(3), S.click.toFixed(2), S.focus, blink, spin, boltOn, S.bolt.toFixed(2), screen.preview ? 1 : 0, screen.rev, liveTick].join("|");
     if (sig !== lastSig && nowMs - lastDraw > (isMobile ? 28 : 12)) {
       lastSig = sig;
       lastDraw = nowMs;
       screen.draw({
-        time: t, win: S.win, codeN, power: S.power, chars: typedCount, loading: S.loading, page: S.page, full: S.full,
+        time: t, win: S.win, ptr: S.ptr, codeN, power: S.power, chars: typedCount, loading: S.loading, page: S.page, full: S.full,
         cursor: S.cursor, click: S.click, focus: S.focus, bolt: S.bolt,
         wt: Math.max(0, S.ct - T.welcome), prog: Math.min(1, Math.max(0, (S.ct - T.welcome) / progDur)),
         cursorAlpha: typedCount > 0 || S.page > 0 ? 0 : 1,
@@ -536,11 +537,14 @@ export function createDeveloperWorkspace(opts) {
       .to(S, { sway: 0, duration: 0.6, ease: "sine.out" }, T.cursorEnd - 0.6)   // goyangan halus berhenti saat mengetik
       .to(S, { sway: 1, duration: 0.8, ease: "sine.inOut" }, T.enterReach)
       .to(S, { sway: 0, duration: 1.2, ease: "sine.out" }, T.dive)
-      .to(S, { typeAmt: 0.5, duration: 0.4, ease: "sine.inOut" }, T.cursorStart - 0.7)
+      .to(S, { typeAmt: 0.5, duration: 0.4, ease: "sine.inOut" }, T.codeEnd)
       // Scene 1b: jendela browser BARU terbuka di atas editor kode (dia berhenti ngoding lalu membuka link)
-      .to(S, { win: 1, duration: 0.8, ease: "power2.out" }, T.cursorStart - 1.2)
+      .to(S, { ptr: 1, duration: 0.8, ease: "power2.inOut" }, T.iconMove)                    // kursor ke ikon browser
+      .to(S, { click: 1, duration: 0.1 }, T.iconClick)
+      .to(S, { click: 0, duration: 0.3, ease: "power1.out" }, T.iconClick + 0.1)
+      .to(S, { win: 1, duration: 0.75, ease: "power2.out" }, T.winOpen)
       // Scene 2: tangan ke mouse, kursor menuju address bar, klik
-      .to(S, { rMouse: 1, duration: 0.7, ease: "sine.inOut" }, T.cursorStart - 0.6)
+      .to(S, { rMouse: 1, duration: 0.7, ease: "sine.inOut" }, T.codeEnd)
       .to(S, { cursor: 1, duration: T.cursorEnd - T.cursorStart, ease: "power2.inOut" }, T.cursorStart)
       .to(S, { click: 1, duration: 0.1 }, T.click)
       .to(S, { click: 0, duration: 0.4, ease: "power1.out" }, T.click + 0.1)

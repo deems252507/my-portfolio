@@ -6,6 +6,8 @@ import * as THREE from "three";
 
 const W = 2048;
 const H = 940;
+const TB = 64;                                   // tinggi taskbar di bawah layar
+const ICON = { x: W / 2 + 46, y: H - TB / 2 };   // ikon browser di taskbar (target klik kursor)
 const FONT = "'Plus Jakarta Sans', system-ui, sans-serif";
 
 const rr = (ctx, x, y, w, h, r) => {
@@ -103,12 +105,12 @@ export class BrowserScreen {
       const ez = win * win * (3 - 2 * win);
       ctx.save();
       if (win < 1) {
-        // jendela baru muncul: membesar dari 90% sambil memudar, dengan bayangan
+        // jendela baru muncul: membesar dari ikon browser sambil memudar, dengan bayangan
         ctx.globalAlpha = ez;
-        const sc = 0.9 + 0.1 * ez;
-        ctx.translate(W / 2, H / 2);
+        const sc = 0.3 + 0.7 * ez; // jendela "keluar" dari ikon browser di taskbar
+        ctx.translate(ICON.x, ICON.y);
         ctx.scale(sc, sc);
-        ctx.translate(-W / 2, -H / 2);
+        ctx.translate(-ICON.x, -ICON.y);
         ctx.shadowColor = "rgba(0,0,0,0.7)";
         ctx.shadowBlur = 70;
         ctx.fillStyle = "#070d18";
@@ -192,9 +194,9 @@ export class BrowserScreen {
     ctx.fillStyle = "#7f93b2"; ctx.font = `500 26px ${FONT}`; ctx.textBaseline = "middle"; ctx.textAlign = "center";
     ctx.fillText("portfolio.jsx \u2014 my-portfolio \u2014 Code", W / 2, 29);
     // activity bar + explorer
-    ctx.fillStyle = "#0c1420"; ctx.fillRect(0, 56, 76, H - 56 - 46);
+    ctx.fillStyle = "#0c1420"; ctx.fillRect(0, 56, 76, H - 56 - 46 - TB);
     ["#5b7fb5", "#2d4264", "#2d4264", "#2d4264"].forEach((c, i) => { ctx.fillStyle = c; rr(ctx, 22, 90 + i * 70, 32, 32, 7); ctx.fill(); });
-    ctx.fillStyle = "#0b121d"; ctx.fillRect(76, 56, 340, H - 56 - 46);
+    ctx.fillStyle = "#0b121d"; ctx.fillRect(76, 56, 340, H - 56 - 46 - TB);
     ctx.textAlign = "left"; ctx.font = `700 22px ${FONT}`; ctx.fillStyle = "#6f86a8";
     ctx.fillText("EXPLORER", 104, 90);
     const files = [["\u25BE  src", 0, "#9fb4d0"], ["\u25BE  components", 1, "#9fb4d0"], ["Navbar.jsx", 2, "#7f93b2"], ["Projects.jsx", 2, "#7f93b2"], ["portfolio.jsx", 2, "#e8f6ff"], ["Contact.jsx", 2, "#7f93b2"], ["App.jsx", 1, "#7f93b2"], ["index.css", 1, "#7f93b2"]];
@@ -241,9 +243,40 @@ export class BrowserScreen {
       ctx.fillRect(caretX + 2, caretY - 20, 4, 40);
     }
     // status bar
-    ctx.fillStyle = "#1d4ed8"; ctx.fillRect(0, H - 46, W, 46);
+    const sb = H - TB - 46;
+    ctx.fillStyle = "#1d4ed8"; ctx.fillRect(0, sb, W, 46);
     ctx.fillStyle = "#e8f1ff"; ctx.font = `500 24px ${FONT}`; ctx.textBaseline = "middle";
-    ctx.fillText(`\u2387 main     JavaScript React     Ln ${lines.length}, Col ${(lines[lines.length - 1] || "").length + 1}     UTF-8`, 28, H - 22);
+    ctx.fillText(`\u2387 main     JavaScript React     Ln ${lines.length}, Col ${(lines[lines.length - 1] || "").length + 1}     UTF-8`, 28, sb + 24);
+    this._taskbar(ctx, s);
+  }
+
+  /** Taskbar ala Windows 11: ikon di tengah; ikon browser menyala saat kursor di atasnya / diklik. */
+  _taskbar(ctx, s) {
+    const y0 = H - TB;
+    ctx.fillStyle = "#0a0f19"; ctx.fillRect(0, y0, W, TB);
+    ctx.fillStyle = "rgba(120,160,210,0.15)"; ctx.fillRect(0, y0, W, 2);
+    const names = ["start", "search", "code", "browser", "folder", "term"];
+    names.forEach((n, i) => {
+      const x = W / 2 + (i - 2.5) * 92, y = H - TB / 2;
+      if (n === "browser") {
+        const hov = (s.ptr ?? 0) > 0.97 && (s.win ?? 1) < 0.2;
+        if (hov) { ctx.fillStyle = "rgba(255,255,255,0.14)"; rr(ctx, x - 36, y - 28, 72, 56, 12); ctx.fill(); }
+        const pr = Math.max(0, s.click || 0) * ((s.win ?? 1) < 0.2 ? 1 : 0);
+        const r = 17 - 2 * pr;
+        const g = ctx.createConicGradient(0, x, y);
+        g.addColorStop(0, "#ea4335"); g.addColorStop(0.33, "#fbbc05"); g.addColorStop(0.66, "#34a853"); g.addColorStop(1, "#ea4335");
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#0a0f19"; ctx.beginPath(); ctx.arc(x, y, r * 0.52, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#4285f4"; ctx.beginPath(); ctx.arc(x, y, r * 0.4, 0, Math.PI * 2); ctx.fill();
+        if ((s.win ?? 0) > 0.2) { ctx.fillStyle = this.accent; rr(ctx, x - 14, y + 26, 28, 4, 2); ctx.fill(); }
+        return;
+      }
+      ctx.fillStyle = n === "code" ? "#3b82f6" : n === "folder" ? "#f5c04a" : n === "term" ? "#1f2a3b" : "#6f86a8";
+      if (n === "start") { [[-9,-9],[2,-9],[-9,2],[2,2]].forEach(([dx,dy]) => ctx.fillRect(x + dx, y + dy, 7, 7)); }
+      else if (n === "search") { ctx.strokeStyle = "#6f86a8"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x - 3, y - 3, 10, 0, Math.PI * 2); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x + 5, y + 5); ctx.lineTo(x + 13, y + 13); ctx.stroke(); }
+      else { rr(ctx, x - 16, y - 14, 32, 28, 6); ctx.fill(); if (n === "term") { ctx.fillStyle = "#7ef0ff"; ctx.fillRect(x - 9, y - 4, 10, 3); ctx.fillRect(x - 9, y + 4, 16, 3); } }
+      if (n === "code") { ctx.fillStyle = this.accent; rr(ctx, x - 14, y + 26, 28, 4, 2); ctx.fill(); }
+    });
   }
 
   _chrome(ctx, h, s) {
@@ -440,13 +473,20 @@ export class BrowserScreen {
 
   // Kursor mouse: bergerak melengkung ke address bar, lalu klik (riak)
   _pointer(ctx, s) {
-    const a = (s.cursorAlpha ?? 1) * Math.min(1, Math.max(0, ((s.win ?? 1) - 0.5) * 2));
+    const a = (s.cursorAlpha ?? 1) * Math.min(1, Math.max(0, (s.ptr ?? 1) * 5));
     if (a <= 0.01 || s.cursor === undefined) return;
+    // fase 1: dari tepi mouse pad menuju ikon browser di taskbar; fase 2: dari ikon menuju address bar
     const sx = W * 0.72, sy = H * 0.7;
-    const ex = 560, ey = 128;
-    const e = s.cursor;
-    const px = sx + (ex - sx) * e;
-    const py = sy + (ey - sy) * e - Math.sin(Math.PI * e) * 70;
+    let px, py;
+    if (s.cursor > 0 || (s.win ?? 1) >= 1 && (s.ptr ?? 1) >= 1) {
+      const e = s.cursor, ex = 560, ey = 128;
+      px = ICON.x + (ex - ICON.x) * e;
+      py = ICON.y + (ey - ICON.y) * e - Math.sin(Math.PI * e) * 70;
+    } else {
+      const e = s.ptr ?? 1;
+      px = sx + (ICON.x - sx) * e;
+      py = sy + (ICON.y - sy) * e - Math.sin(Math.PI * e) * 60;
+    }
     ctx.save();
     ctx.globalAlpha = a;
     if (s.click > 0.01) {

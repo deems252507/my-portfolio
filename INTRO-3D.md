@@ -64,3 +64,7 @@ salinannya ikut otomatis. Warna hoodie/celana juga sedikit diredam agar tidak te
 Monitor awalnya menampilkan editor kode (gaya VS Code, baris terakhir terketik langsung mengikuti ketukan keyboard). Sekitar detik 4,2 jendela browser baru
 terbuka di atasnya, lalu tangan ke mouse, klik address bar, dan mengetik link. Kodenya ada di `browserScreen.js` (`_editor`), waktu buka jendela di timeline `workspaceScene.js` (`win`).
 Tangan juga diangkat dulu sebelum menekan ENTER (`lift`).
+
+## Membuka browser dari taskbar
+Setelah berhenti ngoding (`T.codeEnd`), tangan ke mouse, kursor menuju ikon browser di taskbar layar (`T.iconMove`), klik (`T.iconClick`), lalu jendela browser "keluar" dari ikon (`T.winOpen`),
+kursor lanjut ke address bar dan link diketik. Waktu semuanya di `INTRO_CONFIG.t`.
