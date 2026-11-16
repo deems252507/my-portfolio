@@ -50,6 +50,7 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
   const [soundOn, setSoundOn] = useState(false);
   const [ready, setReady] = useState(false); // semua aset siap & GPU sudah dipanaskan
   const [entered, setEntered] = useState(false); // pengunjung menekan "Masuk"
+  const [loaderGone, setLoaderGone] = useState(false); // layar loading dilepas dari DOM setelah memudar (animasinya tidak lagi berjalan di atas canvas 3D)
   const cbs = useRef({ onReveal, onLoadingComplete });
   cbs.current = { onReveal, onLoadingComplete };
 
@@ -139,6 +140,12 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
   // muat modul layar sambutan lebih awal supaya start-nya tepat waktu
   useEffect(() => { if (use3D) import("./WelcomeScreen"); }, [use3D]);
 
+  useEffect(() => {
+    if (!entered) return;
+    const id = setTimeout(() => setLoaderGone(true), 1000);
+    return () => clearTimeout(id);
+  }, [entered]);
+
   // bersihkan audio saat komponen dilepas
   useEffect(() => () => audioRef.current?.dispose(), []);
 
@@ -205,7 +212,7 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
           </Suspense>
           </IntroBoundary>
 
-          <IntroLoader visible={!entered} ready={ready} onEnter={handleEnter} onSoundOn={handleSoundOn} />
+          {!loaderGone && <IntroLoader visible={!entered} ready={ready} onEnter={handleEnter} onSoundOn={handleSoundOn} />}
 
           {/* vignette sinematik halus (tidak menangkap klik) */}
           <div
@@ -220,7 +227,7 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
               onClick={toggleSound}
               aria-pressed={soundOn}
               aria-label={soundOn ? "Matikan suara intro" : "Nyalakan suara intro"}
-              className="absolute z-10 rounded-full border border-white/25 bg-black/40 px-5 text-sm font-semibold text-white/90 backdrop-blur transition hover:bg-white/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300"
+              className="absolute z-10 rounded-full border border-white/25 bg-black/55 px-5 text-sm font-semibold text-white/90 transition hover:bg-white/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300"
               style={{
                 left: "max(1rem, env(safe-area-inset-left))",
                 bottom: "max(1rem, env(safe-area-inset-bottom))",

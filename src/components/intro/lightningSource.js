@@ -77,7 +77,7 @@ const makeFrag = (octaves) => `
           float dist = abs(uv.x - center);
           
           vec3 baseColor = hsv2rgb(vec3(uHue / 360.0, 0.7, 0.8));
-          vec3 col = baseColor * pow(mix(0.0, 0.07, hash11(iTime * uSpeed)) / dist, 1.0) * uIntensity;
+          vec3 col = baseColor * pow(mix(0.014, 0.056, mix(hash11(floor(iTime * uSpeed * 4.0)), hash11(floor(iTime * uSpeed * 4.0) + 1.0), smoothstep(0.0, 1.0, fract(iTime * uSpeed * 4.0)))) / dist, 1.0) * uIntensity;
           float alpha = clamp(max(col.r, max(col.g, col.b)), 0.0, 1.0);
           fragColor = vec4(col, alpha);
       }

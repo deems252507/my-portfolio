@@ -44,6 +44,7 @@ export const INTRO_CONFIG = {
 /* ======================================================================== */
 
 const _v = new THREE.Vector3();
+const _szv = new THREE.Vector2();
 
 /* ---- jalur kamera: Hermite dengan tangen kontinu (bergerak dengan momentum, tidak "stop-go") ---- */
 function prepTrack(keys) {
@@ -113,6 +114,23 @@ export function createDeveloperWorkspace(opts) {
   const isMobile = window.matchMedia("(max-width: 768px)").matches;
   let disposed = false;
   let skipped = false;
+  // Mode diagnosa: buka situs dengan ?debug di akhir alamat -> log kejadian (resize, context hilang, frame lambat) tampil di layar HP.
+  const DEBUG = /[?&]debug\b/.test(location.search);
+  let dbgEl = null, dbgCt = 0;
+  const dbgLines = [];
+  const dbg = (m) => {
+    if (!DEBUG) return;
+    if (!dbgEl) {
+      dbgEl = document.createElement("div");
+      dbgEl.style.cssText = "position:fixed;left:6px;top:calc(env(safe-area-inset-top,0px) + 4px);z-index:99999;max-width:92vw;font:10px/1.3 monospace;color:#7CFF7C;background:rgba(0,0,0,.65);padding:4px 6px;pointer-events:none;white-space:pre-wrap";
+      document.body.appendChild(dbgEl);
+    }
+    dbgLines.push(`${(performance.now() / 1000).toFixed(1)}s ct=${dbgCt.toFixed(1)} ${m}`);
+    if (dbgLines.length > 12) dbgLines.shift();
+    dbgEl.textContent = dbgLines.join("\n");
+  };
+  const onVis = () => dbg("visibility " + document.visibilityState);
+  document.addEventListener("visibilitychange", onVis);
 
   let renderer, composer, bloom, bokeh = null;
   try {
@@ -144,6 +162,7 @@ export function createDeveloperWorkspace(opts) {
   const onCtxLost = (e) => {
     e.preventDefault();
     console.warn("[intro] WebGL context hilang");
+    dbg("WEBGL CONTEXT LOST");
     clearTimeout(lostTimer);
     lostTimer = setTimeout(() => {
       if (disposed) return;
@@ -151,7 +170,7 @@ export function createDeveloperWorkspace(opts) {
       onError?.(new Error("webgl context lost"));
     }, 2500);
   };
-  const onCtxRestored = () => { clearTimeout(lostTimer); };
+  const onCtxRestored = () => { clearTimeout(lostTimer); dbg("webgl context restored"); };
   canvas.addEventListener("webglcontextlost", onCtxLost);
   canvas.addEventListener("webglcontextrestored", onCtxRestored);
 
@@ -290,7 +309,9 @@ export function createDeveloperWorkspace(opts) {
     const w = container.clientWidth || window.innerWidth;
     const h = container.clientHeight || window.innerHeight;
     size.w = w; size.h = h;
-    renderer.setSize(w, h, false);
+    const cur = renderer.getSize(_szv);
+    if (cur.x !== w || cur.y !== h) renderer.setSize(w, h, false); // setSize mengosongkan canvas: hanya bila ukuran benar-benar berubah
+    dbg(`layout ${w}x${h} pr=${pixelRatio}`);
     composer.setPixelRatio(pixelRatio);
     composer.setSize(w, h);
     camera.aspect = w / h;
@@ -577,8 +598,11 @@ export function createDeveloperWorkspace(opts) {
   function frame(now) {
     if (disposed) return;
     raf = requestAnimationFrame(frame);
-    const dt = Math.min(0.05, (now - last) / 1000);
+    const rawGap = now - last;
+    const dt = Math.min(0.05, rawGap / 1000);
     last = now;
+    dbgCt = S.ct;
+    if (DEBUG && rawGap > 90 && running) dbg(`frame lambat ${rawGap | 0}ms`);
     dtLast = dt;
     t += dt;
     if (layoutPending) { layoutPending = false; layout(); } // ubah ukuran + render di frame yang sama = tidak ada frame kosong
@@ -593,8 +617,12 @@ export function createDeveloperWorkspace(opts) {
       if (avg > (isMobile ? 0.034 : 0.03) && qLevel < 3 && now - qLast > 1200) {
         qLevel++; qLast = now;
         if (qLevel === 1 && !bokeh) qLevel = 2; // HP tidak punya DOF: langsung ke langkah berikutnya
+        dbg(`kualitas turun level ${qLevel} (avg ${(avg * 1000) | 0}ms)`);
         if (qLevel === 1) dofKill = true;
-        else if (qLevel === 2) { if (pixelRatio > 1) { pixelRatio = 1; renderer.setPixelRatio(1); layout(); } }
+        else if (qLevel === 2) {
+          // hanya kecilkan render target post-processing; canvas TIDAK diubah (mengubahnya = canvas kosong = kedip hitam)
+          if (pixelRatio > 1) { pixelRatio = 1; composer.setPixelRatio(1); composer.setSize(size.w, size.h); }
+        }
         else space.setQuality(avg > 0.045 ? 0.3 : 0.55);
       }
     }
@@ -721,6 +749,8 @@ export function createDeveloperWorkspace(opts) {
     gsap.killTweensOf(canvas);
     ro.disconnect();
     clearTimeout(lostTimer);
+    document.removeEventListener("visibilitychange", onVis);
+    dbgEl?.remove();
     canvas.removeEventListener("webglcontextlost", onCtxLost);
     canvas.removeEventListener("webglcontextrestored", onCtxRestored);
     window.removeEventListener("pointermove", onPointer);

@@ -27,3 +27,10 @@
 
 - Monitor sudah menyala sejak frame pertama (tanpa animasi power-on), tangan langsung mengetik, editor kode sudah berisi beberapa baris.
 - Durasi intro 19,4 -> 21,3 dtk: +1,5 dtk ngoding di awal, fade ke layar asli 1,2 dtk (semua jadwal di INTRO_CONFIG.t sudah digeser, urutan tetap).
+
+## Putaran 3 (video kedua)
+- Kilat (petir) tidak lagi berkedip kasar per frame: kecerahan berdenyut halus (energi rata-rata sama). Di `Lightning.jsx` dan `lightningSource.js`.
+- Penurunan kualitas otomatis tidak lagi mengubah ukuran canvas saat animasi (hanya render target post-processing); `setSize` dilewati bila ukuran sama.
+- Layar loading dilepas dari DOM setelah memudar (animasi kotak-kotaknya sebelumnya terus berjalan di atas canvas 3D).
+- Tombol suara tanpa `backdrop-blur` (blur di atas canvas WebGL animasi memicu kedip di iOS/Android).
+- Mode diagnosa: tambahkan `?debug` di akhir alamat situs -> log (resize, context WebGL hilang, frame lambat) tampil di layar.
