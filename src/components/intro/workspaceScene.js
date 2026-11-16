@@ -274,10 +274,10 @@ export function createDeveloperWorkspace(opts) {
       // masuk ke monitor lewat samping kanan karakter (di atas lengan, jauh dari kepala), baru ke tengah layar
       K(T.dive, pull([0.42, 1.3, 0.85], [0, 1.2, -0.2]), [0, 1.2, -0.2], 31),
       K(T.dive + T.diveDur * 0.55, [0.3, 1.27, 0.5], [0, 1.2, -0.2], 36),
-      // layar tepat memenuhi pandangan, kamera TERUS melaju menembus layar (pembesaran 2x), lalu melambat.
+      // layar tepat memenuhi pandangan, kamera TERUS melaju menembus layar (pembesaran ringan: 1.14x desktop, 1.05x HP supaya tidak ada yang terpotong), lalu melambat.
       // Layar asli di bawah overlay diskala sama persis (onZoom) sehingga crossfade tetap menyatu.
       K(T.dive + T.diveDur, [0, SCREEN.cy, SCREEN.cz + dEnd], [0, 1.2, -0.2], fovEnd),
-      K(T.end, [0, SCREEN.cy, SCREEN.cz + dEnd * 0.5], [0, 1.2, -0.2], fovEnd, true),
+      K(T.end, [0, SCREEN.cy, SCREEN.cz + dEnd / (portrait ? 1.05 : 1.14)], [0, 1.2, -0.2], fovEnd, true),
     ]);
     screen.view = { visH: V / SCREEN.h, visW: (V * camera.aspect) / SCREEN.w };
     camera.updateProjectionMatrix();
@@ -531,6 +531,9 @@ export function createDeveloperWorkspace(opts) {
       .to(S, { page: 1, duration: 0.9, ease: "power1.out" }, T.pageStart)
       // Scene 5: kamera masuk, bezel & browser menghilang, petir memenuhi layar
       .to(S, { full: 1, duration: 1.0, ease: "power2.inOut" }, T.chromeOut)
+      // kilau cahaya singkat saat menembus layar (hanya efek di overlay 3D yang sedang memudar)
+      .to(S, { bloom: bloomBase + 0.5, duration: 0.45, ease: "power2.out" }, T.through)
+      .to(S, { bloom: bloomBase, duration: 0.7, ease: "sine.inOut" }, T.through + 0.45)
       .call(() => onWelcome?.(), null, T.welcome)
       .call(() => onReveal?.(), null, T.reveal)
       .call(() => onFade?.(), null, T.fade)
