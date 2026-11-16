@@ -273,7 +273,7 @@ export function createDeveloperWorkspace(opts) {
     const barG = narrow ? [-0.3, 1.41, -0.2] : [-0.2, 1.41, -0.2];
     camKeys = prepTrack([
       K(0, pull([3.5, 1.95, 4.7], [-0.35, 1.05, -0.4]), [-0.35, 1.05, -0.4], 38),
-      K(2.8, pull([2.3, 1.8, 3.2], [-0.15, 1.12, -0.3]), [-0.15, 1.12, -0.3], 36),
+      K(2.8, pull([1.75, 1.7, 2.5], [-0.05, 1.15, -0.3]), [-0.05, 1.15, -0.3], 33), // mendekat: kode di layar terbaca
       K(5.2, pull([1.0, 1.5, 1.75], [0, 1.22, -0.2]), [0, 1.22, -0.2], 33),
       // bidikan address bar dari ATAS bahu/kepala (tidak menembus kepala karakter), bertahan sampai alamat selesai & terbaca
       // kamera DIAM total dari kursor sampai alamat selesai & terbaca (dua kunci identik, kecepatan nol)
@@ -302,7 +302,7 @@ export function createDeveloperWorkspace(opts) {
   /* ---- state animasi (digerakkan GSAP) ---- */
   const S = {
     ct: 0, sway: 1, power: 0, typeT: 0, typeAmt: 0.5, loading: 0, page: 0, full: 0,
-    cursor: 0, click: 0, focus: 0, rMouse: 0, rEnter: 0, enterPress: 0,
+    cursor: 0, click: 0, focus: 0, rMouse: 0, rEnter: 0, enterPress: 0, lift: 0, win: 0,
     exposure: 0.95, bloom: bloomBase, bolt: 1,
   };
   const sched = typingSchedule(INTRO_CONFIG.url, T.typeDur);
@@ -381,9 +381,9 @@ export function createDeveloperWorkspace(opts) {
     hr.position.lerp(_mouseP.set(kb.mouse.position.x, 0.822, kb.mouse.position.z + 0.11), S.rMouse);
     // jari manis (kanan, indeks 2) tepat di atas ENTER
     hr.position.lerp(_enterP.set(kb.enterPos[0] - FOFF[2], 0.812, 0.245), S.rEnter);
-    hr.position.y -= 0.003 * S.enterPress;
+    hr.position.y += 0.075 * S.lift - 0.003 * S.enterPress; // tangan DIANGKAT dulu saat berpindah ke ENTER, baru turun menekan
     hl.rotation.set(0.05, 0.1, 0);
-    hr.rotation.set(0.05, -0.1 + S.rEnter * 0.1, -0.1 * S.rEnter);
+    hr.rotation.set(0.05 - 0.22 * S.lift, -0.1 + S.rEnter * 0.1, -0.1 * S.rEnter);
 
     [ch.handL, ch.handR].forEach((hd, hi) => hd.fingers.forEach((f, i) => {
       f.hit = Math.max(0, f.hit - dt * 8);
@@ -395,6 +395,7 @@ export function createDeveloperWorkspace(opts) {
         if (i === 0) { c1 += S.click * 0.12; c2 += S.click * 0.1; }
         if (i !== 2) { c1 -= S.rEnter * 0.08; c2 -= S.rEnter * 0.08; }
         if (i === 2) { c1 += S.enterPress * 0.14; c2 += S.enterPress * 0.18; }
+        c1 -= S.lift * 0.1; c2 -= S.lift * 0.08;
       }
       f.p1.rotation.x = -c1;
       f.p2.rotation.x = -c2;
@@ -453,12 +454,13 @@ export function createDeveloperWorkspace(opts) {
     const spin = S.loading > 0 && S.loading < 1 ? Math.floor(t * 24) : 0;
     const boltOn = S.page > 0 ? Math.floor(t * 30) : 0;
     const liveTick = S.page > 0 ? Math.floor(nowMs / (isMobile ? 33 : 16)) : 0;
-    const sig = [S.power.toFixed(2), typedCount, S.loading.toFixed(2), S.page.toFixed(2), S.full.toFixed(2), S.cursor.toFixed(3), S.click.toFixed(2), S.focus, blink, spin, boltOn, S.bolt.toFixed(2), screen.preview ? 1 : 0, screen.rev, liveTick].join("|");
+    const codeN = S.win >= 1 ? 999 : Math.floor(Math.max(0, S.ct - 0.9) * 30); // baris kode terakhir terketik langsung
+    const sig = [S.win.toFixed(2), codeN, S.power.toFixed(2), typedCount, S.loading.toFixed(2), S.page.toFixed(2), S.full.toFixed(2), S.cursor.toFixed(3), S.click.toFixed(2), S.focus, blink, spin, boltOn, S.bolt.toFixed(2), screen.preview ? 1 : 0, screen.rev, liveTick].join("|");
     if (sig !== lastSig && nowMs - lastDraw > (isMobile ? 28 : 12)) {
       lastSig = sig;
       lastDraw = nowMs;
       screen.draw({
-        time: t, power: S.power, chars: typedCount, loading: S.loading, page: S.page, full: S.full,
+        time: t, win: S.win, codeN, power: S.power, chars: typedCount, loading: S.loading, page: S.page, full: S.full,
         cursor: S.cursor, click: S.click, focus: S.focus, bolt: S.bolt,
         wt: Math.max(0, S.ct - T.welcome), prog: Math.min(1, Math.max(0, (S.ct - T.welcome) / progDur)),
         cursorAlpha: typedCount > 0 || S.page > 0 ? 0 : 1,
@@ -524,6 +526,8 @@ export function createDeveloperWorkspace(opts) {
       .to(S, { sway: 0, duration: 0.6, ease: "sine.out" }, T.cursorEnd - 0.6)   // goyangan halus berhenti saat mengetik
       .to(S, { sway: 1, duration: 0.8, ease: "sine.inOut" }, T.enterReach)
       .to(S, { sway: 0, duration: 1.2, ease: "sine.out" }, T.dive)
+      // Scene 1b: jendela browser BARU terbuka di atas editor kode (dia berhenti ngoding lalu membuka link)
+      .to(S, { win: 1, duration: 0.8, ease: "power2.out" }, T.cursorStart - 1.2)
       // Scene 2: tangan ke mouse, kursor menuju address bar, klik
       .to(S, { rMouse: 1, duration: 0.7, ease: "sine.inOut" }, T.cursorStart - 0.6)
       .to(S, { cursor: 1, duration: T.cursorEnd - T.cursorStart, ease: "power2.inOut" }, T.cursorStart)
@@ -536,11 +540,15 @@ export function createDeveloperWorkspace(opts) {
       .to(S, { typeT: T.typeDur, duration: T.typeDur }, T.typeStart)
       .to(S, { typeAmt: 0.2, duration: 0.5, ease: "sine.inOut" }, T.typeStart + T.typeDur)
       // Scene 4: tangan menuju ENTER, jari menekan, tombol turun, baru loading
-      .to(S, { rEnter: 1, duration: 1.1, ease: "sine.inOut" }, T.enterReach)
+      .to(S, { lift: 1, duration: 0.45, ease: "sine.out" }, T.enterReach)                 // 1) angkat tangan dari keyboard
+      .to(S, { rEnter: 1, duration: 1.1, ease: "sine.inOut" }, T.enterReach + 0.15)       // 2) melayang ke atas ENTER
+      .to(S, { lift: 0, duration: 0.38, ease: "power2.in" }, T.enterPress - 0.4)          // 3) turun tepat di atas ENTER
       .to(S, { enterPress: 1, duration: 0.1, ease: "power2.out" }, T.enterPress)
       .call(() => audio?.enter?.(), null, T.enterPress + 0.04)
       .to(S, { enterPress: 0, duration: 0.22, ease: "power2.out" }, T.enterPress + 0.18)
+      .to(S, { lift: 1, duration: 0.25, ease: "sine.out" }, T.enterPress + 0.2)           // setelah menekan: angkat lagi
       .to(S, { rEnter: 0, duration: 0.7, ease: "sine.inOut" }, T.enterPress + 0.4)
+      .to(S, { lift: 0, duration: 0.4, ease: "sine.inOut" }, T.enterPress + 0.75)         // kembali ke keyboard
       .to(S, { loading: 1, duration: T.loadDur, ease: "power1.inOut" }, T.loadStart)
       .to(S, { page: 1, duration: 0.9, ease: "power1.out" }, T.pageStart)
       // Scene 5: kamera masuk, bezel & browser menghilang, petir memenuhi layar

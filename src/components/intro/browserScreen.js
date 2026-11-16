@@ -92,18 +92,44 @@ export class BrowserScreen {
       return;
     }
 
-    const chromeH = 170 * (1 - s.full);
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(0, chromeH, W, H - chromeH);
-    ctx.clip();
-    this._page(ctx, 0, chromeH, W, H - chromeH, s);
-    ctx.restore();
-
-    if (chromeH > 2) {
+    // 1) Awal: programmer sedang NGODING (editor kode). 2) Jendela browser baru terbuka di atasnya (s.win 0 -> 1).
+    const win = s.win ?? 1;
+    if (win < 1) {
+      this._editor(ctx, s);
+      ctx.fillStyle = `rgba(0,0,0,${0.3 * win})`;
+      ctx.fillRect(0, 0, W, H);
+    }
+    if (win > 0) {
+      const ez = win * win * (3 - 2 * win);
       ctx.save();
-      ctx.globalAlpha = Math.min(1, chromeH / 70);
-      this._chrome(ctx, chromeH, s);
+      if (win < 1) {
+        // jendela baru muncul: membesar dari 90% sambil memudar, dengan bayangan
+        ctx.globalAlpha = ez;
+        const sc = 0.9 + 0.1 * ez;
+        ctx.translate(W / 2, H / 2);
+        ctx.scale(sc, sc);
+        ctx.translate(-W / 2, -H / 2);
+        ctx.shadowColor = "rgba(0,0,0,0.7)";
+        ctx.shadowBlur = 70;
+        ctx.fillStyle = "#070d18";
+        ctx.fillRect(0, 0, W, H);
+        ctx.shadowBlur = 0;
+        ctx.shadowColor = "transparent";
+      }
+      const chromeH = 170 * (1 - s.full);
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, chromeH, W, H - chromeH);
+      ctx.clip();
+      this._page(ctx, 0, chromeH, W, H - chromeH, s);
+      ctx.restore();
+
+      if (chromeH > 2) {
+        ctx.save();
+        ctx.globalAlpha *= Math.min(1, chromeH / 70);
+        this._chrome(ctx, chromeH, s);
+        ctx.restore();
+      }
       ctx.restore();
     }
     this._pointer(ctx, s);
@@ -124,6 +150,100 @@ export class BrowserScreen {
       ctx.fillRect(0, 0, W, H);
     }
     this.texture.needsUpdate = true;
+  }
+
+  /** Editor kode (gaya VS Code): sebagian kode sudah ada, beberapa baris terakhir terketik langsung. */
+  _editor(ctx, s) {
+    const MONO = `ui-monospace, Menlo, Consolas, "Courier New", monospace`;
+    const done = [
+      'import { useEffect, useState } from "react";',
+      'import Projects from "./Projects";',
+      '',
+      'export default function Portfolio() {',
+      '  const [ready, setReady] = useState(false);',
+      '',
+      '  useEffect(() => {',
+      '    fetchProjects().then(setReady);',
+      '  }, []);',
+    ];
+    const typedSrc = [
+      '',
+      '  return (',
+      '    <main className="hero">',
+      '      <h1>Welcome To My Portfolio</h1>',
+      '      {ready && <Projects />}',
+      '    </main>',
+      '  );',
+      '}',
+    ].join("\n");
+    const n = Math.max(0, Math.min(typedSrc.length, s.codeN | 0));
+    const typed = typedSrc.slice(0, n).split("\n");
+    const lines = [...done];
+    typed.forEach((t, i) => { if (i === 0) lines[done.length - 1] = lines[done.length - 1]; lines.push(t); });
+
+    ctx.fillStyle = "#0a111c";
+    ctx.fillRect(0, 0, W, H);
+    // title bar
+    ctx.fillStyle = "#0d1522";
+    ctx.fillRect(0, 0, W, 56);
+    ["#ff5f57", "#febc2e", "#28c840"].forEach((c, i) => {
+      ctx.fillStyle = c; ctx.beginPath(); ctx.arc(40 + i * 40, 28, 11, 0, Math.PI * 2); ctx.fill();
+    });
+    ctx.fillStyle = "#7f93b2"; ctx.font = `500 26px ${FONT}`; ctx.textBaseline = "middle"; ctx.textAlign = "center";
+    ctx.fillText("portfolio.jsx \u2014 my-portfolio \u2014 Code", W / 2, 29);
+    // activity bar + explorer
+    ctx.fillStyle = "#0c1420"; ctx.fillRect(0, 56, 76, H - 56 - 46);
+    ["#5b7fb5", "#2d4264", "#2d4264", "#2d4264"].forEach((c, i) => { ctx.fillStyle = c; rr(ctx, 22, 90 + i * 70, 32, 32, 7); ctx.fill(); });
+    ctx.fillStyle = "#0b121d"; ctx.fillRect(76, 56, 340, H - 56 - 46);
+    ctx.textAlign = "left"; ctx.font = `700 22px ${FONT}`; ctx.fillStyle = "#6f86a8";
+    ctx.fillText("EXPLORER", 104, 90);
+    const files = [["\u25BE  src", 0, "#9fb4d0"], ["\u25BE  components", 1, "#9fb4d0"], ["Navbar.jsx", 2, "#7f93b2"], ["Projects.jsx", 2, "#7f93b2"], ["portfolio.jsx", 2, "#e8f6ff"], ["Contact.jsx", 2, "#7f93b2"], ["App.jsx", 1, "#7f93b2"], ["index.css", 1, "#7f93b2"]];
+    files.forEach(([t, ind, col], i) => {
+      const fy = 140 + i * 48;
+      if (t === "portfolio.jsx") { ctx.fillStyle = "rgba(37,99,235,0.28)"; ctx.fillRect(76, fy - 22, 340, 44); }
+      ctx.fillStyle = col; ctx.font = `500 26px ${FONT}`;
+      ctx.fillText(t, 104 + ind * 28, fy);
+    });
+    // tab
+    const cx0 = 416;
+    ctx.fillStyle = "#0d1522"; ctx.fillRect(cx0, 56, W - cx0, 60);
+    ctx.fillStyle = "#0a111c"; ctx.fillRect(cx0, 56, 300, 60);
+    ctx.fillStyle = this.accent; ctx.fillRect(cx0, 56, 300, 3);
+    ctx.fillStyle = "#e8f6ff"; ctx.font = `500 26px ${FONT}`; ctx.fillText("portfolio.jsx", cx0 + 28, 88);
+    // kode
+    const fs = 34, lh = 46, gx = cx0 + 100, top = 116 + 26;
+    ctx.font = `${fs}px ${MONO}`;
+    const KW = /^(import|from|export|default|function|const|return)$/;
+    const re = /(\/\/.*$)|("[^"]*"?)|(\b[A-Za-z_]\w*\b(?=\())|(<\/?[A-Za-z][\w]*|\/>|>)|(\b[A-Za-z_]\w*\b)|(.)/g;
+    let caretX = gx, caretY = top;
+    lines.forEach((ln, i) => {
+      const y = top + i * lh;
+      ctx.fillStyle = i === lines.length - 1 ? "#9fb4d0" : "#3d526f";
+      ctx.textAlign = "right"; ctx.fillText(String(i + 1), cx0 + 72, y);
+      ctx.textAlign = "left";
+      let x = gx;
+      for (const m of ln.matchAll(re)) {
+        const tok = m[0];
+        let col = "#d6e2f5";
+        if (m[1]) col = "#546e7a";
+        else if (m[2]) col = "#c3e88d";
+        else if (m[3]) col = "#82aaff";
+        else if (m[4]) col = "#f07178";
+        else if (m[5]) col = KW.test(tok) ? "#c792ea" : /^(useState|useEffect|Projects|Portfolio)$/.test(tok) ? "#ffcb6b" : "#d6e2f5";
+        ctx.fillStyle = col;
+        ctx.fillText(tok, x, y);
+        x += ctx.measureText(tok).width;
+      }
+      if (i === lines.length - 1) { caretX = x; caretY = y; }
+    });
+    if (Math.floor(s.time * 2.4) % 2 === 0 || n > 0 && n < typedSrc.length) {
+      ctx.fillStyle = this.accent;
+      ctx.fillRect(caretX + 2, caretY - 20, 4, 40);
+    }
+    // status bar
+    ctx.fillStyle = "#1d4ed8"; ctx.fillRect(0, H - 46, W, 46);
+    ctx.fillStyle = "#e8f1ff"; ctx.font = `500 24px ${FONT}`; ctx.textBaseline = "middle";
+    ctx.fillText(`\u2387 main     JavaScript React     Ln ${lines.length}, Col ${(lines[lines.length - 1] || "").length + 1}     UTF-8`, 28, H - 22);
   }
 
   _chrome(ctx, h, s) {
@@ -320,7 +440,7 @@ export class BrowserScreen {
 
   // Kursor mouse: bergerak melengkung ke address bar, lalu klik (riak)
   _pointer(ctx, s) {
-    const a = s.cursorAlpha ?? 1;
+    const a = (s.cursorAlpha ?? 1) * Math.min(1, Math.max(0, ((s.win ?? 1) - 0.5) * 2));
     if (a <= 0.01 || s.cursor === undefined) return;
     const sx = W * 0.72, sy = H * 0.7;
     const ex = 560, ey = 128;

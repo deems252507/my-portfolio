@@ -59,3 +59,8 @@ Catatan: bila `public/intro/portfolio-preview.jpg` ada, gambar itu dipakai di mo
 FBX `mutant.fbx` punya tulang kembar bernama sama (anak "bayangan" di bawah tiap tulang asli; tiap mesh memakai salinan berbeda).
 Kode lama menggerakkan salinan yang salah sehingga celana/hoodie melar. Sekarang `mutantCharacter.js` memilih tulang ASLI (yang pertama ditemui);
 salinannya ikut otomatis. Warna hoodie/celana juga sedikit diredam agar tidak terlalu silau.
+
+## Layar awal = sedang ngoding
+Monitor awalnya menampilkan editor kode (gaya VS Code, baris terakhir terketik langsung mengikuti ketukan keyboard). Sekitar detik 4,2 jendela browser baru
+terbuka di atasnya, lalu tangan ke mouse, klik address bar, dan mengetik link. Kodenya ada di `browserScreen.js` (`_editor`), waktu buka jendela di timeline `workspaceScene.js` (`win`).
+Tangan juga diangkat dulu sebelum menekan ENTER (`lift`).
