@@ -50,7 +50,13 @@ export async function loadMutantCharacter(scene, ch, cfg = {}, shouldAbort = () 
   const B = {};
   const meshes = [];
   rig.traverse((n) => {
-    if (n.isBone) B[n.name.replace(/^mixamorig\d*:?/, "")] = n;
+    if (n.isBone) {
+      // File ini punya tulang kembar bernama sama (anak "bayangan" tanpa offset di bawah tulang asli, dipakai
+      // sebagian mesh). Yang digerakkan harus tulang ASLI (yang pertama ditemui; induk lebih dulu dari anak);
+      // tulang kembar otomatis ikut karena menempel sebagai anak dengan transformasi identitas.
+      const key = n.name.replace(/^mixamorig\d*:?/, "");
+      if (!B[key]) B[key] = n;
+    }
     if (n.isMesh || n.isSkinnedMesh) meshes.push(n);
   });
   const REQUIRED = [...REQUIRED_BASE];
@@ -81,7 +87,7 @@ export async function loadMutantCharacter(scene, ch, cfg = {}, shouldAbort = () 
       const isHair = /hair|lash|beard/i.test(m.name) || /hair/i.test(src.name || "");
       const mat = new THREE.MeshStandardMaterial({
         name: src.name,
-        color: src.map ? 0xffffff : src.color || 0xffffff,
+        color: src.map ? (/hoodie|pants/i.test(m.name) ? 0xc9ced8 : 0xffffff) : src.color || 0xffffff, // pakaian putih diredam agar tidak 'terbakar' oleh lampu
         map: src.map || null,
         normalMap: isHair ? null : src.normalMap || null, // "Bump" milik rambut adalah gambar normal: dibuang
         roughness: isHair ? 0.55 : 0.78,
@@ -94,7 +100,7 @@ export async function loadMutantCharacter(scene, ch, cfg = {}, shouldAbort = () 
         mat.map.anisotropy = 4;
         mat.emissiveMap = mat.map;                 // sedikit cahaya sendiri: tidak gelap total di ruangan biru
         mat.emissive.set(0xffffff);
-        mat.emissiveIntensity = 0.14;
+        mat.emissiveIntensity = 0.08;
       }
       if (isHair) { mat.alphaTest = 0.45; mat.transparent = false; } // alpha dari tekstur diffuse (RGBA)
       return mat;

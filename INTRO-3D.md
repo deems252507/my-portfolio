@@ -54,3 +54,8 @@ npm run dev
 `DeveloperIntro.jsx` memanggil `engine.update()` setiap `content` berubah (juga saat data Supabase baru selesai dimuat):
 teks Welcome, font, warna, petir (hue/kecepatan/intensitas/ukuran/aktif), teks & warna loading, durasi loading, gaya latar.
 Catatan: bila `public/intro/portfolio-preview.jpg` ada, gambar itu dipakai di monitor menggantikan tampilan langsung.
+
+## Perbaikan bug posisi duduk / mengetik
+FBX `mutant.fbx` punya tulang kembar bernama sama (anak "bayangan" di bawah tiap tulang asli; tiap mesh memakai salinan berbeda).
+Kode lama menggerakkan salinan yang salah sehingga celana/hoodie melar. Sekarang `mutantCharacter.js` memilih tulang ASLI (yang pertama ditemui);
+salinannya ikut otomatis. Warna hoodie/celana juga sedikit diredam agar tidak terlalu silau.
