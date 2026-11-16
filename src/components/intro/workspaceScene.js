@@ -130,6 +130,7 @@ export function createDeveloperWorkspace(opts) {
     dbgEl.textContent = dbgLines.join("\n");
   };
   const onVis = () => dbg("visibility " + document.visibilityState);
+  let canvasMO = null;
   document.addEventListener("visibilitychange", onVis);
 
   let renderer, composer, bloom, bokeh = null;
@@ -173,6 +174,13 @@ export function createDeveloperWorkspace(opts) {
   const onCtxRestored = () => { clearTimeout(lostTimer); dbg("webgl context restored"); };
   canvas.addEventListener("webglcontextlost", onCtxLost);
   canvas.addEventListener("webglcontextrestored", onCtxRestored);
+
+  if (DEBUG) {
+    canvasMO = new MutationObserver((ml) => ml.forEach((m) => dbg(`canvas ${m.attributeName} berubah (${canvas.width}x${canvas.height})`)));
+    canvasMO.observe(canvas, { attributes: true });
+    const par = container.parentElement;
+    if (par) canvasMO.observe(par, { attributes: true, attributeFilter: ["style", "class"] });
+  }
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x02050a);
@@ -358,7 +366,8 @@ export function createDeveloperWorkspace(opts) {
     const w = container.clientWidth, h = container.clientHeight;
     // HP: bilah alamat browser muncul/hilang saat layar disentuh -> tinggi berubah sedikit. Mengubah ukuran canvas
     // mengosongkannya (kedip hitam) dan menyusun ulang jalur kamera, jadi perubahan tinggi kecil diabaikan.
-    if (isMobile && w === lastW && Math.abs(h - lastH) < 160) return;
+    if (isMobile && w === lastW && Math.abs(h - lastH) < 160) { dbg(`RO ${w}x${h} (diabaikan)`); return; }
+    dbg(`RO ${w}x${h} -> layout`);
     lastW = w; lastH = h;
     // JANGAN layout() di sini: callback ResizeObserver berjalan SETELAH frame digambar tetapi SEBELUM ditampilkan,
     // dan setSize() mengosongkan canvas -> 1-2 frame hitam ("kedip"). Ditunda ke dalam frame(), tepat sebelum render.
@@ -602,7 +611,8 @@ export function createDeveloperWorkspace(opts) {
     const dt = Math.min(0.05, rawGap / 1000);
     last = now;
     dbgCt = S.ct;
-    if (DEBUG && rawGap > 90 && running) dbg(`frame lambat ${rawGap | 0}ms`);
+    if (DEBUG && rawGap > 50 && running) dbg(`frame lambat ${rawGap | 0}ms`);
+    if (DEBUG && renderer.getContext().isContextLost()) dbg("context SEDANG hilang");
     dtLast = dt;
     t += dt;
     if (layoutPending) { layoutPending = false; layout(); } // ubah ukuran + render di frame yang sama = tidak ada frame kosong
@@ -694,6 +704,11 @@ export function createDeveloperWorkspace(opts) {
       // kilau cahaya singkat saat menembus layar (hanya efek di overlay 3D yang sedang memudar)
       .to(S, { bloom: bloomBase + 0.5, duration: 0.45, ease: "power2.out" }, T.through)
       .to(S, { bloom: bloomBase, duration: 0.7, ease: "sine.inOut" }, T.through + 0.45)
+      .call(() => dbg("T: iconMove"), null, T.iconMove)
+      .call(() => dbg("T: winOpen"), null, T.winOpen)
+      .call(() => dbg("T: cursorStart"), null, T.cursorStart)
+      .call(() => dbg("T: typeStart"), null, T.typeStart)
+      .call(() => dbg("T: enterPress"), null, T.enterPress)
       .call(() => onWelcome?.(), null, T.welcome)
       .call(() => onReveal?.(), null, T.reveal)
       .call(() => onFade?.(), null, T.fade)
@@ -751,6 +766,7 @@ export function createDeveloperWorkspace(opts) {
     clearTimeout(lostTimer);
     document.removeEventListener("visibilitychange", onVis);
     dbgEl?.remove();
+    canvasMO?.disconnect();
     canvas.removeEventListener("webglcontextlost", onCtxLost);
     canvas.removeEventListener("webglcontextrestored", onCtxRestored);
     window.removeEventListener("pointermove", onPointer);
