@@ -13,6 +13,7 @@ import Login from "./Pages/Login";
 import Dashboard from "./Pages/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import WhatsAppButton from "./components/WhatsAppButton";
+import IntroLoader from "./components/intro/IntroLoader";
 
 const importHome = () => import("./Pages/Home");
 const importAbout = () => import("./Pages/About");
@@ -44,7 +45,7 @@ const LandingPage = ({ showWelcome, setShowWelcome }) => {
     <>
       <AnimatePresence mode="wait">
         {showWelcome && (
-          <Suspense fallback={null}>
+          <Suspense fallback={<div className="fixed inset-0 z-50"><IntroLoader /></div>}>
             <WelcomeScreen
               onReveal={() => setRevealed(true)}
               onLoadingComplete={() => setShowWelcome(false)}

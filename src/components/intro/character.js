@@ -147,9 +147,9 @@ export function buildCharacter(scene, { isMobile = false } = {}) {
   };
   const mkHand = (side) => {
     const g = new THREE.Group();
-    g.add(mk(new RoundedBoxGeometry(0.08, 0.022, 0.082, 3, 0.009), skin, 0, 0, 0));
+    g.add(mk(new RoundedBoxGeometry(0.092, 0.022, 0.082, 3, 0.009), skin, 0, 0, 0));
     const fingers = [];
-    [-0.03, -0.01, 0.01, 0.03].forEach((x, i) => {
+    [-0.0375, -0.0125, 0.0125, 0.0375].forEach((x, i) => {
       const l1 = 0.03 + (i === 1 || i === 2 ? 0.006 : 0) - (i === 3 ? 0.005 : 0);
       const l2 = 0.022 + (i === 1 || i === 2 ? 0.005 : 0) - (i === 3 ? 0.004 : 0);
       const p1 = new THREE.Group(); p1.position.set(x, 0.002, -0.041);
@@ -159,7 +159,7 @@ export function buildCharacter(scene, { isMobile = false } = {}) {
       p1.add(p2); g.add(p1);
       fingers.push({ p1, p2, hit: 0, phase: Math.random() * 6.28, speed: 9 + Math.random() * 7 + i });
     });
-    const t1 = new THREE.Group(); t1.position.set(-side * 0.043, 0, -0.012); t1.rotation.y = side * 0.7;
+    const t1 = new THREE.Group(); t1.position.set(-side * 0.05, 0, -0.012); t1.rotation.y = side * 0.7;
     t1.add(seg(0.026, 0.0098));
     const t2 = new THREE.Group(); t2.position.z = -0.03; t2.add(seg(0.02, 0.0088));
     t1.add(t2); g.add(t1);

@@ -93,49 +93,93 @@ export function buildMonitor(scene, screenTexture) {
 
 /* ----------------------- keyboard, mouse, dekorasi ----------------------- */
 export function buildKeyboard(scene) {
-  const base = mk(new RoundedBoxGeometry(0.46, 0.018, 0.16, 3, 0.006), std("#07090d", { roughness: 0.4, metalness: 0.5 }), 0, 0.759, 0.12);
+  const U = 0.0275, PZ = 0.0285, X0 = -7.5 * U, TOP = 0.7755, CZ = 0.12;
+  const base = mk(new RoundedBoxGeometry(0.445, 0.018, 0.172, 3, 0.006), std("#07090d", { roughness: 0.4, metalness: 0.5 }), 0, 0.759, CZ);
   scene.add(base);
   const rgbMat = new THREE.MeshBasicMaterial({ color: 0x22d3ee });
-  const rgb = new THREE.Mesh(new THREE.PlaneGeometry(0.43, 0.135), rgbMat);
+  const rgb = new THREE.Mesh(new THREE.PlaneGeometry(0.425, 0.15), rgbMat);
   rgb.rotation.x = -Math.PI / 2;
-  rgb.position.set(0, 0.7695, 0.12);
+  rgb.position.set(0, 0.7695, CZ);
   scene.add(rgb);
 
-  const rows = 5, cols = 15;
-  const keyGeo = new RoundedBoxGeometry(0.0235, 0.011, 0.0235, 2, 0.004);
-  const keys = new THREE.InstancedMesh(keyGeo, std("#10151d", { roughness: 0.5 }), rows * cols);
+  // tata letak keyboard sungguhan (15 unit lebar): angka, QWERTY, ASDF, ZXCV, spasi
+  const chars = (str, f = (c) => c) => str.split("").map((c) => ({ l: f(c), ch: c, w: 1 }));
+  const rowsDef = [
+    [...chars("`1234567890-="), { l: "Bksp", w: 2 }],
+    [{ l: "Tab", w: 1.5 }, ...chars("qwertyuiop[]", (c) => c.toUpperCase()), { l: "\\", ch: "\\", w: 1.5 }],
+    [{ l: "Caps", w: 1.75 }, ...chars("asdfghjkl;'", (c) => (/[a-z]/.test(c) ? c.toUpperCase() : c))],
+    [{ l: "Shift", w: 2.25 }, ...chars("zxcvbnm,./", (c) => (/[a-z]/.test(c) ? c.toUpperCase() : c)), { l: "Shift", w: 2.75 }],
+    [{ l: "Ctrl", w: 1.25 }, { l: "Win", w: 1.25 }, { l: "Alt", w: 1.25 }, { l: "", w: 6.25 }, { l: "Alt", w: 1.25 }, { l: "Win", w: 1.25 }, { l: "Menu", w: 1.25 }, { l: "Ctrl", w: 1.25 }],
+  ];
+  const list = [];
+  rowsDef.forEach((row, r) => {
+    let cx = 0;
+    row.forEach((k) => {
+      list.push({ ...k, x: X0 + (cx + k.w / 2) * U, z: CZ + (r - 2) * PZ });
+      cx += k.w;
+    });
+  });
+  const n = list.length;
+  const keyGeo = new RoundedBoxGeometry(1, 0.011, 0.0235, 2, 0.004);
+  const keys = new THREE.InstancedMesh(keyGeo, std("#10151d", { roughness: 0.5 }), n);
   keys.castShadow = true;
   const dummy = new THREE.Object3D();
-  const rest = [];
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      const x = (c - (cols - 1) / 2) * 0.0275;
-      const z = 0.12 + (r - (rows - 1) / 2) * 0.0265;
-      rest.push([x, 0.7755, z]);
-      dummy.position.set(x, 0.7755, z);
-      dummy.updateMatrix();
-      keys.setMatrixAt(r * cols + c, dummy.matrix);
-    }
-  }
-  // tombol ENTER besar (menggantikan dua tombol terakhir baris tengah)
-  const ENTER_Y = 0.7755, ENTER_X = (13.5 - (cols - 1) / 2) * 0.0275, ENTER_Z = 0.12;
-  const hide = new THREE.Matrix4().makeScale(0, 0, 0);
-  const dead = [2 * cols + 13, 2 * cols + 14];
-  dead.forEach((i) => keys.setMatrixAt(i, hide));
-  const live = [];
-  for (let i = 0; i < rows * cols; i++) if (!dead.includes(i)) live.push(i);
+  const rest = list.map((k) => [k.x, TOP, k.z]);
+  const sx = list.map((k) => k.w * U - 0.0035);
+  const charIdx = {};
+  list.forEach((k, i) => { if (k.ch) charIdx[k.ch] = i; });
+
+  // legenda: satu atlas, satu bidang kecil per tombol (ikut turun saat tombol ditekan)
+  const labels = [...new Set(list.map((k) => k.l).filter(Boolean))];
+  const AC = 16, CELL = 64;
+  const ac = document.createElement("canvas");
+  ac.width = AC * CELL; ac.height = Math.ceil((labels.length + 1) / AC) * CELL;
+  const ag = ac.getContext("2d");
+  ag.fillStyle = "#cfefff"; ag.textAlign = "center"; ag.textBaseline = "middle";
+  labels.forEach((l, i) => {
+    ag.font = `700 ${l.length > 3 ? 20 : l.length > 1 ? 24 : 38}px sans-serif`;
+    ag.fillText(l, (i % AC) * CELL + CELL / 2, Math.floor(i / AC) * CELL + CELL / 2 + 2);
+  });
+  const atlas = new THREE.CanvasTexture(ac); atlas.colorSpace = THREE.SRGBColorSpace; atlas.anisotropy = 4;
+  const legendMat = new THREE.MeshBasicMaterial({ map: atlas, transparent: true, opacity: 0.85, depthWrite: false });
+  const legends = new Array(n).fill(null);
+  list.forEach((k, i) => {
+    if (!k.l) return;
+    const li = labels.indexOf(k.l);
+    const g = new THREE.PlaneGeometry(0.0185, 0.0185);
+    const u0 = (li % AC) / AC, v0 = 1 - (Math.floor(li / AC) + 1) / (ac.height / CELL);
+    const uv = g.attributes.uv;
+    for (let j = 0; j < uv.count; j++) uv.setXY(j, u0 + uv.getX(j) / AC, v0 + uv.getY(j) / (ac.height / CELL));
+    const m = new THREE.Mesh(g, legendMat);
+    m.rotation.x = -Math.PI / 2;
+    m.position.set(k.x, TOP + 0.0059, k.z);
+    scene.add(m);
+    legends[i] = m;
+  });
+  const setKey = (i, p) => {
+    dummy.position.set(rest[i][0], TOP - 0.004 * p, rest[i][2]);
+    dummy.scale.set(sx[i], 1, 1);
+    dummy.updateMatrix();
+    keys.setMatrixAt(i, dummy.matrix);
+    if (legends[i]) legends[i].position.y = TOP + 0.0059 - 0.004 * p;
+    keys.instanceMatrix.needsUpdate = true;
+  };
+  for (let i = 0; i < n; i++) setKey(i, 0);
+  scene.add(keys);
+
+  // ENTER lebar di ujung baris tengah (2,25 unit), seperti keyboard asli
+  const ENTER_X = X0 + (1.75 + 11 + 1.125) * U, ENTER_Y = TOP, ENTER_Z = CZ;
   const enterMat = std("#10151d", { roughness: 0.5, emissive: new THREE.Color("#22d3ee"), emissiveIntensity: 0.0 });
-  const enter = mk(new RoundedBoxGeometry(0.052, 0.011, 0.0235, 2, 0.004), enterMat, ENTER_X, ENTER_Y, ENTER_Z);
+  const enter = mk(new RoundedBoxGeometry(2.25 * U - 0.0035, 0.011, 0.0235, 2, 0.004), enterMat, ENTER_X, ENTER_Y, ENTER_Z);
   scene.add(enter);
-  const lc = document.createElement("canvas"); lc.width = 128; lc.height = 64;
+  const lc = document.createElement("canvas"); lc.width = 160; lc.height = 64;
   const lg = lc.getContext("2d");
   lg.fillStyle = "#7ef0ff"; lg.font = "700 34px sans-serif"; lg.textAlign = "center"; lg.textBaseline = "middle";
-  lg.fillText("ENTER", 64, 34);
+  lg.fillText("ENTER", 80, 34);
   const lt = new THREE.CanvasTexture(lc); lt.colorSpace = THREE.SRGBColorSpace;
-  const label = new THREE.Mesh(new THREE.PlaneGeometry(0.044, 0.0185), new THREE.MeshBasicMaterial({ map: lt, transparent: true }));
-  label.rotation.x = -Math.PI / 2; label.position.y = 0.0058;
+  const label = new THREE.Mesh(new THREE.PlaneGeometry(0.046, 0.0185), new THREE.MeshBasicMaterial({ map: lt, transparent: true }));
+  label.rotation.x = -Math.PI / 2; label.position.y = 0.0059;
   enter.add(label);
-  scene.add(keys);
 
   // mouse + alas
   const pad = mk(new THREE.BoxGeometry(0.26, 0.004, 0.2), std("#0b0f16", { roughness: 0.9 }), 0.47, 0.747, 0.12);
@@ -146,7 +190,8 @@ export function buildKeyboard(scene) {
   const strip = new THREE.Mesh(new THREE.BoxGeometry(0.003, 0.003, 0.035), new THREE.MeshBasicMaterial({ color: 0x22d3ee }));
   strip.position.set(0.47, 0.777, 0.115);
   scene.add(strip);
-  return { keys, rest, dummy, rgbMat, cols, rows, live, enter, enterMat, enterPos: [ENTER_X, ENTER_Y, ENTER_Z], mouse, strip, pressed: new Float32Array(rows * cols) };
+  const live = list.map((_, i) => i);
+  return { keys, rest, rgbMat, live, charIdx, setKey, enter, enterMat, enterPos: [ENTER_X, ENTER_Y, ENTER_Z], mouse, strip, pressed: new Float32Array(n), dispose: () => atlas.dispose() };
 }
 
 export function buildProps(scene, cyan) {

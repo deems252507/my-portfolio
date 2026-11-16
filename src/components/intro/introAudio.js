@@ -1,13 +1,11 @@
 // Efek suara sintetis (Web Audio API) — tanpa file audio, tanpa unduhan tambahan.
-// Default MATI. Baru berbunyi setelah pengunjung menekan tombol suara (aturan autoplay browser).
+// Hanya dua bunyi: ketukan keyboard dan tombol ENTER. Default MATI. Baru berbunyi setelah pengunjung menekan tombol suara (aturan autoplay browser).
 export class IntroAudio {
   constructor() {
     this.ctx = null;
     this.master = null;
     this.enabled = false;
     this.noise = null;
-    this.amb = null;
-    this.ambWanted = false;
   }
 
   get supported() {
@@ -32,10 +30,8 @@ export class IntroAudio {
       }
       try { await this.ctx.resume(); } catch { /* abaikan */ }
       this.enabled = true;
-      if (this.ambWanted) this._ambStart();
     } else {
       this.enabled = false;
-      this._ambStop();
       try { await this.ctx?.suspend(); } catch { /* abaikan */ }
     }
     return this.enabled;
@@ -85,72 +81,7 @@ export class IntroAudio {
     this._burst({ freq: 3400, q: 1.2, peak: 0.16, dec: 0.03, at: 0.07 });
   }
 
-  mouse() {
-    if (!this._ok()) return;
-    this._burst({ freq: 4200, q: 1.5, peak: 0.2, dec: 0.018 });
-    this._burst({ freq: 3000, q: 1.5, peak: 0.12, dec: 0.02, at: 0.09 });
-  }
-
-  /** Suara komputer saat memuat: kipas menderu + bip data. */
-  loading(dur = 1.5) {
-    if (!this._ok()) return;
-    this._burst({ type: "bandpass", freq: 400, freqEnd: 1600, q: 0.7, peak: 0.1, atk: 0.2, dec: dur });
-    for (let i = 0; i < 6; i++) {
-      this._tone({ type: "square", f0: 900 + Math.random() * 900, peak: 0.03, atk: 0.003, dec: 0.035, at: i * (dur / 6) + Math.random() * 0.05 });
-    }
-  }
-
-  /** Sapuan energi futuristik saat kamera menyelam ke layar. */
-  energy(dur = 2.6) {
-    if (!this._ok()) return;
-    this._tone({ type: "sawtooth", f0: 70, f1: 880, peak: 0.07, atk: dur * 0.6, dec: dur * 0.4 });
-    this._tone({ type: "sine", f0: 140, f1: 1760, peak: 0.08, atk: dur * 0.7, dec: dur * 0.3 });
-    this._burst({ type: "highpass", freq: 600, freqEnd: 6000, q: 0.5, peak: 0.12, atk: dur * 0.8, dec: dur * 0.2 });
-  }
-
-  /** Sambaran petir: retakan tajam + gemuruh. */
-  thunder() {
-    if (!this._ok()) return;
-    this._burst({ type: "highpass", freq: 2500, q: 0.5, peak: 0.5, atk: 0.004, dec: 0.12 });
-    this._burst({ type: "lowpass", freq: 600, freqEnd: 90, q: 0.7, peak: 0.55, atk: 0.02, dec: 1.4, at: 0.03 });
-    this._tone({ type: "sine", f0: 80, f1: 38, peak: 0.35, atk: 0.02, dec: 1.0 });
-  }
-
-  /** Dengung ruangan/komputer yang sangat pelan selama intro. */
-  ambience(on) {
-    this.ambWanted = !!on;
-    if (on) { if (this._ok()) this._ambStart(); } else this._ambStop();
-  }
-
-  _ambStart() {
-    if (this.amb || !this.ctx) return;
-    const c = this.ctx;
-    const o1 = c.createOscillator(); o1.type = "sine"; o1.frequency.value = 55;
-    const o2 = c.createOscillator(); o2.type = "sine"; o2.frequency.value = 110.7;
-    const n = c.createBufferSource(); n.buffer = this.noise; n.loop = true;
-    const nf = c.createBiquadFilter(); nf.type = "lowpass"; nf.frequency.value = 500;
-    const g = c.createGain(); g.gain.value = 0.0001;
-    g.gain.exponentialRampToValueAtTime(0.05, c.currentTime + 1.5);
-    o1.connect(g); o2.connect(g); n.connect(nf); nf.connect(g); g.connect(this.master);
-    o1.start(); o2.start(); n.start();
-    this.amb = { o1, o2, n, g };
-  }
-
-  _ambStop() {
-    if (!this.amb || !this.ctx) { this.amb = null; return; }
-    const { o1, o2, n, g } = this.amb;
-    const t = this.ctx.currentTime;
-    try {
-      g.gain.cancelScheduledValues(t);
-      g.gain.setValueAtTime(Math.max(g.gain.value, 0.0001), t);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.4);
-      o1.stop(t + 0.5); o2.stop(t + 0.5); n.stop(t + 0.5);
-    } catch { /* abaikan */ }
-    this.amb = null;
-  }
-
   dispose() {
-    this._ambStop();
     this.enabled = false;
     const c = this.ctx;
     this.ctx = null;

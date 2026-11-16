@@ -8,8 +8,8 @@ export default function DeveloperIntro({ audio, onReveal, onFade, onDone, onErro
   const { content } = useSiteContent();
   const contentRef = useRef(content);
   contentRef.current = content;
-  const cb = useRef({ onReveal, onFade, onDone, onError });
-  cb.current = { onReveal, onFade, onDone, onError };
+  const cb = useRef({ onReady, onReveal, onFade, onDone, onError });
+  cb.current = { onReady, onReveal, onFade, onDone, onError };
 
   useEffect(() => {
     let engine = null;
@@ -37,6 +37,7 @@ export default function DeveloperIntro({ audio, onReveal, onFade, onDone, onErro
           // petir di monitor memakai pengaturan yang sama dengan layar sambutan asli (hue dll. dari admin)
           lightning: getLightningSettings(contentRef.current),
           audio,
+          onReady: () => cb.current.onReady?.(),
           onReveal: () => cb.current.onReveal?.(),
           onFade: () => cb.current.onFade?.(),
           onDone: () => cb.current.onDone?.(),

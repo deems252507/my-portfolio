@@ -28,7 +28,7 @@ export const INTRO_CONFIG = {
     powerOn: 0.5,
     cursorStart: 5.4, cursorEnd: 7.0, click: 7.1,        // Scene 2: kursor ke address bar
     typeStart: 7.7, typeDur: 3.4,                         // Scene 3: mengetik alamat
-    enterReach: 11.55, enterPress: 12.45,                 // Scene 4: tangan ke ENTER, menekan
+    enterReach: 11.1, enterPress: 12.5,                   // Scene 4: tangan ke ENTER (jari manis), menekan
     loadStart: 13.0, loadDur: 1.5, pageStart: 14.3,       // loading browser, halaman tampil
     dive: 15.2, diveDur: 2.3, chromeOut: 15.5,            // Scene 5: kamera masuk, bezel hilang
     through: 17.5, throughDur: 0.9,
@@ -91,7 +91,7 @@ function typingSchedule(url, dur) {
 
 /* ----------------------------- fungsi utama ------------------------------ */
 export function createDeveloperWorkspace(opts) {
-  const { container, content = {}, theme = {}, lightning = {}, audio = null, onReveal, onFade, onDone, onError } = opts;
+  const { container, content = {}, theme = {}, lightning = {}, audio = null, onReady, onReveal, onFade, onDone, onError } = opts;
   const T = INTRO_CONFIG.t;
   T.end = T.through + T.throughDur;
   const isMobile = window.matchMedia("(max-width: 768px)").matches;
@@ -242,9 +242,11 @@ export function createDeveloperWorkspace(opts) {
       K(2.8, pull([2.3, 1.8, 3.2], [-0.15, 1.12, -0.3]), [-0.15, 1.12, -0.3], 36),
       K(5.2, pull([1.0, 1.5, 1.75], [0, 1.22, -0.2]), [0, 1.22, -0.2], 33),
       K(T.cursorEnd, [-0.08, 1.43, 0.72], barG, narrow ? 52 : 29),
-      K(T.typeStart + T.typeDur + 0.1, [-0.02, 1.44, 0.66], narrow ? [-0.3, 1.41, -0.2] : [-0.14, 1.41, -0.2], narrow ? 52 : 28),
-      K(T.enterPress - 0.15, pull([0.95, 1.16, 1.02], [0.17, 0.82, 0.14]), [0.17, 0.82, 0.14], 33),
-      K(T.enterPress + 0.6, pull([0.9, 1.17, 0.98], [0.14, 0.84, 0.1]), [0.14, 0.84, 0.1], 32),
+      // pelan mundur dari address bar ke bidikan medium (layar + keyboard terlihat) -> tidak ada lompatan ke ENTER
+      K(9.2, narrow ? [-0.05, 1.42, 0.8] : [0.05, 1.4, 0.92], narrow ? [-0.3, 1.38, -0.2] : [-0.12, 1.36, -0.15], narrow ? 54 : 32),
+      K(11.4, pull([0.5, 1.25, 1.3], [0.05, 1.05, 0.0]), [0.05, 1.05, 0.0], 38),
+      K(T.enterPress - 0.2, pull([0.85, 1.12, 1.0], [0.17, 0.86, 0.12]), [0.17, 0.86, 0.12], 33),
+      K(T.enterPress + 0.8, pull([0.7, 1.2, 1.05], [0.1, 1.0, 0.0]), [0.1, 1.0, 0.0], 34),
       K(T.pageStart + 0.2, pull([0.35, 1.32, 1.0], [0, 1.2, -0.2]), [0, 1.2, -0.2], 32),
       K(T.dive, pull([0.12, 1.27, 0.78], [0, 1.2, -0.2]), [0, 1.2, -0.2], 31),
       K(T.dive + T.diveDur, [0, SCREEN.cy, SCREEN.cz + dEnd], [0, 1.2, -0.2], fovEnd),
@@ -285,19 +287,29 @@ export function createDeveloperWorkspace(opts) {
   }
 
   /* ---- ketikan & tombol ---- */
-  const hx = { L: 0, R: 0 }; // offset posisi tangan mengikuti huruf yang ditekan
-  const hxT = { L: 0, R: 0 };
+  // posisi tangan: offset (x,z) menuju tombol yang ditekan; jari ditentukan oleh kolom tombol
+  const HOME = { L: -0.0994, R: 0.0581 }; // jari telunjuk tepat di F (kiri) dan J (kanan)
+  const FOFF = [-0.0375, -0.0125, 0.0125, 0.0375]; // posisi jari terhadap pusat telapak
+  const hx = { L: 0, R: 0, Lz: 0, Rz: 0 };
+  const hxT = { L: 0, R: 0, Lz: 0, Rz: 0 };
+  const SHIFTED = { ":": ";", "?": "/", "_": "-", "+": "=" };
   function keystroke(chr) {
-    const idx = kb.live[(chr.charCodeAt(0) * 13 + typedCount * 7) % kb.live.length];
+    const base = SHIFTED[chr] || chr.toLowerCase();
+    let idx = kb.charIdx[base];
+    if (idx === undefined) idx = kb.live[(chr.charCodeAt(0) * 13 + typedCount * 7) % kb.live.length];
     kb.pressed[idx] = 1;
-    const x = kb.rest[idx][0];
-    const left = x < 0;
+    const x = kb.rest[idx][0], z = kb.rest[idx][2];
+    const left = x < -0.02;
+    // jari sesuai kolom: kiri (kelingking..telunjuk) = 0..3, kanan (telunjuk..kelingking) = 0..3
+    let fi;
+    if (left) fi = x < -0.13 ? 0 : x < -0.103 ? 1 : x < -0.075 ? 2 : 3;
+    else fi = x < 0.034 ? 0 : x < 0.062 ? 1 : x < 0.09 ? 2 : 3;
     const H = left ? ch.handL : ch.handR;
-    const fi = left
-      ? Math.max(0, Math.min(3, Math.floor((x + 0.19) / 0.0475)))
-      : Math.max(0, Math.min(3, Math.floor(x / 0.0475)));
     H.fingers[fi].hit = 1;
-    hxT[left ? "L" : "R"] = Math.max(-0.05, Math.min(0.05, (x - (left ? -0.1 : 0.1)) * 0.35));
+    const side = left ? "L" : "R";
+    const home = HOME[side];
+    hxT[side] = Math.max(-0.07, Math.min(0.07, x - FOFF[fi] - home));
+    hxT[side + "z"] = (z - 0.12) * 0.9;
     audio?.key?.();
   }
 
@@ -310,21 +322,23 @@ export function createDeveloperWorkspace(opts) {
     ch.head.rotation.x = -0.1 + Math.sin(t * 0.9) * 0.012 - (S.typeT > 0 && S.typeT < T.typeDur ? 0.02 : 0);
     chair.rotation.y = Math.sin(t * 0.4) * 0.02;
 
-    hx.L += (hxT.L - hx.L) * Math.min(1, dt * 14);
-    hx.R += (hxT.R - hx.R) * Math.min(1, dt * 14);
-    hxT.L *= 0.96; hxT.R *= 0.96;
+    const k = Math.min(1, dt * 16);
+    hx.L += (hxT.L - hx.L) * k; hx.R += (hxT.R - hx.R) * k;
+    hx.Lz += (hxT.Lz - hx.Lz) * k; hx.Rz += (hxT.Rz - hx.Rz) * k;
+    const decay = Math.pow(0.55, dt * 5); // tangan kembali ke posisi awal bila berhenti mengetik
+    hxT.L *= decay; hxT.R *= decay; hxT.Lz *= decay; hxT.Rz *= decay;
 
     const hl = ch.handL.group, hr = ch.handR.group;
     const idleY = (ph, sp) => Math.max(0, Math.sin(t * sp + ph)) * 0.004 * a;
-    hl.position.set(-0.1 + hx.L, 0.812 + idleY(0, 9.3), 0.168 + Math.sin(t * 3.7) * 0.006 * a);
+    hl.position.set(HOME.L + hx.L, 0.812 + idleY(0, 9.3), 0.245 + hx.Lz);
     // tangan kanan: keyboard -> mouse -> ENTER (berurutan, dicampur halus)
-    _v.set(0.1 + hx.R, 0.812 + idleY(2, 8.1), 0.168 + Math.sin(t * 3.1 + 2) * 0.006 * a);
-    hr.position.copy(_v);
-    hr.position.lerp(_mouseP.set(kb.mouse.position.x, 0.822, kb.mouse.position.z + 0.04), S.rMouse);
-    hr.position.lerp(_enterP.set(kb.enterPos[0] - 0.03, 0.812, kb.enterPos[2] + 0.1), S.rEnter);
+    hr.position.set(HOME.R + hx.R, 0.812 + idleY(2, 8.1), 0.245 + hx.Rz);
+    hr.position.lerp(_mouseP.set(kb.mouse.position.x, 0.822, kb.mouse.position.z + 0.11), S.rMouse);
+    // jari manis (kanan, indeks 2) tepat di atas ENTER
+    hr.position.lerp(_enterP.set(kb.enterPos[0] - FOFF[2], 0.812, 0.245), S.rEnter);
     hr.position.y -= 0.003 * S.enterPress;
     hl.rotation.set(0.05, 0.1, 0);
-    hr.rotation.set(0.05, -0.1 + S.rEnter * 0.12, -0.12 * S.rEnter);
+    hr.rotation.set(0.05, -0.1 + S.rEnter * 0.1, -0.1 * S.rEnter);
 
     [ch.handL, ch.handR].forEach((hd, hi) => hd.fingers.forEach((f, i) => {
       f.hit = Math.max(0, f.hit - dt * 8);
@@ -334,8 +348,8 @@ export function createDeveloperWorkspace(opts) {
       if (hi === 1) {
         c1 += S.rMouse * 0.2; c2 += S.rMouse * 0.16;
         if (i === 0) { c1 += S.click * 0.12; c2 += S.click * 0.1; }
-        if (i < 3) { c1 -= S.rEnter * 0.06; c2 -= S.rEnter * 0.06; }
-        if (i === 3) { c1 += S.enterPress * 0.12; c2 += S.enterPress * 0.16; }
+        if (i !== 2) { c1 -= S.rEnter * 0.08; c2 -= S.rEnter * 0.08; }
+        if (i === 2) { c1 += S.enterPress * 0.14; c2 += S.enterPress * 0.18; }
       }
       f.p1.rotation.x = -c1;
       f.p2.rotation.x = -c2;
@@ -361,8 +375,7 @@ export function createDeveloperWorkspace(opts) {
     kb.strip.position.set(kb.mouse.position.x, 0.777, kb.mouse.position.z - 0.015);
 
     // tombol: turun saat ditekan, kembali naik
-    let dirty = false;
-    if (a > 0.05 && S.typeT <= 0) { // ketukan acak halus hanya saat belum mengetik URL
+    if (a > 0.05 && S.typeT <= 0) { // ketukan acak halus (tanpa suara) sebelum mengetik URL
       rng.next -= dt;
       if (rng.next <= 0) {
         rng.next = (0.12 + Math.random() * 0.14) / Math.max(0.3, a);
@@ -373,21 +386,12 @@ export function createDeveloperWorkspace(opts) {
       const p = kb.pressed[i];
       if (p > 0.01) {
         kb.pressed[i] = p * Math.pow(0.0006, dt);
-        const r = kb.rest[i];
-        kb.dummy.position.set(r[0], r[1] - 0.004 * p, r[2]);
-        kb.dummy.updateMatrix();
-        kb.keys.setMatrixAt(i, kb.dummy.matrix);
-        dirty = true;
+        kb.setKey(i, kb.pressed[i]);
       } else if (p > 0) {
         kb.pressed[i] = 0;
-        const r = kb.rest[i];
-        kb.dummy.position.set(r[0], r[1], r[2]);
-        kb.dummy.updateMatrix();
-        kb.keys.setMatrixAt(i, kb.dummy.matrix);
-        dirty = true;
+        kb.setKey(i, 0);
       }
     }
-    if (dirty) kb.keys.instanceMatrix.needsUpdate = true;
     kb.enter.position.y = kb.enterPos[1] - 0.005 * S.enterPress; // ENTER benar-benar turun
     kb.enterMat.emissiveIntensity = 1.6 * S.enterPress;
     kb.rgbMat.color.setHSL((t * 0.08) % 1, 0.95, 0.55);
@@ -458,13 +462,13 @@ export function createDeveloperWorkspace(opts) {
     if (!running) {
       running = true;
       startTimeline();
+      onReady?.();
     }
   }
 
   /* ---- timeline GSAP ---- */
   let tl = null;
   function startTimeline() {
-    audio?.ambience?.(true);
     tl = gsap.timeline({ defaults: { ease: "none" } });
     tl.to(canvas, { opacity: 1, duration: 1.6, ease: "power1.out" }, 0)
       .to(S, { ct: T.end, duration: T.end }, 0)                                   // jam kamera
@@ -475,7 +479,6 @@ export function createDeveloperWorkspace(opts) {
       .to(S, { cursor: 1, duration: T.cursorEnd - T.cursorStart, ease: "power2.inOut" }, T.cursorStart)
       .to(S, { click: 1, duration: 0.1 }, T.click)
       .to(S, { click: 0, duration: 0.4, ease: "power1.out" }, T.click + 0.1)
-      .call(() => audio?.mouse?.(), null, T.click)
       .set(S, { focus: 1 }, T.click)
       .to(S, { rMouse: 0, duration: 0.6, ease: "sine.inOut" }, T.click + 0.2)
       // Scene 3: mengetik alamat (tiap huruf = ketukan jari + suara)
@@ -483,19 +486,16 @@ export function createDeveloperWorkspace(opts) {
       .to(S, { typeT: T.typeDur, duration: T.typeDur }, T.typeStart)
       .to(S, { typeAmt: 0.2, duration: 0.5, ease: "sine.inOut" }, T.typeStart + T.typeDur)
       // Scene 4: tangan menuju ENTER, jari menekan, tombol turun, baru loading
-      .to(S, { rEnter: 1, duration: 0.8, ease: "power2.inOut" }, T.enterReach)
+      .to(S, { rEnter: 1, duration: 1.1, ease: "sine.inOut" }, T.enterReach)
       .to(S, { enterPress: 1, duration: 0.1, ease: "power2.out" }, T.enterPress)
       .call(() => audio?.enter?.(), null, T.enterPress + 0.04)
       .to(S, { enterPress: 0, duration: 0.22, ease: "power2.out" }, T.enterPress + 0.18)
       .to(S, { rEnter: 0, duration: 0.7, ease: "sine.inOut" }, T.enterPress + 0.4)
-      .call(() => audio?.loading?.(T.loadDur), null, T.loadStart)
       .to(S, { loading: 1, duration: T.loadDur, ease: "power1.inOut" }, T.loadStart)
       .to(S, { page: 1, duration: 0.9, ease: "power1.out" }, T.pageStart)
       // Scene 5: kamera masuk, bezel & browser menghilang, petir memenuhi layar
-      .call(() => audio?.energy?.(T.through - T.dive + 0.6), null, T.dive)
       .to(S, { full: 1, duration: 1.0, ease: "power2.inOut" }, T.chromeOut)
       .to(S, { bolt: 1.5, duration: T.diveDur, ease: "power2.in" }, T.dive)
-      .call(() => audio?.thunder?.(), null, T.through - 0.15)
       .to(S, { bolt: 2.2, exposure: 1.5, bloom: 1.5, duration: T.throughDur, ease: "power2.in" }, T.through)
       .call(() => onReveal?.(), null, T.reveal)
       .call(() => onFade?.(), null, T.fade)
@@ -545,7 +545,6 @@ export function createDeveloperWorkspace(opts) {
     cancelAnimationFrame(raf);
     tl?.kill();
     gsap.killTweensOf(canvas);
-    audio?.ambience?.(false);
     ro.disconnect();
     scene.traverse((o) => {
       if (o.geometry) o.geometry.dispose();
@@ -553,6 +552,7 @@ export function createDeveloperWorkspace(opts) {
     });
     shell.disposables.forEach((d) => d.dispose?.());
     screen.dispose();
+    kb.dispose?.();
     envTex.dispose();
     pmrem.dispose();
     composer.dispose?.();

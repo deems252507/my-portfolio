@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
 import { IntroAudio } from "../components/intro/introAudio";
+import IntroLoader from "../components/intro/IntroLoader";
 
 // Urutan: intro 3D (programmer membuka website) -> kamera menembus layar ->
 // WelcomeScreen milikmu ("Welcome To My Portofolio" + animasi partikel 3D) -> portfolio.
@@ -37,6 +38,7 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
   const audioRef = useRef(null);
   if (!audioRef.current) audioRef.current = new IntroAudio();
   const [soundOn, setSoundOn] = useState(false);
+  const [ready, setReady] = useState(false); // scene 3D sudah merender frame pertama
   const cbs = useRef({ onReveal, onLoadingComplete });
   cbs.current = { onReveal, onLoadingComplete };
 
@@ -63,6 +65,7 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
   const handleDone = useCallback(() => {
     if (!skippedRef.current) setIntroGone(true);
   }, []);
+  const handleReady = useCallback(() => setReady(true), []);
   const handleError = useCallback(() => {
     // WebGL gagal di tengah jalan: langsung ke welcome milikmu
     setWelcome(true);
@@ -94,10 +97,12 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
     const onKey = (e) => { if (e.key === "Escape" && use3D && !introGone) onSkip(); };
     window.addEventListener("keydown", onKey);
     const failsafe = setTimeout(finish, FAILSAFE_MS);
+    const readySafe = setTimeout(() => setReady(true), 12000); // loader tidak boleh menggantung
     return () => {
       document.body.style.overflow = prev;
       window.removeEventListener("keydown", onKey);
       clearTimeout(failsafe);
+      clearTimeout(readySafe);
     };
   }, [use3D, introGone, onSkip, finish]);
 
@@ -125,12 +130,15 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
           <Suspense fallback={null}>
             <DeveloperIntro
               audio={audioRef.current}
+              onReady={handleReady}
               onReveal={handleThrough}
               onFade={handleFade}
               onDone={handleDone}
               onError={handleError}
             />
           </Suspense>
+
+          <IntroLoader visible={!ready} />
 
           {/* vignette sinematik halus (tidak menangkap klik) */}
           <div
@@ -157,20 +165,6 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
             </button>
           )}
 
-          <button
-            type="button"
-            onClick={onSkip}
-            aria-label="Lewati intro"
-            className="absolute z-10 rounded-full border border-white/25 bg-black/40 px-5 text-sm font-semibold text-white/90 backdrop-blur transition hover:bg-white/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300"
-            style={{
-              right: "max(1rem, env(safe-area-inset-right))",
-              bottom: "max(1rem, env(safe-area-inset-bottom))",
-              minHeight: 44,
-              fontFamily: "var(--font-display)",
-            }}
-          >
-            Skip Intro
-          </button>
         </div>
       )}
     </>
