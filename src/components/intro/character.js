@@ -5,15 +5,29 @@ import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { mk, phys, std, placeLimb, wrinkle } from "./helpers";
 
-export function buildCharacter(scene, { isMobile = false } = {}) {
-  const skin = phys("#cf9770", { roughness: 0.56, sheen: 0.7, sheenColor: new THREE.Color("#ffb394"), sheenRoughness: 0.55, emissive: new THREE.Color("#3a1709"), emissiveIntensity: 0.22 });
-  const skinDark = phys("#b27a54", { roughness: 0.62, emissive: new THREE.Color("#2a0f05"), emissiveIntensity: 0.2 });
-  const hoodie = phys("#2a3242", { roughness: 0.95, sheen: 1, sheenColor: new THREE.Color("#6d8bb0"), sheenRoughness: 0.7 });
-  const hoodieDark = phys("#1b212e", { roughness: 0.95, sheen: 0.8, sheenColor: new THREE.Color("#4a607d"), sheenRoughness: 0.7 });
+// Pseudo-random berbenih: rambut selalu sama setiap dimuat (tidak berubah-ubah).
+const clampLow = (y) => Math.min(1, Math.max(0, (y + 0.1) / 0.7));
+
+function seeded(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+export function buildCharacter(scene, { isMobile = false, headphones = true } = {}) {
+  const skin = phys("#d6a07a", { roughness: 0.56, sheen: 0.7, sheenColor: new THREE.Color("#ffb394"), sheenRoughness: 0.55, emissive: new THREE.Color("#3a1709"), emissiveIntensity: 0.22 });
+  const skinDark = phys("#b98160", { roughness: 0.62, emissive: new THREE.Color("#2a0f05"), emissiveIntensity: 0.2 });
+  const hoodie = phys("#26306b", { roughness: 0.95, sheen: 1, sheenColor: new THREE.Color("#6f86d6"), sheenRoughness: 0.7 });
+  const hoodieDark = phys("#1a2150", { roughness: 0.95, sheen: 0.8, sheenColor: new THREE.Color("#4a5fa8"), sheenRoughness: 0.7 });
   const pants = phys("#141a25", { roughness: 0.92, sheen: 0.5, sheenColor: new THREE.Color("#3b4d66"), sheenRoughness: 0.8 });
-  const hairM = phys("#15110f", { roughness: 0.42, metalness: 0.05, sheen: 1, sheenColor: new THREE.Color("#4a5d80"), sheenRoughness: 0.35 });
-  const shoe = std("#0e1118", { roughness: 0.55, metalness: 0.15 });
-  const sole = std("#dfe6ee", { roughness: 0.6 });
+  const hairM = phys("#2a1d16", { roughness: 0.5, metalness: 0.05, sheen: 0.8, sheenColor: new THREE.Color("#6b5240"), sheenRoughness: 0.35 });
+  const shoe = std("#e9edf3", { roughness: 0.6, metalness: 0.02 });
+  const sole = std("#f7f9fc", { roughness: 0.65 });
   const phone = std("#0b0f16", { roughness: 0.4, metalness: 0.6 });
   const glowRing = new THREE.MeshStandardMaterial({ color: "#0a1a20", emissive: new THREE.Color("#22d3ee"), emissiveIntensity: 1.4, roughness: 0.4 });
 
@@ -65,6 +79,9 @@ export function buildCharacter(scene, { isMobile = false } = {}) {
     head.add(inner);
   });
   head.add(mk(new THREE.SphereGeometry(0.019, 12, 10), skin, 0, -0.03, -0.109)); // hidung
+  const lips = mk(new THREE.SphereGeometry(0.022, 14, 10), std("#b8695d", { roughness: 0.5 }), 0, -0.066, -0.097, false); // bibir
+  lips.scale.set(1.25, 0.32, 0.5);
+  head.add(lips);
   [-1, 1].forEach((s) => {
     const eye = mk(new THREE.SphereGeometry(0.0125, 12, 10), std("#f2ede8", { roughness: 0.25 }), s * 0.036, 0.012, -0.097, false);
     eye.scale.set(1, 0.8, 0.55);
@@ -72,7 +89,7 @@ export function buildCharacter(scene, { isMobile = false } = {}) {
     const iris = mk(new THREE.SphereGeometry(0.0072, 10, 8), std("#1a120d", { roughness: 0.2 }), s * 0.036, 0.012, -0.1015, false);
     iris.scale.set(1, 1, 0.4);
     head.add(iris);
-    const brow = mk(new THREE.BoxGeometry(0.034, 0.006, 0.008), hairM, s * 0.036, 0.04, -0.097, false);
+    const brow = mk(new THREE.BoxGeometry(0.038, 0.0085, 0.008), hairM, s * 0.036, 0.04, -0.097, false);
     brow.rotation.z = -s * 0.12;
     head.add(brow);
   });
@@ -82,45 +99,68 @@ export function buildCharacter(scene, { isMobile = false } = {}) {
   dome.scale.set(0.97, 1.16, 1.04);
   dome.rotation.x = 0.4;
   head.add(dome);
-  const nHair = isMobile ? 90 : 190;
+  const nHair = isMobile ? 130 : 280;
   const hair = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 7, 5), hairM, nHair);
   hair.castShadow = true;
+  const rnd = seeded(20261116);
   const R = [0.108 * 0.96, 0.108 * 1.16, 0.108 * 1.04];
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), pv = new THREE.Vector3(), sv = new THREE.Vector3(), tv = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
+  const col = new THREE.Color();
   let n = 0, tries = 0;
-  while (n < nHair && tries < 6000) {
+  const put = (d, dir, size, shade) => {
+    pv.set(d[0] * R[0] * 1.02, d[1] * R[1] * 1.02 + 0.012, d[2] * R[2] * 1.02);
+    tv.set(dir[0], dir[1], dir[2]).normalize();
+    q.setFromUnitVectors(up, tv);
+    sv.set(size[0], size[1], size[2]);
+    m4.compose(pv, q, sv);
+    hair.setMatrixAt(n, m4);
+    const g = shade;
+    hair.setColorAt(n, col.setRGB(g, g * 0.97, g * 0.94));
+    n++;
+  };
+  // 1) tutup kepala: helai pendek mengikuti arah tumbuh (dari ubun-ubun ke bawah), samping & belakang dibuat lebih tipis (gaya potongan rapi)
+  while (n < nHair - 26 && tries < 8000) {
     tries++;
-    const th = Math.random() * Math.PI * 2;
-    const cphi = 1 - Math.random() * (1 - Math.cos(Math.PI * 0.68));
+    const th = rnd() * Math.PI * 2;
+    const cphi = 1 - rnd() * (1 - Math.cos(Math.PI * 0.66));
     const phi = Math.acos(cphi);
     const sp = Math.sin(phi);
     const d = [sp * Math.cos(th), cphi, sp * Math.sin(th)];
-    if (d[2] < -0.35 && phi > Math.PI * 0.36) continue; // garis rambut di dahi
-    if (Math.abs(d[0]) > 0.8 && d[1] < 0.05 && d[2] < 0.15) continue; // telinga terbuka
-    pv.set(d[0] * R[0] * 1.02, d[1] * R[1] * 1.02 + 0.012, d[2] * R[2] * 1.02);
-    tv.set(cphi * Math.cos(th), -sp, cphi * Math.sin(th)).normalize();
-    tv.x += (Math.random() - 0.5) * 0.35; tv.z += 0.15 + (Math.random() - 0.5) * 0.3;
-    tv.normalize();
-    q.setFromUnitVectors(up, tv);
-    sv.set(0.02 + Math.random() * 0.012, 0.055 + Math.random() * 0.035, 0.026 + Math.random() * 0.012);
-    m4.compose(pv, q, sv);
-    hair.setMatrixAt(n++, m4);
+    if (d[2] < -0.3 && phi > Math.PI * 0.34) continue; // garis rambut di dahi
+    if (Math.abs(d[0]) > 0.8 && d[1] < 0.05 && d[2] < 0.15) continue; // telinga tetap terbuka
+    const low = clampLow(d[1]); // 0 di bawah, 1 di atas
+    const dir = [cphi * Math.cos(th) * 0.9 + 0.12, -sp, cphi * Math.sin(th) * 0.9 + 0.1 + (rnd() - 0.5) * 0.25];
+    const len = 0.04 + low * 0.045 + rnd() * 0.012;
+    put(d, dir, [0.017 + rnd() * 0.008, len, 0.022 + rnd() * 0.008], 0.75 + rnd() * 0.45);
+  }
+  // 2) poni: helai lebih panjang di bagian depan atas, jatuh ke dahi dan menyapu ke satu sisi
+  while (n < nHair) {
+    const th = -Math.PI / 2 + (rnd() - 0.5) * 1.5;
+    const phi = Math.PI * (0.27 + rnd() * 0.12);
+    const sp = Math.sin(phi), cphi = Math.cos(phi);
+    const d = [sp * Math.cos(th), cphi, sp * Math.sin(th)];
+    const dir = [0.5 + rnd() * 0.25, -0.55, -0.85];
+    put(d, dir, [0.015 + rnd() * 0.006, 0.058 + rnd() * 0.02, 0.02], 0.8 + rnd() * 0.4);
   }
   hair.count = n;
+  hair.instanceMatrix.needsUpdate = true;
+  if (hair.instanceColor) hair.instanceColor.needsUpdate = true;
   head.add(hair);
 
-  // headphone (terlihat jelas dari belakang)
-  const band = mk(new THREE.TorusGeometry(0.128, 0.0085, 10, 40, Math.PI), phone, 0, 0.0, 0.0);
-  band.scale.set(0.86, 0.98, 1);
-  head.add(band);
-  [-1, 1].forEach((s) => {
-    const cup = mk(new THREE.CylinderGeometry(0.038, 0.038, 0.028, 22), phone, s * 0.112, -0.005, 0.0);
-    cup.rotation.z = Math.PI / 2;
-    head.add(cup);
-    const ring = mk(new THREE.TorusGeometry(0.029, 0.004, 8, 28), glowRing, s * 0.127, -0.005, 0.0, false);
-    ring.rotation.y = Math.PI / 2;
-    head.add(ring);
-  });
+  // headphone (terlihat jelas dari belakang); matikan lewat buildCharacter(scene, { headphones: false })
+  if (headphones) {
+    const band = mk(new THREE.TorusGeometry(0.128, 0.0085, 10, 40, Math.PI), phone, 0, 0.0, 0.0);
+    band.scale.set(0.86, 0.98, 1);
+    head.add(band);
+    [-1, 1].forEach((s) => {
+      const cup = mk(new THREE.CylinderGeometry(0.038, 0.038, 0.028, 22), phone, s * 0.112, -0.005, 0.0);
+      cup.rotation.z = Math.PI / 2;
+      head.add(cup);
+      const ring = mk(new THREE.TorusGeometry(0.029, 0.004, 8, 28), glowRing, s * 0.127, -0.005, 0.0, false);
+      ring.rotation.y = Math.PI / 2;
+      head.add(ring);
+    });
+  }
 
   /* ---------------- lengan (IK dihitung tiap frame) ---------------- */
   const mkArm = () => {
