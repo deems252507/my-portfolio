@@ -14,6 +14,7 @@ import Dashboard from "./Pages/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import WhatsAppButton from "./components/WhatsAppButton";
 import IntroLoader from "./components/intro/IntroLoader";
+import SmoothScroll from "./components/SmoothScroll";
 
 const importHome = () => import("./Pages/Home");
 const importAbout = () => import("./Pages/About");
@@ -43,6 +44,7 @@ const LandingPage = ({ showWelcome, setShowWelcome }) => {
 
   return (
     <>
+      <SmoothScroll enabled={!showWelcome} />
       <AnimatePresence mode="wait">
         {showWelcome && (
           <Suspense fallback={<div className="fixed inset-0 z-50"><IntroLoader /></div>}>

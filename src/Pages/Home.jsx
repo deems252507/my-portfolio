@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, memo } from "react"
 import { Helmet } from "react-helmet-async"
+import { motion } from "framer-motion"
 import { ExternalLink, ArrowRight } from "lucide-react"
 import SpotifyCard from "../components/ui/spotify-card"
 import { TextEffect } from "../components/ui/text-effect"
@@ -48,20 +49,32 @@ const ReadMoreText = ({ text, isDesktop, ...rest }) => {
   )
 }
 
+// Judul hero: tiap baris muncul dari blur + turun sedikit + jarak huruf merapat (sinematik), baris kedua menyusul.
+// HP/tablet: tanpa filter blur (berat di GPU HP), cukup naik + fade + jarak huruf merapat
+const heroLine = (delay) => {
+  const light = typeof window !== "undefined" && window.matchMedia?.("(max-width: 1023px)").matches
+  return {
+    initial: { opacity: 0, y: 34, ...(light ? {} : { filter: "blur(16px)" }), letterSpacing: "0.06em" },
+    animate: { opacity: 1, y: 0, ...(light ? {} : { filter: "blur(0px)" }), letterSpacing: "-0.025em" },
+    transition: { duration: 1.1, delay, ease: [0.16, 1, 0.3, 1] },
+  }
+}
 const HeroTitle = memo(({ line1, line2 }) => (
-  <div className="space-y-1" data-aos="fade-up" data-aos-delay="400">
-    <div
-      className="text-[2.6rem] sm:text-6xl lg:text-6xl xl:text-7xl font-bold leading-[1.05] tracking-tight grad-vi"
+  <div className="space-y-1">
+    <motion.div
+      className="text-[2.6rem] sm:text-6xl lg:text-6xl xl:text-7xl font-bold leading-[1.05] grad-vi"
       style={{ fontFamily: "var(--font-display)" }}
+      {...heroLine(0.55)}
     >
       {line1}
-    </div>
-    <div
-      className="text-[2.6rem] sm:text-6xl lg:text-6xl xl:text-7xl font-bold leading-[1.05] tracking-tight text-white"
+    </motion.div>
+    <motion.div
+      className="text-[2.6rem] sm:text-6xl lg:text-6xl xl:text-7xl font-bold leading-[1.05] text-white"
       style={{ fontFamily: "var(--font-display)" }}
+      {...heroLine(0.85)}
     >
       {line2}
-    </div>
+    </motion.div>
   </div>
 ))
 

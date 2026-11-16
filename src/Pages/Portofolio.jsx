@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef, useMemo, memo } from "react";
+import SplitTitle from "../components/ui/split-title"
 import { supabase } from "../supabase";
 import CardProject from "../components/CardProject";
 import ProjectCarousel from "../components/ProjectCarousel";
@@ -159,7 +160,7 @@ export default function FullWidthTabs() {
       {/* Header */}
       <div className="text-center pb-10" data-aos="fade-up" data-aos-duration="1000">
         <h2 className="section-label" style={{ fontFamily: "var(--font-display)" }}>
-          Portofolio
+          <SplitTitle text="Portofolio" />
         </h2>
       </div>
 

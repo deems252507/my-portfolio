@@ -1,4 +1,5 @@
 import { useSiteContent } from "../context/SiteContentContext"
+import SplitTitle from "../components/ui/split-title"
 import React, { useEffect, memo, useMemo, useState, useCallback, useRef } from "react"
 import { motion, useMotionValue, useSpring, useMotionTemplate, useReducedMotion } from "framer-motion"
 import { FileText, Code, Award, Trophy, ArrowUpRight, GraduationCap, Briefcase } from "lucide-react"
@@ -29,7 +30,7 @@ const Header = memo(() => (
         className="section-label mx-auto"
         style={{ fontFamily: "var(--font-display)" }}
       >
-        About Me
+        <SplitTitle text="About Me" />
       </h2>
     </div>
   </div>

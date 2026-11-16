@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import SplitTitle from "../components/ui/split-title"
 import { Share2, User, Mail, MessageSquare, Send } from "lucide-react";
 import { Link } from "react-router-dom";
 import SocialLinks from "../components/SocialLinks";
@@ -107,7 +108,7 @@ const handleChange = (e) => {
             className="section-label"
             style={{ fontFamily: "var(--font-display)" }}
           >
-            Hubungi Saya
+            <SplitTitle text="Hubungi Saya" />
           </h2>
         </div>
       </div>
