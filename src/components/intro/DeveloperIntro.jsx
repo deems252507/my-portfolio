@@ -3,7 +3,7 @@ import { useSiteContent } from "../../context/SiteContentContext";
 import { getLightningSettings } from "../../lib/siteContent";
 
 // Mount scene 3D. three.js + gsap dimuat lazy (code-split) agar halaman utama tetap ringan.
-export default function DeveloperIntro({ audio, onReveal, onFade, onDone, onError }) {
+export default function DeveloperIntro({ audio, onReady, onReveal, onFade, onDone, onError }) {
   const hostRef = useRef(null);
   const { content } = useSiteContent();
   const contentRef = useRef(content);

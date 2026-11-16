@@ -7,6 +7,13 @@ import IntroLoader from "../components/intro/IntroLoader";
 const LegacyWelcome = lazy(() => import("./WelcomeScreen"));
 const DeveloperIntro = lazy(() => import("../components/intro/DeveloperIntro"));
 
+class IntroBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { failed: false }; }
+  static getDerivedStateFromError() { return { failed: true }; }
+  componentDidCatch(err) { console.error("[intro]", err); this.props.onError?.(err); }
+  render() { return this.state.failed ? null : this.props.children; }
+}
+
 const FADE_MS = 700;
 const FAILSAFE_MS = 45000; // jaga-jaga: intro tidak boleh menahan akses ke portfolio
 
@@ -127,6 +134,7 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
             pointerEvents: leaving ? "none" : "auto",
           }}
         >
+          <IntroBoundary onError={handleError}>
           <Suspense fallback={null}>
             <DeveloperIntro
               audio={audioRef.current}
@@ -137,6 +145,7 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
               onError={handleError}
             />
           </Suspense>
+          </IntroBoundary>
 
           <IntroLoader visible={!ready} />
 
