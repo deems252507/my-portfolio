@@ -28,16 +28,17 @@ export const INTRO_CONFIG = {
   previewImage: "/intro/portfolio-preview.jpg",
   // Waktu (detik) tiap adegan
   t: {
+    // +1,5 dtk ngoding di awal (monitor sudah menyala sejak frame pertama) dan fade ke layar asli diperpanjang (0,9 -> 1,3 dtk)
     powerOn: 0.5,
-    codeEnd: 3.6, iconMove: 4.0, iconClick: 4.85, winOpen: 4.95, // Scene 1b: berhenti ngoding, kursor ke ikon browser di taskbar, klik, jendela terbuka
-    cursorStart: 5.7, cursorEnd: 7.0, click: 7.1,        // Scene 2: kursor ke address bar
-    typeStart: 7.7, typeDur: 3.4,                         // Scene 3: mengetik alamat
-    enterReach: 12.0, enterPress: 13.5,                   // Scene 4: jeda baca alamat, LALU tangan ke ENTER (jari manis)
-    loadStart: 14.0, loadDur: 1.5, pageStart: 15.3,       // loading browser, halaman tampil
-    dive: 16.2, diveDur: 2.3, chromeOut: 16.5,            // Scene 5: kamera masuk, bezel hilang
-    through: 18.5, throughDur: 0.9,
-    welcome: 15.3,                                        // layar sambutan ASLI mulai berjalan di bawah (sama dengan halaman di monitor)
-    reveal: 18.5, fade: 18.5, done: 19.4,                 // crossfade tepat saat layar memenuhi pandangan
+    codeEnd: 5.1, iconMove: 5.5, iconClick: 6.35, winOpen: 6.45, // Scene 1b: berhenti ngoding, kursor ke ikon browser di taskbar, klik, jendela terbuka
+    cursorStart: 7.2, cursorEnd: 8.5, click: 8.6,        // Scene 2: kursor ke address bar
+    typeStart: 9.2, typeDur: 3.4,                         // Scene 3: mengetik alamat
+    enterReach: 13.5, enterPress: 15.0,                   // Scene 4: jeda baca alamat, LALU tangan ke ENTER (jari manis)
+    loadStart: 15.5, loadDur: 1.5, pageStart: 16.8,       // loading browser, halaman tampil
+    dive: 17.7, diveDur: 2.3, chromeOut: 18.0,            // Scene 5: kamera masuk, bezel hilang
+    through: 20.0, throughDur: 1.3,
+    welcome: 16.8,                                        // layar sambutan ASLI mulai berjalan di bawah (sama dengan halaman di monitor)
+    reveal: 20.0, fade: 20.0, done: 21.3,                 // crossfade tepat saat layar memenuhi pandangan
   },
 };
 /* ======================================================================== */
@@ -307,8 +308,8 @@ export function createDeveloperWorkspace(opts) {
     const barG = narrow ? [-0.3, 1.41, -0.2] : [-0.2, 1.41, -0.2];
     camKeys = prepTrack([
       K(0, pull([3.5, 1.95, 4.7], [-0.35, 1.05, -0.4]), [-0.35, 1.05, -0.4], 38),
-      K(2.8, pull([1.75, 1.7, 2.5], [-0.05, 1.15, -0.3]), [-0.05, 1.15, -0.3], 33), // mendekat: kode di layar terbaca
-      K(5.2, pull([1.0, 1.5, 1.75], [0, 1.22, -0.2]), [0, 1.22, -0.2], 33),
+      K(3.2, pull([1.75, 1.7, 2.5], [-0.05, 1.15, -0.3]), [-0.05, 1.15, -0.3], 33), // mendekat: kode di layar terbaca
+      K(6.8, pull([1.0, 1.5, 1.75], [0, 1.22, -0.2]), [0, 1.22, -0.2], 33),
       // bidikan address bar dari ATAS bahu/kepala (tidak menembus kepala karakter), bertahan sampai alamat selesai & terbaca
       // kamera DIAM total dari kursor sampai alamat selesai & terbaca (dua kunci identik, kecepatan nol)
       K(T.cursorEnd, narrow ? [0.1, 1.58, 0.95] : [0.15, 1.6, 0.9], barG, narrow ? 52 : 29, true),
@@ -346,7 +347,7 @@ export function createDeveloperWorkspace(opts) {
 
   /* ---- state animasi (digerakkan GSAP) ---- */
   const S = {
-    ct: 0, sway: 1, power: 0, typeT: 0, typeAmt: 1, loading: 0, page: 0, full: 0,
+    ct: 0, sway: 1, power: 1, typeT: 0, typeAmt: 1, loading: 0, page: 0, full: 0,
     cursor: 0, click: 0, focus: 0, rMouse: 0, rEnter: 0, enterPress: 0, lift: 0, win: 0, ptr: 0,
     exposure: 0.95, bloom: bloomBase, bolt: 1,
   };
@@ -361,7 +362,7 @@ export function createDeveloperWorkspace(opts) {
   window.addEventListener("pointermove", onPointer, { passive: true });
   const sched = typingSchedule(INTRO_CONFIG.url, T.typeDur);
   let typedCount = 0;
-  let codeKeys = 0; // jumlah ketukan saat 'ngoding' (menggerakkan teks kode di layar)
+  let codeKeys = 12; // jumlah ketukan saat 'ngoding' (menggerakkan teks kode di layar); sudah ada beberapa baris terketik sejak awal
   const CODE_CHARS = "etaoinshrdlucmfwypvbgkqjxz";
 
   const pos = new THREE.Vector3(), tgt = new THREE.Vector3();
@@ -386,7 +387,7 @@ export function createDeveloperWorkspace(opts) {
     }
     // memudarnya overlay 3D mengikuti jam adegan (sinkron dengan frame yang digambar), bukan transisi CSS yang bisa
     // tertunda/terpotong saat thread utama HP sibuk. Selesai (1) tepat sebelum T.end.
-    if (onFadeP && S.ct >= T.fade - 0.02) onFadeP(smooth(T.fade, T.fade + 0.85, S.ct));
+    if (onFadeP && S.ct >= T.fade - 0.02) onFadeP(smooth(T.fade, T.fade + 1.2, S.ct));
     if (Math.abs(camera.fov - fovNow) > 0.001) { camera.fov = fovNow; camera.updateProjectionMatrix(); }
     if (bokeh) {
       if (dofKill) dofMul = Math.max(0, dofMul - dtLast * 2.5);
@@ -502,7 +503,7 @@ export function createDeveloperWorkspace(opts) {
     kb.strip.position.set(kb.mouse.position.x, 0.7875, kb.mouse.position.z - 0.022);
 
     // tombol: turun saat ditekan, kembali naik
-    if (S.ct > T.powerOn + 0.3 && S.ct < T.codeEnd && S.typeT <= 0) {
+    if (running && S.ct < T.codeEnd && S.typeT <= 0) { // mengetik sejak detik pertama (tidak menunggu monitor 'menyala')
       // NGODING: kedua tangan terus mengetik (jari sesuai tombol, telapak bergeser, tombol turun) sampai ia beralih ke mouse
       rng.next -= dt;
       if (rng.next <= 0) {
@@ -626,7 +627,6 @@ export function createDeveloperWorkspace(opts) {
   function startTimeline() {
     tl = gsap.timeline({ defaults: { ease: "none" } });
     tl.to(S, { ct: T.end, duration: T.end }, 0)                                   // jam kamera
-      .to(S, { power: 1, duration: 0.9, ease: "power2.out" }, T.powerOn)
       .to(S, { sway: 0, duration: 0.6, ease: "sine.out" }, T.cursorEnd - 0.6)   // goyangan halus berhenti saat mengetik
       .to(S, { sway: 1, duration: 0.8, ease: "sine.inOut" }, T.enterReach)
       .to(S, { sway: 0, duration: 1.2, ease: "sine.out" }, T.dive)

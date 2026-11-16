@@ -24,3 +24,6 @@
   setelah frame digambar tapi sebelum tampil. Sekarang ukuran diubah di dalam `frame()` tepat sebelum render.
 - Transisi layar 3D -> layar asli patah: fade overlay memakai transisi CSS yang bisa tertunda/terpotong saat HP sibuk.
   Sekarang opacity overlay digerakkan dari jam adegan 3D (sinkron frame), 0,85 dtk.
+
+- Monitor sudah menyala sejak frame pertama (tanpa animasi power-on), tangan langsung mengetik, editor kode sudah berisi beberapa baris.
+- Durasi intro 19,4 -> 21,3 dtk: +1,5 dtk ngoding di awal, fade ke layar asli 1,2 dtk (semua jadwal di INTRO_CONFIG.t sudah digeser, urutan tetap).
