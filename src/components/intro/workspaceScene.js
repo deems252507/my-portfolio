@@ -106,7 +106,7 @@ function welcomeFrom(c = {}) {
 
 /* ----------------------------- fungsi utama ------------------------------ */
 export function createDeveloperWorkspace(opts) {
-  const { container, content = {}, theme = {}, lightning = {}, liveWelcome = null, audio = null, onZoom = null, onReady, onWelcome, onReveal, onFade, onDone, onError } = opts;
+  const { container, content = {}, theme = {}, lightning = {}, liveWelcome = null, audio = null, onZoom = null, onReady, onWelcome, onReveal, onFade, onDone, onError, holdStart = false } = opts;
   const T = INTRO_CONFIG.t;
   T.end = T.through + T.throughDur;
   const isMobile = window.matchMedia("(max-width: 768px)").matches;
@@ -118,7 +118,7 @@ export function createDeveloperWorkspace(opts) {
     renderer = new THREE.WebGLRenderer({ antialias: !isMobile, alpha: false, powerPreference: "high-performance" });
   } catch (e) {
     onError?.(e);
-    return { dispose() {}, skip() {}, update() {} };
+    return { dispose() {}, skip() {}, update() {}, begin() {} };
   }
   const pixelRatioMax = isMobile ? 1.5 : 1.75;
   let pixelRatio = Math.min(window.devicePixelRatio || 1, pixelRatioMax);
@@ -129,7 +129,7 @@ export function createDeveloperWorkspace(opts) {
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.setClearColor(0x02050a, 1);
   const canvas = renderer.domElement;
-  canvas.style.cssText = "position:absolute;inset:0;width:100%;height:100%;display:block;opacity:0;";
+  canvas.style.cssText = "position:absolute;inset:0;width:100%;height:100%;display:block;";
   canvas.setAttribute("aria-hidden", "true");
   container.appendChild(canvas);
 
@@ -167,8 +167,12 @@ export function createDeveloperWorkspace(opts) {
     live: liveWelcome,
     quality: isMobile ? 0.5 : 0.85,
   });
+  // gambar pratinjau halaman untuk layar monitor: ikut ditunggu saat loading (maks 4 dtk)
+  let previewReady = false;
+  const previewTimer = setTimeout(() => { previewReady = true; }, 4000);
   const prev = new Image();
-  prev.onload = () => { if (prev.naturalWidth > 100) screen.preview = prev; };
+  prev.onload = () => { if (prev.naturalWidth > 100) screen.preview = prev; previewReady = true; };
+  prev.onerror = () => { previewReady = true; };
   prev.src = INTRO_CONFIG.previewImage;
   const progDurOf = (c) => {
     const total = Math.max(6000, Math.max(1500, (parseFloat(c.loading_duration) || 4.5) * 1000));
@@ -409,7 +413,14 @@ export function createDeveloperWorkspace(opts) {
     hr.position.lerp(_enterP.set(kb.enterPos[0] - FOFF[2], 0.812, 0.245), S.rEnter);
     hr.position.y += 0.075 * S.lift - 0.003 * S.enterPress; // tangan DIANGKAT dulu saat berpindah ke ENTER, baru turun menekan
     hl.rotation.set(0.05, 0.1, 0);
-    hr.rotation.set(0.05 - 0.22 * S.lift, -0.1 + S.rEnter * 0.1, -0.1 * S.rEnter);
+    // saat memegang mouse: pergelangan sedikit melengkung, telapak ikut menoleh ke arah gerak kursor, ada getar halus
+    const mg = S.rMouse * (1 - S.rEnter);
+    const mDrift = Math.sin(t * 2.3) * 0.012 + Math.sin(t * 5.1 + 1.3) * 0.006;
+    hr.rotation.set(
+      0.05 - 0.22 * S.lift + 0.14 * mg,
+      -0.1 + S.rEnter * 0.1 + mg * (0.12 - 0.34 * S.cursor + mDrift),
+      -0.1 * S.rEnter + mg * 0.06
+    );
 
     [ch.handL, ch.handR].forEach((hd, hi) => hd.fingers.forEach((f, i) => {
       f.hit = Math.max(0, f.hit - dt * 8);
@@ -417,8 +428,10 @@ export function createDeveloperWorkspace(opts) {
       let c1 = 0.2 + f.hit * 0.16 + idle;
       let c2 = 0.26 + f.hit * 0.2 + idle * 1.2;
       if (hi === 1) {
-        c1 += S.rMouse * 0.2; c2 += S.rMouse * 0.16;
-        if (i === 0) { c1 += S.click * 0.12; c2 += S.click * 0.1; }
+        // genggaman rileks: telunjuk & jari tengah melengkung di atas tombol, jari manis & kelingking menekuk di sisi mouse
+        const grip = i < 2 ? 0.26 : 0.42;
+        c1 += S.rMouse * grip; c2 += S.rMouse * (grip + 0.04);
+        if (i === 0) { c1 += S.click * 0.14; c2 += S.click * 0.1; }
         if (i !== 2) { c1 -= S.rEnter * 0.08; c2 -= S.rEnter * 0.08; }
         if (i === 2) { c1 += S.enterPress * 0.14; c2 += S.enterPress * 0.18; }
         c1 -= S.lift * 0.1; c2 -= S.lift * 0.08;
@@ -443,8 +456,9 @@ export function createDeveloperWorkspace(opts) {
     ch.sync?.(); // karakter FBX: terjemahkan proxy (kepala, punggung, tangan, jari) ke tulang
 
     // mouse mengikuti kursor di layar
-    kb.mouse.position.x = 0.47 - 0.025 * S.ptr - 0.025 * S.cursor;
-    kb.mouse.position.z = 0.13 - 0.03 * S.ptr - 0.02 * S.cursor;
+    const msw = S.rMouse * (0.004 * Math.sin(t * 3.3) + 0.002 * Math.sin(t * 7.7));
+    kb.mouse.position.x = 0.47 - 0.025 * S.ptr - 0.025 * S.cursor + msw;
+    kb.mouse.position.z = 0.13 - 0.03 * S.ptr - 0.02 * S.cursor + msw * 0.6 + 0.004 * S.click;
     kb.strip.position.set(kb.mouse.position.x, 0.777, kb.mouse.position.z - 0.015);
 
     // tombol: turun saat ditekan, kembali naik
@@ -517,6 +531,7 @@ export function createDeveloperWorkspace(opts) {
   let t = 0;
   let frames = 0, acc = 0;
   let running = false;
+  let warm = 0, readyFired = false, beginRequested = !holdStart;
   function frame(now) {
     if (disposed) return;
     raf = requestAnimationFrame(frame);
@@ -546,10 +561,14 @@ export function createDeveloperWorkspace(opts) {
     bloom.strength = S.bloom;
     composer.render(dt);
 
-    if (!running && charReady && earthReady) {
-      running = true;
-      startTimeline();
-      onReady?.();
+    // Semua aset (karakter, Bumi, pratinjau) sudah ada -> "panaskan" GPU beberapa frame (shader terkompilasi,
+    // tekstur terunggah) SEBELUM loader dilepas, supaya animasi mulus dan tidak ada layar gelap / patah-patah.
+    if (!running && charReady && earthReady && previewReady) {
+      warm++;
+      if (warm >= 6) {
+        if (!readyFired) { readyFired = true; onReady?.(); }
+        if (beginRequested) { running = true; startTimeline(); }
+      }
     }
   }
 
@@ -557,8 +576,7 @@ export function createDeveloperWorkspace(opts) {
   let tl = null;
   function startTimeline() {
     tl = gsap.timeline({ defaults: { ease: "none" } });
-    tl.to(canvas, { opacity: 1, duration: 1.6, ease: "power1.out" }, 0)
-      .to(S, { ct: T.end, duration: T.end }, 0)                                   // jam kamera
+    tl.to(S, { ct: T.end, duration: T.end }, 0)                                   // jam kamera
       .to(S, { power: 1, duration: 0.9, ease: "power2.out" }, T.powerOn)
       .to(S, { sway: 0, duration: 0.6, ease: "sine.out" }, T.cursorEnd - 0.6)   // goyangan halus berhenti saat mengetik
       .to(S, { sway: 1, duration: 0.8, ease: "sine.inOut" }, T.enterReach)
@@ -607,6 +625,9 @@ export function createDeveloperWorkspace(opts) {
 
   raf = requestAnimationFrame(frame);
 
+  // dipanggil saat pengunjung menekan "Masuk": animasi baru berjalan (suara pun sudah diizinkan browser)
+  function begin() { beginRequested = true; }
+
   function skip() {
     if (skipped || disposed) return;
     skipped = true;
@@ -652,6 +673,7 @@ export function createDeveloperWorkspace(opts) {
     ro.disconnect();
     window.removeEventListener("pointermove", onPointer);
     clearTimeout(earthTimer);
+    clearTimeout(previewTimer);
     space.dispose();
     scene.traverse((o) => {
       if (o.geometry) o.geometry.dispose();
@@ -691,5 +713,5 @@ export function createDeveloperWorkspace(opts) {
     if (l.hue !== undefined) boltCol.setHSL(((l.hue % 360) / 360), 0.8, 0.6);
   }
 
-  return { dispose, skip, update };
+  return { dispose, skip, update, begin };
 }

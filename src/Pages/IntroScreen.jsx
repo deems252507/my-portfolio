@@ -46,7 +46,8 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
   const zoomRef = useRef(null);
   if (!audioRef.current) audioRef.current = new IntroAudio();
   const [soundOn, setSoundOn] = useState(false);
-  const [ready, setReady] = useState(false); // scene 3D sudah merender frame pertama
+  const [ready, setReady] = useState(false); // semua aset siap & GPU sudah dipanaskan
+  const [entered, setEntered] = useState(false); // pengunjung menekan "Masuk"
   const cbs = useRef({ onReveal, onLoadingComplete });
   cbs.current = { onReveal, onLoadingComplete };
 
@@ -105,6 +106,14 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
     setSoundOn(next && ok);
   }, []);
 
+  // Tombol "Masuk" = gestur pengguna: browser mengizinkan suara langsung hidup tanpa klik tambahan
+  const handleEnter = useCallback((withSound) => {
+    if (withSound) {
+      audioRef.current.setEnabled(true).then((ok) => setSoundOn(!!ok)); // dipanggil sinkron di dalam klik
+    }
+    setEntered(true);
+  }, []);
+
   const onSkip = useCallback(() => {
     if (skippedRef.current) return;
     skippedRef.current = true;
@@ -126,15 +135,20 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
     document.body.style.overflow = "hidden";
     const onKey = (e) => { if (e.key === "Escape" && use3D && !introGone) onSkip(); };
     window.addEventListener("keydown", onKey);
-    const failsafe = setTimeout(finish, FAILSAFE_MS);
     const readySafe = setTimeout(() => setReady(true), 12000); // loader tidak boleh menggantung
     return () => {
       document.body.style.overflow = prev;
       window.removeEventListener("keydown", onKey);
-      clearTimeout(failsafe);
       clearTimeout(readySafe);
     };
   }, [use3D, introGone, onSkip, finish]);
+
+  // pengaman waktu baru berjalan setelah pengunjung menekan "Masuk" (loader boleh menunggu selama apa pun)
+  useEffect(() => {
+    if (use3D && !entered) return;
+    const failsafe = setTimeout(finish, FAILSAFE_MS);
+    return () => clearTimeout(failsafe);
+  }, [use3D, entered, finish]);
 
   return (
     <>
@@ -163,6 +177,7 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
           <Suspense fallback={null}>
             <DeveloperIntro
               audio={audioRef.current}
+              started={entered}
               onReady={handleReady}
               onZoom={handleZoom}
               onWelcome={handleWelcomeStart}
@@ -174,7 +189,7 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
           </Suspense>
           </IntroBoundary>
 
-          <IntroLoader visible={!ready} />
+          <IntroLoader visible={!entered} ready={ready} onEnter={handleEnter} />
 
           {/* vignette sinematik halus (tidak menangkap klik) */}
           <div
@@ -183,7 +198,7 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
             style={{ background: "radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,4,10,0.55) 100%)" }}
           />
 
-          {audioRef.current.supported && (
+          {entered && audioRef.current.supported && (
             <button
               type="button"
               onClick={toggleSound}

@@ -3,10 +3,12 @@ import { useSiteContent } from "../../context/SiteContentContext";
 import { getLightningSettings } from "../../lib/siteContent";
 
 // Mount scene 3D. three.js + gsap dimuat lazy (code-split) agar halaman utama tetap ringan.
-export default function DeveloperIntro({ audio, onZoom, onReady, onWelcome, onReveal, onFade, onDone, onError }) {
+export default function DeveloperIntro({ audio, started = true, onZoom, onReady, onWelcome, onReveal, onFade, onDone, onError }) {
   const hostRef = useRef(null);
   const engineRef = useRef(null);
   const { content } = useSiteContent();
+  const startedRef = useRef(started);
+  startedRef.current = started;
   const contentRef = useRef(content);
   contentRef.current = content;
   const cb = useRef({ onZoom, onReady, onWelcome, onReveal, onFade, onDone, onError });
@@ -44,6 +46,7 @@ export default function DeveloperIntro({ audio, onZoom, onReady, onWelcome, onRe
           // petir di monitor memakai pengaturan yang sama dengan layar sambutan asli (hue dll. dari admin)
           lightning: getLightningSettings(contentRef.current),
           audio,
+          holdStart: true, // animasi menunggu tombol "Masuk" (gestur pengguna = suara boleh hidup)
           // kanvas partikel layar sambutan ASLI (dibuat tepat saat monitor menampilkan halamannya).
           // null = belum ada; monitor menggambar apa yang sedang berjalan di sana.
           liveWelcome: () => document.querySelector('canvas[data-welcome-particles]'),
@@ -56,6 +59,7 @@ export default function DeveloperIntro({ audio, onZoom, onReady, onWelcome, onRe
           onError: (e) => cb.current.onError?.(e),
         });
         engineRef.current = engine;
+        if (startedRef.current) engine.begin?.();
         // data admin bisa baru selesai dimuat setelah scene dibuat: samakan lagi
         engine.update?.({ content: contentRef.current, lightning: getLightningSettings(contentRef.current), theme: readTheme() });
       } catch (e) {
@@ -71,6 +75,9 @@ export default function DeveloperIntro({ audio, onZoom, onReady, onWelcome, onRe
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // pengunjung menekan "Masuk" -> jalankan animasi
+  useEffect(() => { if (started) engineRef.current?.begin?.(); }, [started]);
 
   // Admin mengganti teks Welcome / warna / petir / loading -> monitor ikut (tanpa membuat ulang scene)
   useEffect(() => {
