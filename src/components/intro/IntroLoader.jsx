@@ -9,10 +9,11 @@ import { getCoinSettings } from "../../lib/siteContent";
 // Tampilannya harus sama dengan #boot-loader di index.html supaya tidak ada lompatan saat React mengambil alih.
 //
 // Setelah semua siap muncul tombol koin "Hidupkan Suara": klik = suara menyala (gestur pengguna) + koin melambung;
-// begitu koin mendarat intro dimulai. (Tombol "Masuk tanpa suara" dihapus; suara bisa dimatikan sendiri di dalam.)
+// begitu koin mendarat intro dimulai. "Masuk tanpa suara" untuk pengunjung yang tidak ingin suara.
 // Foto di koin: admin "Foto koin suara" (kosong = foto profil).
 export default function IntroLoader({ visible = true, ready = false, onEnter = null, onSoundOn = null }) {
   const { content } = useSiteContent();
+  const [flipping, setFlipping] = useState(false);
   const photo = content?.coin_photo || content?.profile_photo || "";
   const coin = getCoinSettings(content);
 
@@ -62,11 +63,22 @@ export default function IntroLoader({ visible = true, ready = false, onEnter = n
             photoZoom={coin.photoZoom}
             bigScale={coin.bigScale}
             thanks="Suara hidup ✓"
-            onFlip={() => { onSoundOn?.(); }}
+            onFlip={() => { setFlipping(true); onSoundOn?.(); }}
             onLanded={() => setTimeout(() => onEnter(true), 800)}
           >
             Hidupkan Suara
           </FlipCoinButton>
+          <button
+            type="button"
+            onClick={() => onEnter(false)}
+            style={{
+              marginTop: 34, minHeight: 40, background: "none", border: "none", cursor: "pointer",
+              color: "rgba(220,240,255,0.55)", fontSize: 12, fontFamily: "inherit",
+              opacity: flipping ? 0 : 1, pointerEvents: flipping ? "none" : "auto", transition: "opacity 200ms",
+            }}
+          >
+            Masuk tanpa suara
+          </button>
         </div>
       )}
     </div>
