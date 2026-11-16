@@ -11,7 +11,7 @@ import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { RectAreaLightUniformsLib } from "three/examples/jsm/lights/RectAreaLightUniformsLib.js";
 import { BrowserScreen } from "./browserScreen";
 import { LightningSource } from "./lightningSource";
-import { solveArm, placeLimb } from "./helpers";
+import { solveArm, placeLimb, smooth } from "./helpers";
 import { buildCharacter } from "./character";
 import { loadMutantCharacter } from "./mutantCharacter";
 import { SCREEN, buildChair, buildDesk, buildMonitor, buildKeyboard, buildProps } from "./furniture";
@@ -180,6 +180,14 @@ export function createDeveloperWorkspace(opts) {
   /* ---- objek ---- */
   const space = buildSpaceBackdrop(scene, { isMobile });
   const shell = buildStationShell(scene, { isMobile, cyan });
+
+  // Tekstur Bumi (citra satelit NASA) dimuat paralel. Adegan menunggu maksimal 7 detik; bila lebih lambat
+  // atau gagal, Bumi prosedural tetap tampil dan versi realistis fade-in begitu siap (tidak ada yang rusak).
+  let earthReady = false;
+  const earthTimer = setTimeout(() => { earthReady = true; }, 7000);
+  space.loadEarth(renderer)
+    .catch((e) => console.warn("[intro] Tekstur Bumi gagal dimuat, memakai Bumi prosedural:", e))
+    .finally(() => { clearTimeout(earthTimer); earthReady = true; });
   buildDesk(scene, cyan);
   const mon = buildMonitor(scene, screen.texture);
   const kb = buildKeyboard(scene);
@@ -306,6 +314,15 @@ export function createDeveloperWorkspace(opts) {
     cursor: 0, click: 0, focus: 0, rMouse: 0, rEnter: 0, enterPress: 0, lift: 0, win: 0, ptr: 0,
     exposure: 0.95, bloom: bloomBase, bolt: 1,
   };
+  // parallax mouse/sentuh: kamera bergeser sangat halus (hilang sebelum kamera masuk ke layar, jadi tidak mengganggu alur)
+  const ptr = { x: 0, y: 0, sx: 0, sy: 0 };
+  const onPointer = (e) => {
+    const w = window.innerWidth || 1, h = window.innerHeight || 1;
+    ptr.x = (e.clientX / w) * 2 - 1;
+    ptr.y = -((e.clientY / h) * 2 - 1);
+    space.setPointer(ptr.x, ptr.y, t);
+  };
+  window.addEventListener("pointermove", onPointer, { passive: true });
   const sched = typingSchedule(INTRO_CONFIG.url, T.typeDur);
   let typedCount = 0;
   let codeKeys = 0; // jumlah ketukan saat 'ngoding' (menggerakkan teks kode di layar)
@@ -319,6 +336,12 @@ export function createDeveloperWorkspace(opts) {
     fovNow = evalTrack(camKeys, S.ct, pos, tgt);
     pos.x += Math.sin(t * 0.7) * 0.006 * S.sway;
     pos.y += Math.sin(t * 0.9 + 1.0) * 0.005 * S.sway;
+    // parallax mouse (dihaluskan; memudar total sebelum dive supaya layar tetap pas memenuhi pandangan)
+    const par = (1 - smooth(T.enterPress, T.dive, S.ct)) * (isMobile ? 0.6 : 1);
+    const kp = 1 - Math.exp(-0.06 * 60 * Math.min(0.05, dtLast));
+    ptr.sx += (ptr.x - ptr.sx) * kp; ptr.sy += (ptr.y - ptr.sy) * kp;
+    pos.x += ptr.sx * 0.075 * par; pos.y += ptr.sy * 0.04 * par;
+    tgt.x += ptr.sx * 0.02 * par; tgt.y += ptr.sy * 0.012 * par;
     camera.position.copy(pos);
     camera.lookAt(tgt);
     if (onZoom && S.ct >= T.dive + T.diveDur - 0.02) {
@@ -489,6 +512,7 @@ export function createDeveloperWorkspace(opts) {
 
   /* ---- loop render ---- */
   let raf = 0;
+  let dtLast = 0.016;
   let last = performance.now();
   let t = 0;
   let frames = 0, acc = 0;
@@ -498,6 +522,7 @@ export function createDeveloperWorkspace(opts) {
     raf = requestAnimationFrame(frame);
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
+    dtLast = dt;
     t += dt;
 
     // kualitas adaptif: bila FPS rendah, turunkan resolusi lalu matikan DOF
@@ -506,6 +531,7 @@ export function createDeveloperWorkspace(opts) {
       if (frames === 100) {
         const avg = acc / 100;
         if (avg > 0.03 && pixelRatio > 1) { pixelRatio = 1; renderer.setPixelRatio(1); layout(); }
+        if (avg > 0.03) space.setQuality(avg > 0.045 ? 0.3 : 0.55); // kurangi partikel bila FPS rendah
         if (avg > 0.045 && bokeh) { composer.removePass(bokeh); bokeh = null; }
       }
     }
@@ -514,13 +540,13 @@ export function createDeveloperWorkspace(opts) {
     updateCharacter(t, dt);
     glbMixer?.update(dt);
     updateScreen(t, now);
-    space.update(t, dt);
+    space.update(t, dt, camera, size.h * pixelRatio);
     shell.update(t, dt);
     renderer.toneMappingExposure = S.exposure;
     bloom.strength = S.bloom;
     composer.render(dt);
 
-    if (!running && charReady) {
+    if (!running && charReady && earthReady) {
       running = true;
       startTimeline();
       onReady?.();
@@ -540,12 +566,14 @@ export function createDeveloperWorkspace(opts) {
       .to(S, { typeAmt: 0.5, duration: 0.4, ease: "sine.inOut" }, T.codeEnd)
       // Scene 1b: jendela browser BARU terbuka di atas editor kode (dia berhenti ngoding lalu membuka link)
       .to(S, { ptr: 1, duration: 0.8, ease: "power2.inOut" }, T.iconMove)                    // kursor ke ikon browser
+      .call(() => audio?.click?.(), null, T.iconClick)                                      // suara klik mouse: ikon browser
       .to(S, { click: 1, duration: 0.1 }, T.iconClick)
       .to(S, { click: 0, duration: 0.3, ease: "power1.out" }, T.iconClick + 0.1)
       .to(S, { win: 1, duration: 0.75, ease: "power2.out" }, T.winOpen)
       // Scene 2: tangan ke mouse, kursor menuju address bar, klik
       .to(S, { rMouse: 1, duration: 0.7, ease: "sine.inOut" }, T.codeEnd)
       .to(S, { cursor: 1, duration: T.cursorEnd - T.cursorStart, ease: "power2.inOut" }, T.cursorStart)
+      .call(() => audio?.click?.(), null, T.click)                                          // suara klik mouse: address bar (pencarian)
       .to(S, { click: 1, duration: 0.1 }, T.click)
       .to(S, { click: 0, duration: 0.4, ease: "power1.out" }, T.click + 0.1)
       .set(S, { focus: 1 }, T.click)
@@ -622,6 +650,9 @@ export function createDeveloperWorkspace(opts) {
     tl?.kill();
     gsap.killTweensOf(canvas);
     ro.disconnect();
+    window.removeEventListener("pointermove", onPointer);
+    clearTimeout(earthTimer);
+    space.dispose();
     scene.traverse((o) => {
       if (o.geometry) o.geometry.dispose();
       if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => { m.map?.dispose?.(); m.dispose(); });

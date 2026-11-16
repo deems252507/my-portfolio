@@ -1,5 +1,5 @@
 // Efek suara sintetis (Web Audio API) — tanpa file audio, tanpa unduhan tambahan.
-// Hanya dua bunyi: ketukan keyboard dan tombol ENTER. Default MATI. Baru berbunyi setelah pengunjung menekan tombol suara (aturan autoplay browser).
+// Tiga bunyi: klik mouse (ikon browser & address bar), ketukan keyboard, dan tombol ENTER. Default MATI. Baru berbunyi setelah pengunjung menekan tombol suara (aturan autoplay browser).
 export class IntroAudio {
   constructor() {
     this.ctx = null;
@@ -65,6 +65,19 @@ export class IntroAudio {
     this._env(g, t, peak, atk, dec);
     o.connect(g); g.connect(this.master);
     o.start(t); o.stop(t + atk + dec + 0.05);
+  }
+
+  // Klik tombol mouse: "tik" saat ditekan (tajam, tinggi) lalu "tak" lebih lembut saat dilepas.
+  click() {
+    if (!this._ok()) return;
+    const v = 0.94 + Math.random() * 0.12;
+    this._burst({ type: "highpass", freq: 3800 * v, q: 0.7, peak: 0.3, atk: 0.0008, dec: 0.014 });
+    this._burst({ freq: 5200 * v, q: 2.2, peak: 0.18, atk: 0.0008, dec: 0.02 });
+    this._tone({ type: "square", f0: 1900 * v, f1: 900, peak: 0.05, atk: 0.0006, dec: 0.016 });
+    this._tone({ f0: 320, f1: 190, peak: 0.07, atk: 0.001, dec: 0.03 });
+    // lepas tombol
+    this._burst({ type: "highpass", freq: 3000, q: 0.7, peak: 0.13, atk: 0.0008, dec: 0.012, at: 0.075 });
+    this._tone({ type: "square", f0: 1400, f1: 760, peak: 0.025, atk: 0.0006, dec: 0.012, at: 0.075 });
   }
 
   key() {

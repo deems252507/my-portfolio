@@ -68,3 +68,12 @@ Tangan juga diangkat dulu sebelum menekan ENTER (`lift`).
 ## Membuka browser dari taskbar
 Setelah berhenti ngoding (`T.codeEnd`), tangan ke mouse, kursor menuju ikon browser di taskbar layar (`T.iconMove`), klik (`T.iconClick`), lalu jendela browser "keluar" dari ikon (`T.winOpen`),
 kursor lanjut ke address bar dan link diketik. Waktu semuanya di `INTRO_CONFIG.t`.
+
+
+## Upgrade ruang angkasa sinematik (Bumi realistis, partikel 3D, parallax)
+- `intro/earthTextures.js` : memuat tekstur Bumi (siang, lampu kota, mask laut, relief, awan). Urutan: `public/textures/earth/*` -> CDN jsDelivr. Gagal -> Bumi prosedural lama tetap dipakai.
+- `intro/spaceEnvironment.js` : `makePlanet()` = Bumi prosedural (cadangan) + Bumi bertekstur (fade-in), bola awan terpisah yang berputar sendiri, atmosfer Rayleigh di tepian, senja di terminator, lampu kota di sisi malam, bayangan awan. Asteroid memakai 3 InstancedMesh dengan tekstur kawah, melayang & berputar.
+- `intro/spaceParticles.js` : satu draw call `THREE.Points`, gerak dihitung di GPU: partikel biru/cyan/putih mengorbit Bumi + debu kosmik; menyingkir halus dari kursor. Jumlah otomatis (HP 1.4k-2.4k, desktop 4.5k-8k) dan turun bila FPS rendah.
+- `intro/workspaceScene.js` : parallax mouse/sentuh pada kamera (hilang sebelum kamera masuk ke layar), adegan menunggu tekstur Bumi maksimal 7 detik.
+- Suara klik mouse (`introAudio.click()`) berbunyi saat klik ikon browser dan klik address bar. Suara tetap default MATI sampai tombol "Suara" ditekan.
+- Loading: `components/ui/animated-loader-1.jsx` (kotak-kotak) dipakai `IntroLoader.jsx` dan `#boot-loader` di `index.html`.

@@ -3,6 +3,8 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { std, mk, radialTexture } from "./helpers";
+import { loadEarthTextures } from "./earthTextures";
+import { buildSpaceParticles } from "./spaceParticles";
 
 export const PLANET_POS = new THREE.Vector3(-24, 6, -62);
 export const PLANET_R = 15;
@@ -78,8 +80,128 @@ export function makeSky(isMobile) {
 }
 
 /* ------------------------------- planet ---------------------------------- */
+// Dua lapis tampilan Bumi:
+//  - "body"  : Bumi prosedural lama (cadangan; dipakai di peta lingkungan & bila tekstur gagal dimuat)
+//  - "earth" : Bumi realistis berbasis tekstur satelit NASA (siang, lampu kota malam, laut/darat, relief, awan)
+// Awan = bola transparan terpisah yang berputar sendiri, atmosfer = hamburan Rayleigh di tepian planet.
+const PLANET_VERT = `
+  varying vec3 vNw; varying vec3 vTw; varying vec3 vBw; varying vec3 vV; varying vec2 vUv;
+  void main(){
+    vec4 wp = modelMatrix * vec4(position, 1.0);
+    vec3 no = normalize(position);
+    vec3 to = cross(vec3(0.0, 1.0, 0.0), no);                 // arah timur (u bertambah) pada bola
+    to = length(to) < 1e-4 ? vec3(1.0, 0.0, 0.0) : normalize(to);
+    vec3 bo = cross(no, to);                                   // arah utara (v bertambah)
+    mat3 M = mat3(modelMatrix);
+    vNw = normalize(M * no); vTw = normalize(M * to); vBw = normalize(M * bo);
+    vV = cameraPosition - wp.xyz;
+    vUv = uv;
+    gl_Position = projectionMatrix * viewMatrix * wp;
+  }`;
+
+function makeEarthMaterial(tex, isMobile) {
+  const has = (t) => (t ? 1 : 0);
+  const dummy = tex.day;
+  return new THREE.ShaderMaterial({
+    transparent: true, depthWrite: true,
+    polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
+    uniforms: {
+      tDay: { value: tex.day }, tNight: { value: tex.night || dummy }, tSpec: { value: tex.spec || dummy },
+      tNormal: { value: tex.normal || dummy }, tClouds: { value: tex.clouds || dummy },
+      uHasNight: { value: has(tex.night) }, uHasSpec: { value: has(tex.spec) },
+      uHasNormal: { value: has(tex.normal) }, uHasClouds: { value: has(tex.clouds) },
+      uSun: { value: SUN_DIR.clone() }, uCloudShift: { value: 0 }, uFade: { value: 0 },
+      uRelief: { value: isMobile ? 0.7 : 1.0 },
+    },
+    vertexShader: PLANET_VERT,
+    fragmentShader: `
+      varying vec3 vNw; varying vec3 vTw; varying vec3 vBw; varying vec3 vV; varying vec2 vUv;
+      uniform sampler2D tDay; uniform sampler2D tNight; uniform sampler2D tSpec; uniform sampler2D tNormal; uniform sampler2D tClouds;
+      uniform float uHasNight; uniform float uHasSpec; uniform float uHasNormal; uniform float uHasClouds;
+      uniform vec3 uSun; uniform float uCloudShift; uniform float uFade; uniform float uRelief;
+      void main(){
+        vec3 N = normalize(vNw);
+        vec3 V = normalize(vV);
+        vec3 L = normalize(uSun);
+        vec3 Nm = N;
+        if (uHasNormal > 0.5) {
+          vec3 m = texture2D(tNormal, vUv).xyz * 2.0 - 1.0;
+          m.xy *= 0.9 * uRelief;
+          Nm = normalize(normalize(vTw) * m.x + normalize(vBw) * m.y + N * max(m.z, 0.2));
+        }
+        float ndl = dot(N, L);
+        float day = smoothstep(-0.10, 0.30, ndl);            // terminator lembut (bukan garis tajam)
+        float relief = clamp(1.0 + (dot(Nm, L) - ndl) * 1.5, 0.65, 1.4);
+
+        vec3 albedo = texture2D(tDay, vUv).rgb;
+        float water = uHasSpec > 0.5 ? texture2D(tSpec, vUv).r : 0.0;
+        float cd = uHasClouds > 0.5 ? texture2D(tClouds, vec2(vUv.x + uCloudShift + 0.0035, vUv.y - 0.0025)).r : 0.0;
+        cd = smoothstep(0.12, 0.9, cd);
+        float shadow = 1.0 - cd * 0.5;                        // bayangan awan jatuh ke permukaan
+
+        vec3 col = albedo * day * relief * shadow * 2.6;
+        col += albedo * vec3(0.05, 0.09, 0.17) * 0.11 * (1.0 - day); // cahaya bumi (earthshine) sangat halus
+
+        // pantulan matahari di laut
+        vec3 H = normalize(L + V);
+        float spec = pow(max(dot(Nm, H), 0.0), 110.0) * water * day * (1.0 - cd);
+        col += vec3(0.85, 0.93, 1.0) * spec * 1.6;
+        float NdV = max(dot(N, V), 0.0);
+        col += vec3(0.12, 0.28, 0.55) * pow(1.0 - NdV, 4.0) * water * day * 0.5;
+
+        // senja di sepanjang terminator
+        col += vec3(1.0, 0.42, 0.18) * exp(-pow(ndl * 4.2, 2.0)) * 0.09 * (0.4 + 0.6 * shadow) * day;
+
+        // lampu kota di sisi malam, tertutup awan
+        if (uHasNight > 0.5) {
+          vec3 nl = texture2D(tNight, vUv).rgb;
+          float lum = dot(nl, vec3(0.333));
+          vec3 warm = mix(nl, vec3(1.0, 0.72, 0.38) * lum, 0.65);
+          float nightMask = 1.0 - smoothstep(-0.10, 0.12, ndl);
+          col += warm * nightMask * (1.0 - cd * 0.85) * 2.4;
+        }
+
+        // hamburan atmosfer di tepi piringan planet
+        float fres = pow(1.0 - NdV, 3.2);
+        col += vec3(0.2, 0.46, 1.0) * fres * (0.12 + 0.88 * smoothstep(-0.25, 0.5, ndl)) * 1.15;
+        gl_FragColor = vec4(col, uFade);
+      }`,
+  });
+}
+
+function makeCloudMaterial(tex) {
+  return new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false,
+    uniforms: { tClouds: { value: tex.clouds }, uSun: { value: SUN_DIR.clone() }, uFade: { value: 0 } },
+    vertexShader: `
+      varying vec3 vNw; varying vec3 vV; varying vec2 vUv;
+      void main(){
+        vec4 wp = modelMatrix * vec4(position, 1.0);
+        vNw = normalize(mat3(modelMatrix) * normalize(position));
+        vV = cameraPosition - wp.xyz; vUv = uv;
+        gl_Position = projectionMatrix * viewMatrix * wp;
+      }`,
+    fragmentShader: `
+      varying vec3 vNw; varying vec3 vV; varying vec2 vUv;
+      uniform sampler2D tClouds; uniform vec3 uSun; uniform float uFade;
+      void main(){
+        vec3 N = normalize(vNw); vec3 V = normalize(vV); vec3 L = normalize(uSun);
+        float d = smoothstep(0.12, 0.9, texture2D(tClouds, vUv).r);
+        float ndl = dot(N, L);
+        float day = smoothstep(-0.12, 0.35, ndl);
+        vec3 tint = mix(vec3(1.0, 0.72, 0.52), vec3(1.0), smoothstep(0.0, 0.45, ndl)); // awan memerah di dekat senja
+        vec3 col = tint * (0.02 + 1.9 * day);
+        float rim = 1.0 + pow(1.0 - max(dot(N, V), 0.0), 3.0) * 0.5;
+        gl_FragColor = vec4(col, clamp(d * rim, 0.0, 1.0) * 0.92 * uFade);
+      }`,
+  });
+}
+
 export function makePlanet(isMobile) {
-  const group = new THREE.Group();
+  const group = new THREE.Group();          // kemiringan sumbu (diatur pemanggil)
+  const spinner = new THREE.Group();        // berputar pada sumbu miring
+  group.add(spinner);
+
   const mat = new THREE.ShaderMaterial({
     uniforms: { uSun: { value: SUN_DIR.clone() }, uTime: { value: 0 } },
     vertexShader: `
@@ -125,34 +247,94 @@ export function makePlanet(isMobile) {
         gl_FragColor = vec4(col, 1.0);
       }`,
   });
-  const body = new THREE.Mesh(new THREE.SphereGeometry(PLANET_R, isMobile ? 48 : 80, isMobile ? 32 : 56), mat);
+  const geo = new THREE.SphereGeometry(PLANET_R, isMobile ? 64 : 96, isMobile ? 40 : 64);
+  const body = new THREE.Mesh(geo, mat);
   body.frustumCulled = false;
-  group.add(body);
+  spinner.add(body);
 
+  // atmosfer: hamburan Rayleigh dari sinar yang melintasi lapisan udara tipis di tepi planet
+  const ATMO = 1.07;
   const atmoMat = new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, side: THREE.BackSide, blending: THREE.AdditiveBlending,
-    uniforms: { uSun: { value: SUN_DIR.clone() } },
+    uniforms: { uSun: { value: SUN_DIR.clone() }, uR: { value: PLANET_R }, uAtmo: { value: ATMO } },
     vertexShader: `
-      varying vec3 vN; varying vec3 vV;
+      varying vec3 vWp; varying vec3 vC;
       void main(){
         vec4 wp = modelMatrix * vec4(position, 1.0);
-        vN = normalize(mat3(modelMatrix) * normal);
-        vV = cameraPosition - wp.xyz;
+        vWp = wp.xyz;
+        vC = (modelMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
         gl_Position = projectionMatrix * viewMatrix * wp;
       }`,
     fragmentShader: `
-      varying vec3 vN; varying vec3 vV; uniform vec3 uSun;
+      varying vec3 vWp; varying vec3 vC; uniform vec3 uSun; uniform float uR; uniform float uAtmo;
       void main(){
-        float d = abs(dot(normalize(vN), normalize(vV)));
-        float i = pow(clamp(d / 0.3, 0.0, 1.0), 2.5);
-        float day = smoothstep(-0.4, 0.5, dot(normalize(vN), normalize(uSun)));
-        gl_FragColor = vec4(vec3(0.3, 0.6, 1.0) * i * (0.25 + 0.9 * day), 1.0);
+        vec3 rd = normalize(vWp - cameraPosition);
+        float tca = dot(vC - cameraPosition, rd);
+        vec3 cp = cameraPosition + rd * tca;
+        vec3 off = cp - vC;
+        float b = length(off) / uR;                           // jarak terdekat sinar ke pusat (dalam jari-jari planet)
+        float h = max(b - 1.0, 0.0);
+        float dens = exp(-h * 36.0);                          // pekat di tepi, cepat memudar ke atas
+        float chord = sqrt(max(uAtmo * uAtmo - max(b, 1.0) * max(b, 1.0), 0.0));
+        float sunT = dot(normalize(off + vec3(1e-5)), normalize(uSun));
+        float day = smoothstep(-0.4, 0.55, sunT);
+        float twi = exp(-pow(sunT * 3.0, 2.0));
+        vec3 col = vec3(0.15, 0.42, 1.0) * day + vec3(1.0, 0.48, 0.2) * twi * 0.3;
+        float a = min(dens * chord * 5.5, 1.4);
+        gl_FragColor = vec4(col * a, 1.0);
       }`,
   });
-  const atmo = new THREE.Mesh(new THREE.SphereGeometry(PLANET_R * 1.035, 48, 32), atmoMat);
+  const atmo = new THREE.Mesh(new THREE.SphereGeometry(PLANET_R * ATMO, 64, 40), atmoMat);
   atmo.frustumCulled = false;
+  atmo.renderOrder = 4;
   group.add(atmo);
-  return { group, body, mats: [mat, atmoMat] };
+
+  const state = { earth: null, clouds: null, earthMat: null, cloudMat: null, fade: 0, tex: null, spin: 0 };
+
+  /** Pasang tekstur satelit. Bumi realistis muncul dengan fade di atas Bumi prosedural. */
+  function applyTextures(tex) {
+    if (!tex || state.earth) return;
+    state.tex = tex;
+    state.earthMat = makeEarthMaterial(tex, isMobile);
+    state.earth = new THREE.Mesh(geo, state.earthMat);
+    state.earth.frustumCulled = false;
+    state.earth.renderOrder = 1;
+    spinner.add(state.earth);
+    if (tex.clouds) {
+      state.cloudMat = makeCloudMaterial(tex);
+      state.clouds = new THREE.Mesh(new THREE.SphereGeometry(PLANET_R * 1.012, isMobile ? 48 : 80, isMobile ? 32 : 48), state.cloudMat);
+      state.clouds.frustumCulled = false;
+      state.clouds.renderOrder = 2;
+      group.add(state.clouds);
+    }
+  }
+
+  /** Dipanggil tiap frame: rotasi Bumi pelan, awan berputar sendiri, fade-in tekstur. */
+  function update(t, dt) {
+    mat.uniforms.uTime.value = t;
+    const aPlanet = t * 0.012, aCloud = t * 0.019 + 0.6;
+    spinner.rotation.y = aPlanet;
+    if (state.clouds) state.clouds.rotation.y = aCloud;
+    if (state.earthMat) {
+      state.fade = Math.min(1, state.fade + dt / 1.6);
+      const f = state.fade * state.fade * (3 - 2 * state.fade);
+      state.earthMat.uniforms.uFade.value = f;
+      state.earthMat.uniforms.uCloudShift.value = (aPlanet - aCloud) / (Math.PI * 2);
+      if (state.cloudMat) state.cloudMat.uniforms.uFade.value = f;
+      if (state.fade >= 1 && body.visible) { // prosedural sudah tertutup penuh: matikan agar hemat GPU
+        body.visible = false;
+        state.earthMat.transparent = false;
+      }
+    }
+  }
+
+  function dispose() {
+    if (state.tex) Object.values(state.tex).forEach((t) => t?.dispose?.());
+    state.earthMat?.dispose(); state.cloudMat?.dispose();
+    state.clouds?.geometry.dispose();
+  }
+
+  return { group, body, mats: [mat, atmoMat], applyTextures, update, dispose };
 }
 
 function lumpyRock(radius, detail, bump, seed) {
@@ -167,6 +349,152 @@ function lumpyRock(radius, detail, bump, seed) {
   }
   g.computeVertexNormals();
   return g;
+}
+
+
+/* ---------------------------- asteroid realistis ---------------------------- */
+// Batu abu-kebiruan dengan relief kawah (tekstur dibuat di canvas), melayang & berputar pelan.
+// 3 variasi bentuk, masing-masing 1 InstancedMesh (hanya 3 draw call untuk seluruh asteroid).
+function rockTexture() {
+  const N = 256;
+  const c = document.createElement("canvas"); c.width = c.height = N;
+  const g = c.getContext("2d");
+  const build = (cells, seed) => {
+    const a = new Float32Array(cells * cells);
+    let s = seed; const r = () => ((s = (s * 16807) % 2147483647) / 2147483647);
+    for (let i = 0; i < a.length; i++) a[i] = r();
+    return (x, y) => { // value noise yang dapat diulang (tileable)
+      const fx = (x / N) * cells, fy = (y / N) * cells;
+      const x0 = Math.floor(fx), y0 = Math.floor(fy);
+      const tx = fx - x0, ty = fy - y0;
+      const sx = tx * tx * (3 - 2 * tx), sy = ty * ty * (3 - 2 * ty);
+      const i = (xx, yy) => a[(((yy % cells) + cells) % cells) * cells + (((xx % cells) + cells) % cells)];
+      return (i(x0, y0) * (1 - sx) + i(x0 + 1, y0) * sx) * (1 - sy) + (i(x0, y0 + 1) * (1 - sx) + i(x0 + 1, y0 + 1) * sx) * sy;
+    };
+  };
+  const n1 = build(4, 11), n2 = build(8, 23), n3 = build(16, 37), n4 = build(32, 51);
+  const h = new Float32Array(N * N);
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    h[y * N + x] = n1(x, y) * 0.45 + n2(x, y) * 0.28 + n3(x, y) * 0.17 + n4(x, y) * 0.10;
+  }
+  // kawah: cekungan dengan tepi sedikit terangkat
+  let s = 77; const r = () => ((s = (s * 16807) % 2147483647) / 2147483647);
+  for (let k = 0; k < 26; k++) {
+    const cx = r() * N, cy = r() * N, rad = 6 + r() * r() * 30, dep = 0.18 + r() * 0.25;
+    for (let y = -rad * 1.4 | 0; y <= rad * 1.4; y++) for (let x = -rad * 1.4 | 0; x <= rad * 1.4; x++) {
+      const d = Math.hypot(x, y) / rad;
+      if (d > 1.4) continue;
+      const bowl = d < 1 ? -dep * (1 - d * d) : 0;
+      const rim = Math.exp(-Math.pow((d - 1.05) * 5, 2)) * dep * 0.45;
+      const px = (Math.floor(cx + x) + N) % N, py = (Math.floor(cy + y) + N) % N;
+      h[py * N + px] += bowl + rim;
+    }
+  }
+  const img = g.createImageData(N, N);
+  for (let i = 0; i < N * N; i++) {
+    const v = Math.max(0, Math.min(1, h[i]));
+    const l = 52 + v * 150;
+    img.data[i * 4] = l * 1.0; img.data[i * 4 + 1] = l * 1.02; img.data[i * 4 + 2] = l * 1.07; img.data[i * 4 + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  return t;
+}
+
+function rockGeometry(seed, bump) {
+  const g = new THREE.IcosahedronGeometry(1, 3);
+  const p = g.attributes.position;
+  const v = new THREE.Vector3();
+  for (let i = 0; i < p.count; i++) {
+    v.fromBufferAttribute(p, i);
+    const n1 = Math.sin(v.x * 2.3 + seed) * Math.sin(v.y * 2.1 + seed * 1.7) * Math.sin(v.z * 2.6 + seed * 0.6);
+    const n2 = Math.sin(v.x * 5.7 + seed * 2.1) * Math.sin(v.y * 6.3 + seed) * Math.sin(v.z * 5.1 + seed * 3.3);
+    const n3 = Math.sin(v.x * 11.0 + seed * 4.0) * Math.sin(v.y * 12.5 + seed * 2.0) * Math.sin(v.z * 10.3 + seed);
+    v.multiplyScalar(1 + n1 * bump + n2 * bump * 0.35 + n3 * bump * 0.12);
+    p.setXYZ(i, v.x, v.y, v.z);
+  }
+  g.computeVertexNormals();
+  // UV bola sederhana agar tekstur batu menutup merata
+  const uv = new Float32Array(p.count * 2);
+  for (let i = 0; i < p.count; i++) {
+    v.fromBufferAttribute(p, i).normalize();
+    uv[i * 2] = Math.atan2(v.z, v.x) / (Math.PI * 2) + 0.5;
+    uv[i * 2 + 1] = Math.asin(v.y) / Math.PI + 0.5;
+  }
+  g.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
+  return g;
+}
+
+function buildAsteroids(root, { isMobile }) {
+  const belt = new THREE.Group();
+  belt.position.set(0, 0, -18);
+  root.add(belt);
+
+  const tex = rockTexture();
+  const mat = new THREE.MeshStandardMaterial({
+    color: 0xb4bdcc, map: tex, bumpMap: tex, bumpScale: 2.4, roughness: 1, metalness: 0, envMapIntensity: 2.2, fog: false,
+  });
+  const variants = [rockGeometry(1.3, 0.3), rockGeometry(4.7, 0.26), rockGeometry(8.1, 0.34)];
+  const total = isMobile ? 54 : 150;
+  const cam = new THREE.Vector3(0, 1.3, 3.5);
+  const rnd = Math.random;
+
+  // data tiap asteroid: posisi dunia dasar, skala, sumbu & kecepatan putar, ayunan melayang
+  const items = [];
+  const nArc = Math.floor(total * 0.55);
+  for (let i = 0; i < total; i++) {
+    let x, y, z, s;
+    if (i < nArc) { // sabuk lengkung (susunan lama)
+      const a = -0.9 + rnd() * 1.9, rr = 26 + rnd() * 14;
+      x = Math.sin(a) * rr + 4; y = (rnd() - 0.5) * 7 + 2; z = -Math.cos(a) * rr - 6;
+      s = 0.22 + rnd() * rnd() * 1.4;
+    } else { // asteroid kecil di berbagai kedalaman (memperkuat parallax); tidak menutupi planet / masuk ruangan
+      let tries = 0;
+      do {
+        x = (rnd() - 0.5) * 50; y = -3 + rnd() * 17; z = -8 - rnd() * 34; s = 0.06 + Math.pow(rnd(), 2.2) * 0.5; tries++;
+        const k = (z - cam.z) / (PLANET_POS.z - cam.z);
+        const cx = cam.x + (PLANET_POS.x - cam.x) * k, cy = cam.y + (PLANET_POS.y - cam.y) * k;
+        if (Math.hypot(x - cx, y - cy) > PLANET_R * k * 1.12 + s) break;
+      } while (tries < 20);
+    }
+    const axis = new THREE.Vector3(rnd() - 0.5, rnd() - 0.5, rnd() - 0.5).normalize();
+    items.push({
+      v: i % variants.length,
+      base: new THREE.Vector3(x, y, z + 18), // koordinat lokal sabuk
+      s, flat: 0.7 + rnd() * 0.5,
+      axis, w: (0.04 + rnd() * 0.35) / Math.sqrt(Math.max(s, 0.1) * 2),
+      q0: new THREE.Quaternion().setFromEuler(new THREE.Euler(rnd() * 6, rnd() * 6, rnd() * 6)),
+      dir: new THREE.Vector3(rnd() - 0.5, rnd() - 0.5, rnd() - 0.5).multiplyScalar(0.6),
+      f: 0.05 + rnd() * 0.12, ph: rnd() * 6.28,
+    });
+  }
+  const meshes = variants.map((g, vi) => {
+    const n = items.filter((it) => it.v === vi).length;
+    const m = new THREE.InstancedMesh(g, mat, n);
+    m.frustumCulled = false;
+    belt.add(m);
+    return m;
+  });
+  const idx = [0, 0, 0];
+  items.forEach((it) => { it.i = idx[it.v]++; });
+
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), sv = new THREE.Vector3();
+  function update(t) {
+    belt.rotation.y = t * 0.004;
+    for (const it of items) {
+      q.setFromAxisAngle(it.axis, it.w * t).multiply(it.q0);
+      p.copy(it.base).addScaledVector(it.dir, Math.sin(t * it.f + it.ph) * 2.2);
+      sv.set(it.s, it.s * it.flat, it.s);
+      m4.compose(p, q, sv);
+      meshes[it.v].setMatrixAt(it.i, m4);
+    }
+    meshes.forEach((m) => { m.instanceMatrix.needsUpdate = true; });
+  }
+  update(0);
+  return { update, tex, mat };
 }
 
 /* --------------------- latar luar angkasa lengkap ------------------------ */
@@ -185,28 +513,9 @@ export function buildSpaceBackdrop(scene, { isMobile }) {
   moon.position.set(17, 10, -48);
   root.add(moon);
 
-  // sabuk asteroid
-  const nAst = isMobile ? 36 : 80;
-  const rockMat = std("#5b6068", { roughness: 1, fog: false });
-  const ast = new THREE.InstancedMesh(lumpyRock(1, 1, 0.25, 1.1), rockMat, nAst);
-  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), pv = new THREE.Vector3(), sv = new THREE.Vector3();
-  for (let i = 0; i < nAst; i++) {
-    const a = -0.9 + Math.random() * 1.9;
-    const r = 26 + Math.random() * 14;
-    pv.set(Math.sin(a) * r + 4, (Math.random() - 0.5) * 7 + 2, -Math.cos(a) * r - 6);
-    e.set(Math.random() * 6, Math.random() * 6, Math.random() * 6);
-    q.setFromEuler(e);
-    const s = 0.25 + Math.random() * Math.random() * 1.4;
-    sv.set(s, s * (0.7 + Math.random() * 0.5), s);
-    m4.compose(pv, q, sv);
-    ast.setMatrixAt(i, m4);
-  }
-  ast.frustumCulled = false;
-  const belt = new THREE.Group();
-  belt.position.set(0, 0, -18);
-  ast.position.set(0, 0, 18);
-  belt.add(ast);
-  root.add(belt);
+  // asteroid realistis (instanced) + partikel 3D
+  const asteroids = buildAsteroids(root, { isMobile });
+  const particles = buildSpaceParticles(scene, { isMobile, planetPos: PLANET_POS, planetR: PLANET_R });
 
   // satelit
   const sat = new THREE.Group();
@@ -251,11 +560,11 @@ export function buildSpaceBackdrop(scene, { isMobile }) {
 
   const noDepth = [meteor, trail];
 
-  function update(t, dt) {
+  function update(t, dt, camera, viewH) {
     sky.material.uniforms.uTime.value = t;
-    planet.mats[0].uniforms.uTime.value = t;
-    planet.group.rotation.y = t * 0.006;
-    belt.rotation.y = t * 0.004;
+    planet.update(t, dt);
+    asteroids.update(t);
+    if (camera) particles.update(t, dt, camera, viewH || 800);
     moon.rotation.y = t * 0.02;
     sat.position.set(12 - ((t * 0.5) % 36), 5.6 + Math.sin(t * 0.2) * 0.3, -23);
     sat.rotation.y = t * 0.15; sat.rotation.z = Math.sin(t * 0.3) * 0.1;
@@ -272,7 +581,26 @@ export function buildSpaceBackdrop(scene, { isMobile }) {
       if (u >= 1) { meteorT = -1; meteor.visible = false; nextMeteor = t + 6 + Math.random() * 6; }
     }
   }
-  return { root, update, noDepth };
+
+  // tekstur Bumi dimuat async; Bumi prosedural tetap tampil sampai tekstur siap (lalu fade ke versi realistis)
+  let disposed = false;
+  const abort = new AbortController();
+  async function loadEarth(renderer) {
+    const tex = await loadEarthTextures({ renderer, isMobile, signal: abort.signal });
+    if (!tex) return false;
+    if (disposed) { Object.values(tex).forEach((t) => t?.dispose?.()); return false; }
+    planet.applyTextures(tex);
+    return true;
+  }
+  function dispose() {
+    disposed = true; abort.abort();
+    planet.dispose(); particles.dispose();
+    asteroids.tex.dispose();
+  }
+  return {
+    root, update, noDepth, loadEarth, dispose,
+    setPointer: particles.setPointer, setQuality: particles.setQuality, particleCount: particles.count,
+  };
 }
 
 /* ---- scene khusus untuk peta lingkungan (pantulan di kaca, lantai, meja, monitor) ---- */
