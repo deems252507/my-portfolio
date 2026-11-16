@@ -3,7 +3,7 @@ import { useSiteContent } from "../../context/SiteContentContext";
 import { getLightningSettings } from "../../lib/siteContent";
 
 // Mount scene 3D. three.js + gsap dimuat lazy (code-split) agar halaman utama tetap ringan.
-export default function DeveloperIntro({ audio, started = true, onZoom, onReady, onWelcome, onReveal, onFade, onDone, onError }) {
+export default function DeveloperIntro({ audio, started = true, onFadeP, onZoom, onReady, onWelcome, onReveal, onFade, onDone, onError }) {
   const hostRef = useRef(null);
   const engineRef = useRef(null);
   const { content } = useSiteContent();
@@ -11,8 +11,8 @@ export default function DeveloperIntro({ audio, started = true, onZoom, onReady,
   startedRef.current = started;
   const contentRef = useRef(content);
   contentRef.current = content;
-  const cb = useRef({ onZoom, onReady, onWelcome, onReveal, onFade, onDone, onError });
-  cb.current = { onZoom, onReady, onWelcome, onReveal, onFade, onDone, onError };
+  const cb = useRef({ onFadeP, onZoom, onReady, onWelcome, onReveal, onFade, onDone, onError });
+  cb.current = { onFadeP, onZoom, onReady, onWelcome, onReveal, onFade, onDone, onError };
 
   useEffect(() => {
     let engine = null;
@@ -51,6 +51,7 @@ export default function DeveloperIntro({ audio, started = true, onZoom, onReady,
           // null = belum ada; monitor menggambar apa yang sedang berjalan di sana.
           liveWelcome: () => document.querySelector('canvas[data-welcome-particles]'),
           onZoom: (m) => cb.current.onZoom?.(m),
+          onFadeP: (a) => cb.current.onFadeP?.(a),
           onReady: () => cb.current.onReady?.(),
           onWelcome: () => cb.current.onWelcome?.(),
           onReveal: () => cb.current.onReveal?.(),

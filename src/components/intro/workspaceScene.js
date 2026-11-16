@@ -106,7 +106,7 @@ function welcomeFrom(c = {}) {
 
 /* ----------------------------- fungsi utama ------------------------------ */
 export function createDeveloperWorkspace(opts) {
-  const { container, content = {}, theme = {}, lightning = {}, liveWelcome = null, audio = null, onZoom = null, onReady, onWelcome, onReveal, onFade, onDone, onError, holdStart = false } = opts;
+  const { container, content = {}, theme = {}, lightning = {}, liveWelcome = null, audio = null, onZoom = null, onFadeP = null, onReady, onWelcome, onReveal, onFade, onDone, onError, holdStart = false } = opts;
   const T = INTRO_CONFIG.t;
   T.end = T.through + T.throughDur;
   const isMobile = window.matchMedia("(max-width: 768px)").matches;
@@ -331,13 +331,16 @@ export function createDeveloperWorkspace(opts) {
   };
   layout();
   let lastW = container.clientWidth, lastH = container.clientHeight;
+  let layoutPending = false;
   const ro = new ResizeObserver(() => {
     const w = container.clientWidth, h = container.clientHeight;
     // HP: bilah alamat browser muncul/hilang saat layar disentuh -> tinggi berubah sedikit. Mengubah ukuran canvas
     // mengosongkannya (kedip hitam) dan menyusun ulang jalur kamera, jadi perubahan tinggi kecil diabaikan.
     if (isMobile && w === lastW && Math.abs(h - lastH) < 160) return;
     lastW = w; lastH = h;
-    layout();
+    // JANGAN layout() di sini: callback ResizeObserver berjalan SETELAH frame digambar tetapi SEBELUM ditampilkan,
+    // dan setSize() mengosongkan canvas -> 1-2 frame hitam ("kedip"). Ditunda ke dalam frame(), tepat sebelum render.
+    layoutPending = true;
   });
   ro.observe(container);
 
@@ -381,6 +384,9 @@ export function createDeveloperWorkspace(opts) {
       const d = Math.max(0.02, camera.position.z - SCREEN.cz);
       onZoom(Math.max(1, dEndV / d));
     }
+    // memudarnya overlay 3D mengikuti jam adegan (sinkron dengan frame yang digambar), bukan transisi CSS yang bisa
+    // tertunda/terpotong saat thread utama HP sibuk. Selesai (1) tepat sebelum T.end.
+    if (onFadeP && S.ct >= T.fade - 0.02) onFadeP(smooth(T.fade, T.fade + 0.85, S.ct));
     if (Math.abs(camera.fov - fovNow) > 0.001) { camera.fov = fovNow; camera.updateProjectionMatrix(); }
     if (bokeh) {
       if (dofKill) dofMul = Math.max(0, dofMul - dtLast * 2.5);
@@ -574,6 +580,7 @@ export function createDeveloperWorkspace(opts) {
     last = now;
     dtLast = dt;
     t += dt;
+    if (layoutPending) { layoutPending = false; layout(); } // ubah ukuran + render di frame yang sama = tidak ada frame kosong
 
     // Kualitas adaptif, dievaluasi tiap 90 frame DAN selama animasi berjalan (bagian akhir adalah yang terberat).
     // Urutan menurunkan: (1) matikan DOF = paling mahal & tidak membuat gambar buram, (2) turunkan resolusi

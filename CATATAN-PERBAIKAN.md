@@ -18,3 +18,9 @@
 - Layar monitor digambar maks ~30fps (sebelumnya ~60fps, upload tekstur besar tiap frame).
 - Kualitas adaptif berurutan: matikan DOF -> turunkan resolusi -> kurangi partikel, dievaluasi juga saat animasi berjalan.
   (Sebelumnya resolusi diturunkan lebih dulu = penyebab gambar jadi blur.)
+
+## Putaran 2 (dari video rekaman HP)
+- Kedip hitam 2 frame saat kursor menuju address bar: `ResizeObserver` memanggil `renderer.setSize()` (mengosongkan canvas)
+  setelah frame digambar tapi sebelum tampil. Sekarang ukuran diubah di dalam `frame()` tepat sebelum render.
+- Transisi layar 3D -> layar asli patah: fade overlay memakai transisi CSS yang bisa tertunda/terpotong saat HP sibuk.
+  Sekarang opacity overlay digerakkan dari jam adegan 3D (sinkron frame), 0,85 dtk.

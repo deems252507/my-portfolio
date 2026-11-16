@@ -45,6 +45,7 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
   const revealedRef = useRef(false);
   const audioRef = useRef(null);
   const zoomRef = useRef(null);
+  const overlayRef = useRef(null);
   if (!audioRef.current) audioRef.current = new IntroAudio();
   const [soundOn, setSoundOn] = useState(false);
   const [ready, setReady] = useState(false); // semua aset siap & GPU sudah dipanaskan
@@ -79,6 +80,11 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
     if (!el || skippedRef.current) return;
     el.style.transition = "none";
     el.style.transform = `scale(${m.toFixed(4)})`;
+  }, []);
+  // opacity overlay digerakkan langsung dari jam adegan 3D (frame-synced) -> crossfade mulus, tidak terpotong
+  const handleFadeP = useCallback((a) => {
+    const el = overlayRef.current;
+    if (el && !skippedRef.current) el.style.opacity = String(Math.max(0, 1 - a));
   }, []);
   const handleDone = useCallback(() => {
     if (skippedRef.current) return;
@@ -124,6 +130,8 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
     skippedRef.current = true;
     audioRef.current?.setEnabled(false);
     reveal(); // portfolio dipasang di bawah overlay
+    const ov = overlayRef.current;
+    if (ov) { ov.style.transition = `opacity ${FADE_MS}ms cubic-bezier(0.4,0,0.2,1)`; ov.style.opacity = "0"; }
     setLeaving(true);
     setTimeout(finish, FADE_MS);
   }, [reveal, finish]);
@@ -171,13 +179,12 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
 
       {use3D && !introGone && (
         <div
+          ref={overlayRef}
           className="fixed inset-0 z-50 overflow-hidden"
           role="dialog"
           aria-label="Intro portfolio"
           style={{
             background: "#02050a",
-            opacity: leaving ? 0 : 1,
-            transition: `opacity ${FADE_MS}ms cubic-bezier(0.4,0,0.2,1)`,
             pointerEvents: leaving ? "none" : "auto",
           }}
         >
@@ -188,6 +195,7 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
               started={entered}
               onReady={handleReady}
               onZoom={handleZoom}
+              onFadeP={handleFadeP}
               onWelcome={handleWelcomeStart}
               onReveal={handleThrough}
               onFade={handleFade}
