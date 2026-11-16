@@ -28,11 +28,11 @@ export const INTRO_CONFIG = {
     powerOn: 0.5,
     cursorStart: 5.4, cursorEnd: 7.0, click: 7.1,        // Scene 2: kursor ke address bar
     typeStart: 7.7, typeDur: 3.4,                         // Scene 3: mengetik alamat
-    enterReach: 11.1, enterPress: 12.5,                   // Scene 4: tangan ke ENTER (jari manis), menekan
-    loadStart: 13.0, loadDur: 1.5, pageStart: 14.3,       // loading browser, halaman tampil
-    dive: 15.2, diveDur: 2.3, chromeOut: 15.5,            // Scene 5: kamera masuk, bezel hilang
-    through: 17.5, throughDur: 0.9,
-    reveal: 17.6, fade: 17.8, done: 18.7,
+    enterReach: 12.0, enterPress: 13.5,                   // Scene 4: jeda baca alamat, LALU tangan ke ENTER (jari manis)
+    loadStart: 14.0, loadDur: 1.5, pageStart: 15.3,       // loading browser, halaman tampil
+    dive: 16.2, diveDur: 2.3, chromeOut: 16.5,            // Scene 5: kamera masuk, bezel hilang
+    through: 18.5, throughDur: 0.9,
+    reveal: 18.6, fade: 18.8, done: 19.7,
   },
 };
 /* ======================================================================== */
@@ -241,14 +241,18 @@ export function createDeveloperWorkspace(opts) {
       K(0, pull([3.5, 1.95, 4.7], [-0.35, 1.05, -0.4]), [-0.35, 1.05, -0.4], 38),
       K(2.8, pull([2.3, 1.8, 3.2], [-0.15, 1.12, -0.3]), [-0.15, 1.12, -0.3], 36),
       K(5.2, pull([1.0, 1.5, 1.75], [0, 1.22, -0.2]), [0, 1.22, -0.2], 33),
-      K(T.cursorEnd, [-0.08, 1.43, 0.72], barG, narrow ? 52 : 29),
-      // pelan mundur dari address bar ke bidikan medium (layar + keyboard terlihat) -> tidak ada lompatan ke ENTER
-      K(9.2, narrow ? [-0.05, 1.42, 0.8] : [0.05, 1.4, 0.92], narrow ? [-0.3, 1.38, -0.2] : [-0.12, 1.36, -0.15], narrow ? 54 : 32),
-      K(11.4, pull([0.5, 1.25, 1.3], [0.05, 1.05, 0.0]), [0.05, 1.05, 0.0], 38),
+      // bidikan address bar dari ATAS bahu/kepala (tidak menembus kepala karakter), bertahan sampai alamat selesai & terbaca
+      K(T.cursorEnd, narrow ? [0.1, 1.58, 0.95] : [0.15, 1.6, 0.9], barG, narrow ? 52 : 29),
+      K(9.6, narrow ? [0.08, 1.58, 0.95] : [0.12, 1.59, 0.88], barG, narrow ? 52 : 28.5),
+      K(T.enterReach, narrow ? [0.08, 1.58, 0.95] : [0.12, 1.58, 0.86], barG, narrow ? 52 : 28),
+      // baru setelah itu: mundur ke bidikan medium, lalu mendekat ke keyboard untuk menekan ENTER
+      K(T.enterReach + 0.8, pull([0.6, 1.28, 1.3], [0.05, 1.05, 0.0]), [0.05, 1.05, 0.0], 38),
       K(T.enterPress - 0.2, pull([0.85, 1.12, 1.0], [0.17, 0.86, 0.12]), [0.17, 0.86, 0.12], 33),
       K(T.enterPress + 0.8, pull([0.7, 1.2, 1.05], [0.1, 1.0, 0.0]), [0.1, 1.0, 0.0], 34),
-      K(T.pageStart + 0.2, pull([0.35, 1.32, 1.0], [0, 1.2, -0.2]), [0, 1.2, -0.2], 32),
-      K(T.dive, pull([0.12, 1.27, 0.78], [0, 1.2, -0.2]), [0, 1.2, -0.2], 31),
+      K(T.pageStart + 0.2, pull([0.45, 1.34, 1.0], [0, 1.2, -0.2]), [0, 1.2, -0.2], 32),
+      // masuk ke monitor lewat samping kanan karakter (di atas lengan, jauh dari kepala), baru ke tengah layar
+      K(T.dive, pull([0.42, 1.3, 0.85], [0, 1.2, -0.2]), [0, 1.2, -0.2], 31),
+      K(T.dive + T.diveDur * 0.55, [0.3, 1.27, 0.5], [0, 1.2, -0.2], 36),
       K(T.dive + T.diveDur, [0, SCREEN.cy, SCREEN.cz + dEnd], [0, 1.2, -0.2], fovEnd),
       K(T.end, [0, SCREEN.cy, SCREEN.cz + 0.04], [0, 1.2, -1.5], fovEnd + 10),
     ]);

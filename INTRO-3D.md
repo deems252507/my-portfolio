@@ -3,7 +3,7 @@
 Overlay di atas portfolio asli. Portfolio, routing, Supabase, dashboard admin, dan semua fitur lama tidak diubah
 (`App.jsx`, `WelcomeScreen.jsx`, halaman, dan database tidak disentuh).
 
-## Alur (± 18,5 detik, bisa di-Skip)
+## Alur (± 19,5 detik)
 1. Programmer bekerja di ruangan berkaca menghadap planet; kamera dari belakang, tangan mengetik.
 2. Dolly-in ke monitor; tangan memegang mouse, kursor bergerak ke address bar dan klik.
 3. `https://rizkydm.vercel.app/` diketik huruf demi huruf (tiap huruf = ketukan jari di tombol QWERTY yang benar + tombol turun + suara).
