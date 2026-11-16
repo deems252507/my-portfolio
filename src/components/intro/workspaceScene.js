@@ -301,12 +301,14 @@ export function createDeveloperWorkspace(opts) {
 
   /* ---- state animasi (digerakkan GSAP) ---- */
   const S = {
-    ct: 0, sway: 1, power: 0, typeT: 0, typeAmt: 0.5, loading: 0, page: 0, full: 0,
+    ct: 0, sway: 1, power: 0, typeT: 0, typeAmt: 1, loading: 0, page: 0, full: 0,
     cursor: 0, click: 0, focus: 0, rMouse: 0, rEnter: 0, enterPress: 0, lift: 0, win: 0,
     exposure: 0.95, bloom: bloomBase, bolt: 1,
   };
   const sched = typingSchedule(INTRO_CONFIG.url, T.typeDur);
   let typedCount = 0;
+  let codeKeys = 0; // jumlah ketukan saat 'ngoding' (menggerakkan teks kode di layar)
+  const CODE_CHARS = "etaoinshrdlucmfwypvbgkqjxz";
 
   const pos = new THREE.Vector3(), tgt = new THREE.Vector3();
   const sh = new THREE.Vector3(), W = new THREE.Vector3(), pole = new THREE.Vector3();
@@ -422,7 +424,15 @@ export function createDeveloperWorkspace(opts) {
     kb.strip.position.set(kb.mouse.position.x, 0.777, kb.mouse.position.z - 0.015);
 
     // tombol: turun saat ditekan, kembali naik
-    if (a > 0.05 && S.typeT <= 0) { // ketukan acak halus (tanpa suara) sebelum mengetik URL
+    if (S.ct > T.powerOn + 0.3 && S.ct < T.cursorStart - 0.7 && S.typeT <= 0) {
+      // NGODING: kedua tangan terus mengetik (jari sesuai tombol, telapak bergeser, tombol turun) sampai ia beralih ke mouse
+      rng.next -= dt;
+      if (rng.next <= 0) {
+        rng.next = 0.06 + Math.random() * 0.11 + (Math.random() < 0.1 ? 0.28 : 0); // sesekali jeda berpikir
+        keystroke(CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]);
+        codeKeys++;
+      }
+    } else if (a > 0.05 && S.typeT <= 0) { // ketukan acak halus (tanpa suara) sebelum mengetik URL
       rng.next -= dt;
       if (rng.next <= 0) {
         rng.next = (0.12 + Math.random() * 0.14) / Math.max(0.3, a);
@@ -454,7 +464,7 @@ export function createDeveloperWorkspace(opts) {
     const spin = S.loading > 0 && S.loading < 1 ? Math.floor(t * 24) : 0;
     const boltOn = S.page > 0 ? Math.floor(t * 30) : 0;
     const liveTick = S.page > 0 ? Math.floor(nowMs / (isMobile ? 33 : 16)) : 0;
-    const codeN = S.win >= 1 ? 999 : Math.floor(Math.max(0, S.ct - 0.9) * 30); // baris kode terakhir terketik langsung
+    const codeN = S.win >= 1 ? 999 : Math.floor(codeKeys * 2.6); // teks kode bertambah sesuai ketukan jari
     const sig = [S.win.toFixed(2), codeN, S.power.toFixed(2), typedCount, S.loading.toFixed(2), S.page.toFixed(2), S.full.toFixed(2), S.cursor.toFixed(3), S.click.toFixed(2), S.focus, blink, spin, boltOn, S.bolt.toFixed(2), screen.preview ? 1 : 0, screen.rev, liveTick].join("|");
     if (sig !== lastSig && nowMs - lastDraw > (isMobile ? 28 : 12)) {
       lastSig = sig;
@@ -526,6 +536,7 @@ export function createDeveloperWorkspace(opts) {
       .to(S, { sway: 0, duration: 0.6, ease: "sine.out" }, T.cursorEnd - 0.6)   // goyangan halus berhenti saat mengetik
       .to(S, { sway: 1, duration: 0.8, ease: "sine.inOut" }, T.enterReach)
       .to(S, { sway: 0, duration: 1.2, ease: "sine.out" }, T.dive)
+      .to(S, { typeAmt: 0.5, duration: 0.4, ease: "sine.inOut" }, T.cursorStart - 0.7)
       // Scene 1b: jendela browser BARU terbuka di atas editor kode (dia berhenti ngoding lalu membuka link)
       .to(S, { win: 1, duration: 0.8, ease: "power2.out" }, T.cursorStart - 1.2)
       // Scene 2: tangan ke mouse, kursor menuju address bar, klik
