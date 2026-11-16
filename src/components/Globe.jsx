@@ -132,6 +132,9 @@ function CobeGlobe({
       const width = canvas.offsetWidth
       if (width === 0 || globe) return
 
+      // WebGL bisa gagal dibuat di HP (memori GPU habis / jumlah context penuh setelah intro 3D).
+      // Tanpa try/catch, error ini menjatuhkan seluruh halaman jadi layar hitam; sekarang globe saja yang dilewati.
+      try {
       globe = createGlobe(canvas, {
         devicePixelRatio: Math.min(window.devicePixelRatio || 1, compactDevice ? 1 : 1.5),
         width,
@@ -153,6 +156,11 @@ function CobeGlobe({
         arcHeight: 0.25,
         opacity: 0.8,
       })
+      } catch (err) {
+        console.warn("[Globe] WebGL tidak tersedia, globe dilewati:", err)
+        globe = null
+        return
+      }
       visibilityObserver.observe(canvas)
       document.addEventListener("visibilitychange", handleVisibilityChange)
       startAnimation()

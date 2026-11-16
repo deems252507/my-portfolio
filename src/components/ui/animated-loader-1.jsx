@@ -21,6 +21,9 @@ const KEYFRAMES = `
 
 /** Hanya kotak-kotaknya (tanpa latar). Dipakai oleh IntroLoader dan layar loading lain. */
 export function SquaresLoader({ dark = true, className = "" }) {
+  // Fase animasi dari jam halaman (bukan dari saat komponen dipasang): loader di index.html, fallback Suspense, dan
+  // IntroLoader tampil sefase, jadi saat berganti layar kotak-kotak TIDAK mengulang dari awal (itu yang tampak "kedip").
+  const [phase] = useState(() => ((typeof performance !== "undefined" ? performance.now() : 0) / 1000) % 10);
   return (
     <div className={`relative w-24 h-24 rotate-45 z-10 ${className}`} aria-hidden="true">
       <style>{KEYFRAMES}</style>
@@ -28,7 +31,7 @@ export function SquaresLoader({ dark = true, className = "" }) {
         <div
           key={i}
           className={`absolute top-0 left-0 w-7 h-7 m-0.5 al1-square ${dark ? "bg-white" : "bg-gray-900"}`}
-          style={{ animationDelay: `${-1.4285714286 * i}s` }}
+          style={{ animationDelay: `${-(phase + 1.4285714286 * i).toFixed(4)}s` }}
         />
       ))}
     </div>

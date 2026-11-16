@@ -127,11 +127,32 @@ export function createDeveloperWorkspace(opts) {
   renderer.toneMappingExposure = 0.95;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  // Bayangan diperbarui tiap 2 frame (HP: 3), bukan tiap frame. Sebelumnya bayangan juga digambar ulang oleh pass DOF
+  // (adegan + bayangan dua kali per frame) -> ini penyebab utama laptop terasa berat.
+  renderer.shadowMap.autoUpdate = false;
+  renderer.shadowMap.needsUpdate = true;
   renderer.setClearColor(0x02050a, 1);
   const canvas = renderer.domElement;
   canvas.style.cssText = "position:absolute;inset:0;width:100%;height:100%;display:block;";
   canvas.setAttribute("aria-hidden", "true");
   container.appendChild(canvas);
+
+  // Di HP, sistem bisa mencabut context WebGL (memori GPU habis / aplikasi dipindah). three.js memulihkannya sendiri,
+  // tetapi bila tidak kembali dalam 2,5 dtk jangan biarkan layar hitam: lewati intro ke layar sambutan asli.
+  let lostTimer = 0;
+  const onCtxLost = (e) => {
+    e.preventDefault();
+    console.warn("[intro] WebGL context hilang");
+    clearTimeout(lostTimer);
+    lostTimer = setTimeout(() => {
+      if (disposed) return;
+      console.warn("[intro] context tidak kembali, intro dilewati");
+      onError?.(new Error("webgl context lost"));
+    }, 2500);
+  };
+  const onCtxRestored = () => { clearTimeout(lostTimer); };
+  canvas.addEventListener("webglcontextlost", onCtxLost);
+  canvas.addEventListener("webglcontextrestored", onCtxRestored);
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x02050a);
@@ -309,7 +330,15 @@ export function createDeveloperWorkspace(opts) {
     camera.updateProjectionMatrix();
   };
   layout();
-  const ro = new ResizeObserver(layout);
+  let lastW = container.clientWidth, lastH = container.clientHeight;
+  const ro = new ResizeObserver(() => {
+    const w = container.clientWidth, h = container.clientHeight;
+    // HP: bilah alamat browser muncul/hilang saat layar disentuh -> tinggi berubah sedikit. Mengubah ukuran canvas
+    // mengosongkannya (kedip hitam) dan menyusun ulang jalur kamera, jadi perubahan tinggi kecil diabaikan.
+    if (isMobile && w === lastW && Math.abs(h - lastH) < 160) return;
+    lastW = w; lastH = h;
+    layout();
+  });
   ro.observe(container);
 
   /* ---- state animasi (digerakkan GSAP) ---- */
@@ -354,10 +383,15 @@ export function createDeveloperWorkspace(opts) {
     }
     if (Math.abs(camera.fov - fovNow) > 0.001) { camera.fov = fovNow; camera.updateProjectionMatrix(); }
     if (bokeh) {
+      if (dofKill) dofMul = Math.max(0, dofMul - dtLast * 2.5);
       const d = camera.position.distanceTo(tgt);
       const f = bokeh.uniforms.focus.value;
       bokeh.uniforms.focus.value = f + (d - f) * 0.2;
-      bokeh.enabled = S.ct < T.dive + 1.2;
+      // blur memudar halus (sebelumnya mati mendadak = gambar "berkedip" tajam)
+      const dofK = (1 - smooth(T.dive, T.dive + 1.2, S.ct)) * dofMul;
+      bokeh.uniforms.maxblur.value = 0.012 * dofK;
+      bokeh.enabled = dofK > 0.02;
+      if (dofKill && dofMul <= 0) { composer.removePass(bokeh); bokeh = null; }
     }
   }
 
@@ -501,10 +535,10 @@ export function createDeveloperWorkspace(opts) {
     const blink = Math.floor(t * 2.4) % 2;
     const spin = S.loading > 0 && S.loading < 1 ? Math.floor(t * 24) : 0;
     const boltOn = S.page > 0 ? Math.floor(t * 30) : 0;
-    const liveTick = S.page > 0 ? Math.floor(nowMs / (isMobile ? 33 : 16)) : 0;
+    const liveTick = S.page > 0 ? Math.floor(nowMs / (isMobile ? 50 : 33)) : 0;
     const codeN = S.win >= 1 ? 999 : Math.floor(codeKeys * 2.6); // teks kode bertambah sesuai ketukan jari
     const sig = [S.ptr.toFixed(3), S.win.toFixed(2), codeN, S.power.toFixed(2), typedCount, S.loading.toFixed(2), S.page.toFixed(2), S.full.toFixed(2), S.cursor.toFixed(3), S.click.toFixed(2), S.focus, blink, spin, boltOn, S.bolt.toFixed(2), screen.preview ? 1 : 0, screen.rev, liveTick].join("|");
-    if (sig !== lastSig && nowMs - lastDraw > (isMobile ? 28 : 12)) {
+    if (sig !== lastSig && nowMs - lastDraw > (isMobile ? 45 : 30)) {
       lastSig = sig;
       lastDraw = nowMs;
       screen.draw({
@@ -529,7 +563,8 @@ export function createDeveloperWorkspace(opts) {
   let dtLast = 0.016;
   let last = performance.now();
   let t = 0;
-  let frames = 0, acc = 0;
+  let qAcc = 0, qN = 0, qLevel = 0, qLast = 0, shadowTick = 0;
+  let dofKill = false, dofMul = 1;
   let running = false;
   let warm = 0, readyFired = false, beginRequested = !holdStart;
   function frame(now) {
@@ -540,16 +575,23 @@ export function createDeveloperWorkspace(opts) {
     dtLast = dt;
     t += dt;
 
-    // kualitas adaptif: bila FPS rendah, turunkan resolusi lalu matikan DOF
-    if (frames < 100) {
-      frames++; acc += dt;
-      if (frames === 100) {
-        const avg = acc / 100;
-        if (avg > 0.03 && pixelRatio > 1) { pixelRatio = 1; renderer.setPixelRatio(1); layout(); }
-        if (avg > 0.03) space.setQuality(avg > 0.045 ? 0.3 : 0.55); // kurangi partikel bila FPS rendah
-        if (avg > 0.045 && bokeh) { composer.removePass(bokeh); bokeh = null; }
+    // Kualitas adaptif, dievaluasi tiap 90 frame DAN selama animasi berjalan (bagian akhir adalah yang terberat).
+    // Urutan menurunkan: (1) matikan DOF = paling mahal & tidak membuat gambar buram, (2) turunkan resolusi
+    // (yang membuat gambar tampak blur, jadi dijadikan langkah kedua), (3) kurangi partikel.
+    qAcc += dt; qN++;
+    if (qN >= 90) {
+      const avg = qAcc / qN;
+      qAcc = 0; qN = 0;
+      if (avg > (isMobile ? 0.034 : 0.03) && qLevel < 3 && now - qLast > 1200) {
+        qLevel++; qLast = now;
+        if (qLevel === 1 && !bokeh) qLevel = 2; // HP tidak punya DOF: langsung ke langkah berikutnya
+        if (qLevel === 1) dofKill = true;
+        else if (qLevel === 2) { if (pixelRatio > 1) { pixelRatio = 1; renderer.setPixelRatio(1); layout(); } }
+        else space.setQuality(avg > 0.045 ? 0.3 : 0.55);
       }
     }
+    shadowTick++;
+    if (shadowTick < 3 || shadowTick % (isMobile ? 3 : 2) === 0) renderer.shadowMap.needsUpdate = true;
 
     updateCamera(t);
     updateCharacter(t, dt);
@@ -671,6 +713,9 @@ export function createDeveloperWorkspace(opts) {
     tl?.kill();
     gsap.killTweensOf(canvas);
     ro.disconnect();
+    clearTimeout(lostTimer);
+    canvas.removeEventListener("webglcontextlost", onCtxLost);
+    canvas.removeEventListener("webglcontextrestored", onCtxRestored);
     window.removeEventListener("pointermove", onPointer);
     clearTimeout(earthTimer);
     clearTimeout(previewTimer);

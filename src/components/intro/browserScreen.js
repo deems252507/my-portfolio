@@ -44,8 +44,9 @@ export class BrowserScreen {
     this.texture = new THREE.CanvasTexture(this.canvas);
     this.texture.colorSpace = THREE.SRGBColorSpace;
     this.texture.anisotropy = 4;
-    this.texture.generateMipmaps = false;
-    this.texture.minFilter = THREE.LinearFilter;
+    // mipmap: layar monitor yang diperkecil (kamera jauh) tidak lagi berkilau/berkedip saat kamera bergoyang
+    this.texture.generateMipmaps = true;
+    this.texture.minFilter = THREE.LinearMipmapLinearFilter;
   }
 
   /** Teks, font, warna, dan loading dari pengaturan admin (bisa dipanggil kapan saja). */

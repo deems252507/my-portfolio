@@ -17,20 +17,29 @@ import IntroLoader from "./components/intro/IntroLoader";
 import SmoothScroll from "./components/SmoothScroll";
 import CursorGlow from "./components/CursorGlow";
 import FilmOverlay from "./components/FilmOverlay";
+import ErrorBoundary, { CrashScreen } from "./components/ErrorBoundary";
+import { retryImport, lazyWithRetry } from "./utils/lazyWithRetry";
 
-const importHome = () => import("./Pages/Home");
-const importAbout = () => import("./Pages/About");
-const importPortofolio = () => import("./Pages/Portofolio");
-const importContact = () => import("./Pages/Contact");
+// retryImport: coba ulang bila unduhan gagal (sinyal HP) supaya tidak berakhir layar hitam
+const importHome = retryImport(() => import("./Pages/Home"));
+const importAbout = retryImport(() => import("./Pages/About"));
+const importPortofolio = retryImport(() => import("./Pages/Portofolio"));
+const importContact = retryImport(() => import("./Pages/Contact"));
 
 const Home = lazy(importHome);
 const About = lazy(importAbout);
 const Portofolio = lazy(importPortofolio);
 const ContactPage = lazy(importContact);
-const ProjectDetails = lazy(() => import("./components/ProjectDetail"));
+const ProjectDetails = lazyWithRetry(() => import("./components/ProjectDetail"));
 // Intro sinematik 3D (WelcomeScreen lama tetap ada sebagai cadangan di dalam IntroScreen)
-const WelcomeScreen = lazy(() => import("./Pages/IntroScreen"));
-const NotFoundPage = lazy(() => import("./Pages/404"));
+const WelcomeScreen = lazyWithRetry(() => import("./Pages/IntroScreen"));
+const NotFoundPage = lazyWithRetry(() => import("./Pages/404"));
+
+// Bila intro/welcome error, jangan biarkan layar hitam: lewati langsung ke halaman utama.
+function SkipIntro({ onSkip }) {
+  useEffect(() => { onSkip(); }, [onSkip]);
+  return null;
+}
 
 const LandingPage = ({ showWelcome, setShowWelcome }) => {
   // Halaman utama dipasang saat intro mulai keluar (di BAWAH overlay), lalu di-crossfade.
@@ -51,12 +60,17 @@ const LandingPage = ({ showWelcome, setShowWelcome }) => {
       {!showWelcome && <FilmOverlay />}
       <AnimatePresence mode="wait">
         {showWelcome && (
+          <ErrorBoundary
+            name="intro"
+            fallback={<SkipIntro onSkip={() => { setRevealed(true); setShowWelcome(false); }} />}
+          >
           <Suspense fallback={<div className="fixed inset-0 z-50"><IntroLoader /></div>}>
             <WelcomeScreen
               onReveal={() => setRevealed(true)}
               onLoadingComplete={() => setShowWelcome(false)}
             />
           </Suspense>
+          </ErrorBoundary>
         )}
       </AnimatePresence>
 
@@ -68,11 +82,12 @@ const LandingPage = ({ showWelcome, setShowWelcome }) => {
           transition={{ duration: 1, ease: [0.4, 0, 0.2, 1] }}
         >
           <Navbar />
+          {/* tiap bagian punya boundary sendiri: satu bagian error tidak menjatuhkan seluruh halaman */}
           <Suspense fallback={<div className="h-20" />}>
-            <Home />
-            <About />
-            <Portofolio />
-            <ContactPage />
+            <ErrorBoundary name="home"><Home /></ErrorBoundary>
+            <ErrorBoundary name="about"><About /></ErrorBoundary>
+            <ErrorBoundary name="portofolio"><Portofolio /></ErrorBoundary>
+            <ErrorBoundary name="contact"><ContactPage /></ErrorBoundary>
           </Suspense>
           <Footer />
           <WhatsAppButton />
@@ -109,6 +124,7 @@ function App() {
 
   return (
     
+    <ErrorBoundary name="root" fallback={<CrashScreen />}>
     <HelmetProvider>
     <SiteContentProvider>
       <div className="pointer-events-none">
@@ -155,6 +171,7 @@ function App() {
       </BrowserRouter>
     </SiteContentProvider>
     </HelmetProvider>
+    </ErrorBoundary>
   );
 }
 

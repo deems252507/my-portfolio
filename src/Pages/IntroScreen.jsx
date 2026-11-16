@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
 import { IntroAudio } from "../components/intro/introAudio";
 import IntroLoader from "../components/intro/IntroLoader";
+import ErrorBoundary from "../components/ErrorBoundary";
 
 // Urutan: intro 3D (programmer membuka website) -> kamera menembus layar ->
 // WelcomeScreen milikmu ("Welcome To My Portofolio" + animasi partikel 3D) -> portfolio.
@@ -86,6 +87,7 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
       el.style.transition = "transform 1100ms cubic-bezier(0.16, 1, 0.3, 1)";
       el.style.transform = "scale(1)";
     }
+    setWelcome(true); // jaga-jaga: pastikan layar sambutan asli ada sebelum overlay 3D dilepas (tidak ada layar kosong)
     setIntroGone(true);
   }, []);
   const handleReady = useCallback(() => setReady(true), []);
@@ -158,9 +160,12 @@ export default function IntroScreen({ onReveal, onLoadingComplete }) {
       {/* Welcome milikmu (tidak diubah). Saat tampil bersama overlay 3D, overlay 3D memudar di atasnya. */}
       {welcome && !skippedRef.current && (
         <div ref={zoomRef} className="fixed inset-0 z-50" style={{ transformOrigin: "50% 50%", willChange: "transform" }}>
-          <Suspense fallback={null}>
-            <LegacyWelcome onReveal={reveal} onLoadingComplete={finish} />
-          </Suspense>
+          {/* bila layar sambutan error (mis. WebGL/canvas gagal di HP), langsung lanjut ke website, bukan layar hitam */}
+          <ErrorBoundary name="welcome" onError={finish} fallback={null}>
+            <Suspense fallback={null}>
+              <LegacyWelcome onReveal={reveal} onLoadingComplete={finish} />
+            </Suspense>
+          </ErrorBoundary>
         </div>
       )}
 
