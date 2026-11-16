@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { SquaresLoader } from "../ui/animated-loader-1";
 import FlipCoinButton from "../ui/flip-coin-button";
 import { useSiteContent } from "../../context/SiteContentContext";
+import { getCoinSettings } from "../../lib/siteContent";
 
 // Layar loading sebelum intro 3D siap (memuat modul 3D, tekstur Bumi, menyusun ruangan, kompilasi shader).
 // Animasi kotak-kotak murni CSS (transform) sehingga tetap bergerak walau thread utama sibuk.
@@ -14,6 +15,7 @@ export default function IntroLoader({ visible = true, ready = false, onEnter = n
   const { content } = useSiteContent();
   const [flipping, setFlipping] = useState(false);
   const photo = content?.coin_photo || content?.profile_photo || "";
+  const coin = getCoinSettings(content);
 
   // unduh foto koin lebih awal supaya sudah ada saat koin berputar
   useEffect(() => {
@@ -56,6 +58,10 @@ export default function IntroLoader({ visible = true, ready = false, onEnter = n
           <style>{"@keyframes intro-enter-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}"}</style>
           <FlipCoinButton
             photo={photo}
+            photoX={coin.photoX}
+            photoY={coin.photoY}
+            photoZoom={coin.photoZoom}
+            bigScale={coin.bigScale}
             thanks="Suara hidup ✓"
             onFlip={() => { setFlipping(true); onSoundOn?.(); }}
             onLanded={() => setTimeout(() => onEnter(true), 800)}

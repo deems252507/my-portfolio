@@ -181,6 +181,10 @@ export const DEFAULT_CONTENT = {
   idcard_enabled: "true",
   idcard_photo: "", // kosong = pakai foto profil
   coin_photo: "", // foto di koin tombol "Hidupkan Suara" (kosong = foto profil)
+  coin_photo_x: "50", // posisi horizontal foto di koin (%)
+  coin_photo_y: "30", // posisi vertikal foto di koin (%)
+  coin_photo_zoom: "1", // zoom foto di koin
+  coin_big_scale: "2.6", // ukuran koin saat membesar sebelum jatuh (x)
   idcard_brand: "NAMA KAMU",
   idcard_tagline: "Your Tagline",
   idcard_number: "ID-0000",
@@ -341,6 +345,21 @@ export function getIdCardSettings(content) {
     photoY: num(c.idcard_photo_y, 32, 0, 100),
     photoZoom: num(c.idcard_photo_zoom, 1, 1, 3),
     anchorX: num(c.idcard_anchor_x, 74, 50, 92),
+  };
+}
+
+/** Pengaturan foto & ukuran koin tombol "Hidupkan Suara" (angka dibatasi supaya aman). */
+export function getCoinSettings(content) {
+  const c = content || DEFAULT_CONTENT;
+  const num = (v, d, min, max) => {
+    const n = parseFloat(v);
+    return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : d;
+  };
+  return {
+    photoX: num(c.coin_photo_x, 50, 0, 100),
+    photoY: num(c.coin_photo_y, 30, 0, 100),
+    photoZoom: num(c.coin_photo_zoom, 1, 1, 3),
+    bigScale: num(c.coin_big_scale, 2.6, 1.6, 3.6),
   };
 }
 

@@ -13,6 +13,7 @@ import {
   uploadSiteImage,
   applyTheme,
   getIdCardSettings,
+  getCoinSettings,
   getAboutMobileSettings,
 } from "../../lib/siteContent";
 import { useSiteContent } from "../../context/SiteContentContext";
@@ -402,6 +403,59 @@ function IdCardPhotoEditor({ form, setField }) {
                 setField("idcard_photo_y", DEFAULT_CONTENT.idcard_photo_y);
                 setField("idcard_anchor_x", DEFAULT_CONTENT.idcard_anchor_x);
               }}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-white/10 text-xs text-gray-300 hover:text-white hover:bg-white/5"
+            >
+              <RotateCcw className="w-3.5 h-3.5" /> Reset posisi & ukuran
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Atur posisi, zoom foto di koin "Hidupkan Suara" dan ukuran koin saat membesar. Ada preview langsung. */
+function CoinPhotoEditor({ form, setField }) {
+  const coin = getCoinSettings(form);
+  const photo = form.coin_photo || form.profile_photo;
+  return (
+    <div className="rounded-xl border border-white/10 bg-black/20 p-4 space-y-4">
+      <div>
+        <p className="text-sm text-white">Foto & ukuran koin (tombol Hidupkan Suara)</p>
+        <p className="text-xs text-gray-500 mt-0.5">
+          Geser slider sampai wajah pas di tengah lingkaran koin. Preview langsung berubah. Klik Simpan supaya tampil di website.
+        </p>
+      </div>
+      <div className="grid md:grid-cols-[200px_1fr] gap-5 items-start">
+        <div className="mx-auto md:mx-0 w-[180px]">
+          <div className="relative w-[180px] h-[180px] rounded-full overflow-hidden border-[6px] border-[#c2cadf] bg-[#8590b3] shadow-[0_8px_30px_rgba(0,0,0,.5)]">
+            {photo ? (
+              <img
+                src={photo}
+                alt="Preview foto koin"
+                draggable={false}
+                className="absolute inset-0 w-full h-full object-cover"
+                style={{
+                  objectPosition: `${coin.photoX}% ${coin.photoY}%`,
+                  transformOrigin: `${coin.photoX}% ${coin.photoY}%`,
+                  transform: `scale(${coin.photoZoom})`,
+                }}
+              />
+            ) : (
+              <span className="absolute inset-0 flex items-center justify-center text-xs text-gray-500">Belum ada foto</span>
+            )}
+          </div>
+          <p className="text-[10px] text-gray-600 mt-1.5 text-center">Preview sisi depan koin</p>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <RangeField label="Zoom foto" hint="Makin besar = wajah makin besar di koin" min={1} max={3} step={0.05} unit="x" value={form.coin_photo_zoom || "1"} onChange={(v) => setField("coin_photo_zoom", v)} />
+          <RangeField label="Ukuran koin saat membesar" hint="Seberapa besar koin sebelum jatuh" min={1.6} max={3.6} step={0.1} unit="x" value={form.coin_big_scale || "2.6"} onChange={(v) => setField("coin_big_scale", v)} />
+          <RangeField label="Geser foto kiri ↔ kanan" min={0} max={100} step={1} unit="%" value={form.coin_photo_x || "50"} onChange={(v) => setField("coin_photo_x", v)} />
+          <RangeField label="Geser foto atas ↕ bawah" min={0} max={100} step={1} unit="%" value={form.coin_photo_y || "30"} onChange={(v) => setField("coin_photo_y", v)} />
+          <div className="flex items-end">
+            <button
+              type="button"
+              onClick={() => ["coin_photo_x", "coin_photo_y", "coin_photo_zoom", "coin_big_scale"].forEach((k) => setField(k, DEFAULT_CONTENT[k]))}
               className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-white/10 text-xs text-gray-300 hover:text-white hover:bg-white/5"
             >
               <RotateCcw className="w-3.5 h-3.5" /> Reset posisi & ukuran
@@ -1188,6 +1242,7 @@ export default function SiteSettings() {
             <PhotoField key={key} label={label} value={form[key] || ""} onChange={(v) => setField(key, v)} />
           ))}
         </div>
+        <CoinPhotoEditor form={form} setField={setField} />
       </section>
 
       {/* ── Foto karakter hover (About) ── */}
